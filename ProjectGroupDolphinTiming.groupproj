@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{B21E5080-0751-44FC-8CB8-994E43B88300}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="SCM_DolphinTimer.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\SCM_Member-R\SCM_Member.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="SCM_DolphinTimer">
+        <MSBuild Projects="SCM_DolphinTimer.dproj"/>
+    </Target>
+    <Target Name="SCM_DolphinTimer:Clean">
+        <MSBuild Projects="SCM_DolphinTimer.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SCM_DolphinTimer:Make">
+        <MSBuild Projects="SCM_DolphinTimer.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="SCM_Member">
+        <MSBuild Projects="..\SCM_Member-R\SCM_Member.dproj"/>
+    </Target>
+    <Target Name="SCM_Member:Clean">
+        <MSBuild Projects="..\SCM_Member-R\SCM_Member.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SCM_Member:Make">
+        <MSBuild Projects="..\SCM_Member-R\SCM_Member.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="SCM_DolphinTimer;SCM_Member"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="SCM_DolphinTimer:Clean;SCM_Member:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="SCM_DolphinTimer:Make;SCM_Member:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
