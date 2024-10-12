@@ -3,7 +3,7 @@ object dtExec: TdtExec
   Top = 0
   Caption = 'SwimClubMeet - Dolphin Timing.'
   ClientHeight = 583
-  ClientWidth = 759
+  ClientWidth = 1002
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -100,8 +100,8 @@ object dtExec: TdtExec
     TitleFont.Style = []
   end
   object MainMenu1: TMainMenu
-    Left = 360
-    Top = 8
+    Left = 928
+    Top = 16
     object File1: TMenuItem
       Caption = 'File'
     end
@@ -114,7 +114,7 @@ object dtExec: TdtExec
   end
   object ImageCollection1: TImageCollection
     Images = <>
-    Left = 360
-    Top = 64
+    Left = 928
+    Top = 88
   end
 end

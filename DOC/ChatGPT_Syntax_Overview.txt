@@ -1,0 +1,107 @@
+The PDF provides detailed information on the `.DO3` and `.DO4` file formats used by Dolphin Timing for interfacing with Hy-Tek Meet Manager. Here's a summary based on the document:
+
+### File Naming Convention:
+- **General format**: `AAA-BBB-CCCX-NNNN.ext` (`ext` being `.do3` or `.do4`)
+  - **AAA**: Dataset number (each dataset is a collection of races from a specific session or day).
+  - **BBB**: Event number.
+  - **CCC**: Heat number.
+  - **X**: Round of the event (e.g., Prelim, Final).
+  - **NNNN**: A unique 4-digit number for the race.
+  - **.DO3**: Contains the final times from each watch.
+  - **.DO4**: Contains the final times along with split times (if available).
+
+### `.DO3` Format Breakdown:
+- Each line represents timing data, including lane and time information.
+- Syntax example:
+  ```
+  0;47.09;;
+  1;36.70;;
+  ```
+  - The first number refers to the lane.
+  - The second value is the recorded time (in seconds).
+  - Empty values are represented by semicolons (`;;`), which denote no data for those fields.
+
+### `.DO4` Format Breakdown:
+- Similar structure to `.DO3`, but with split times included.
+- Syntax example:
+  ```
+  Lane0;47.04;;
+  Lane1;46.06;;
+  ```
+  - Each lane is represented with its corresponding time, including split times where applicable.
+  
+- **File End**: Both `.DO3` and `.DO4` files end with a checksum or validation code (a string of alphanumeric characters).
+
+These formats allow for accurate race results, including final times and splits, to be processed by Meet Manager. Additionally, the files can be read directly using basic text editors like Notepad.
+
+For further technical details, you can refer to the section on Dolphin result files in the manual  .
+
+
+
+
+
+
+The `.DO3` and `.DO4` file formats used by the Dolphin Timing system are data files designed to interface with Hy-Tek Meet Manager software. They store timing results, including splits for events, and their file naming conventions and contents carry specific meaning.
+
+### Breakdown of `.DO3` Files
+- **Filename Example**: `088-000-00F0018.do3`
+  - **088**: This could represent a specific session, race, or lane number (likely session-related).
+  - **000**: Possibly the heat or event number.
+  - **00F0018**: This part may represent a unique identifier or timestamp for the event.
+
+#### File Content:
+```
+0;0;1;A
+0;47.09;;
+1;36.70;;
+2;37.80;;
+3;39.00;;
+4;37.59;;
+5;38.62;;
+6;;;
+7;;;
+8;;;
+9;;;
+E57FBB1E3B9E65FF
+```
+- **0;0;1;A**: Indicates session, event, lane, and timing method (possibly "A" for automatic or something similar).
+- **0;47.09;;**: First timer, 47.09 seconds.
+- **1;36.70;;**: Second timer, 36.70 seconds.
+- **6;;;** to **9;;;**: Empty values indicate no recorded time for those positions (likely unused lanes).
+- **E57FBB1E3B9E65FF**: This could be a checksum or verification hash.
+
+### Breakdown of `.DO4` Files
+- **Filename Example**: `088-001-001A-0026.do4`
+  - **088**: Session or event number.
+  - **001**: Heat number.
+  - **001A**: Lane or swimmer identifier (lane 1A could denote a swimmer with a designated lane identifier).
+  - **0026**: A unique event or race code.
+
+#### File Content:
+```
+1;1;1;A
+Lane0;47.04;;
+Lane1;46.06;;
+Lane2;36.72;;
+Lane3;;;
+Lane4;44.72;;
+Lane5;;;
+BE9DEC6F53DAC14D
+```
+- **1;1;1;A**: Same interpretation as `.DO3`, session, heat, lane, and timing method.
+- **Lane0;47.04;;**: Time for lane 0 is 47.04 seconds.
+- **Lane1;46.06;;**: Time for lane 1 is 46.06 seconds.
+- **BE9DEC6F53DAC14D**: Similarly, this appears to be a checksum.
+
+### Key Differences:
+- **.DO3 files**: Generally contain race times, one time per swimmer for each lane, without detailed splits.
+- **.DO4 files**: Include more detailed information, possibly including splits or additional timing data for each lane.
+
+### Syntax and Data Structure:
+- Each line is semicolon-separated, likely representing lanes and their associated race times.
+- Empty fields in both formats represent unused lanes or no recorded times.
+- The final field, often a long alphanumeric string, might serve as a checksum or hash to validate the integrity of the file.
+
+This structure is designed for efficient data import into Hy-Tek Meet Manager, where it can automatically integrate race results. Since each format has specific fields and structures, the system can handle different race types (with or without splits).
+
+If you need more specific documentation on these formats, it’s advisable to contact [Colorado Time Systems](https://www.coloradotime.com) or check the software's official documentation for further details on these file formats.
