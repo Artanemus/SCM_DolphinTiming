@@ -30,12 +30,15 @@ type
     actnDisconnect: TAction;
     actnDolphinTiming: TAction;
     Timer1: TTimer;
+    procedure FormDestroy(Sender: TObject);
     procedure actnConnectExecute(Sender: TObject);
     procedure actnConnectUpdate(Sender: TObject);
     procedure actnDisconnectExecute(Sender: TObject);
     procedure actnDisconnectUpdate(Sender: TObject);
+    procedure actnDolphinTimingUpdate(Sender: TObject);
     procedure btnDolphinTimingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     fLoginTimeOut: integer;
     fConnectionCountdown: integer;
@@ -59,6 +62,12 @@ implementation
 {$R *.dfm}
 
 uses exeinfo, dtfrmExec;
+
+procedure TdtBoot.FormDestroy(Sender: TObject);
+begin
+    if Assigned(SCM) then  // handle data module.
+      FreeAndNil(SCM);
+end;
 
 procedure TdtBoot.actnConnectExecute(Sender: TObject);
 var
@@ -127,6 +136,8 @@ begin
   // CALL IT DIRECTLY - ELSE IT WILL NOT WORK
   actnDisconnectUpdate(Self);
   actnConnectUpdate(Self);
+  actnDolphinTimingUpdate(Self);
+
 end;
 
 procedure TdtBoot.actnDisconnectUpdate(Sender: TObject);
@@ -143,6 +154,22 @@ begin
   begin
     if actnDisconnect.Enabled then
       actnDisconnect.Enabled := false;
+  end;
+end;
+
+procedure TdtBoot.actnDolphinTimingUpdate(Sender: TObject);
+begin
+  if Assigned(SCM) then
+  begin
+    if SCM.scmConnection.Connected and not actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := true;
+    if not SCM.scmConnection.Connected and actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := false;
+  end
+  else // D E F A U L T  I N I T  . Data module not created.
+  begin
+    if actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := false;
   end;
 end;
 
@@ -230,6 +257,20 @@ begin
   // CALL IT DIRECTLY ....
   actnDisconnectUpdate(Self);
   actnConnectUpdate(Self);
+  actnDolphinTimingUpdate(Self);
+end;
+
+procedure TdtBoot.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = VK_ESCAPE) then
+  begin
+    if Assigned(SCM) then
+    begin
+      if SCM.scmConnection.Connected then
+        SaveToSettings; // store parameters.
+    end
+  end;
+  Close();
 end;
 
 function TdtBoot.GetSCMVerInfo: string;

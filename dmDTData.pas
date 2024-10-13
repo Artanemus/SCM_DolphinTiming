@@ -9,7 +9,7 @@ uses
   Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.DatS,
   FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, dmSCM,
   System.ImageList, Vcl.ImgList, Vcl.VirtualImageList, Vcl.BaseImageCollection,
-  Vcl.ImageCollection;
+  Vcl.ImageCollection, SCMDefines, Windows, Winapi.Messages, vcl.Forms;
 
 type
   TDTData = class(TDataModule)
@@ -26,7 +26,7 @@ type
     dsTEAM: TDataSource;
     dsTEAMEntrant: TDataSource;
     imgcolDT: TImageCollection;
-    vimglistDT: TVirtualImageList;
+    vimglistDTEvent: TVirtualImageList;
     qryGetCurrentSessionID: TFDQuery;
     memtblLink: TFDMemTable;
     memtblLinkID: TFDAutoIncField;
@@ -41,11 +41,14 @@ type
     qryStroke: TFDQuery;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
+    procedure qryEventAfterScroll(DataSet: TDataSet);
+    procedure qryHeatAfterScroll(DataSet: TDataSet);
   private
     { Private declarations }
     FConnection: TFDConnection;
     fSessionID: integer;
     fDTDataIsActive: Boolean;
+
 
   public
     { Public declarations }
@@ -118,6 +121,20 @@ begin
   fDTDataIsActive := false;
   fSessionID := 0;
   FConnection := nil;
+end;
+
+procedure TDTData.qryEventAfterScroll(DataSet: TDataSet);
+begin
+  // send message to update dtfrmExec lblHeatNum
+  if Owner is TForm then
+    PostMessage(TForm(Owner).Handle,SCM_EVENTSCROLL, 0, 0);
+end;
+
+procedure TDTData.qryHeatAfterScroll(DataSet: TDataSet);
+begin
+  // send message to update dtfrmExec lblHeatNum
+  if Owner is TForm then
+    PostMessage(TForm(Owner).Handle,SCM_HEATSCROLL, 0, 0);
 end;
 
 end.

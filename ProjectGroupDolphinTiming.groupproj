@@ -9,6 +9,9 @@
         <Projects Include="..\SCM_Member-R\SCM_Member.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="SCM_Member:Make">
         <MSBuild Projects="..\SCM_Member-R\SCM_Member.dproj" Targets="Make"/>
     </Target>
+    <Target Name="SwimClubMeet">
+        <MSBuild Projects="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj"/>
+    </Target>
+    <Target Name="SwimClubMeet:Clean">
+        <MSBuild Projects="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="SwimClubMeet:Make">
+        <MSBuild Projects="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="SCM_DolphinTimer;SCM_Member"/>
+        <CallTarget Targets="SCM_DolphinTimer;SCM_Member;SwimClubMeet"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="SCM_DolphinTimer:Clean;SCM_Member:Clean"/>
+        <CallTarget Targets="SCM_DolphinTimer:Clean;SCM_Member:Clean;SwimClubMeet:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="SCM_DolphinTimer:Make;SCM_Member:Make"/>
+        <CallTarget Targets="SCM_DolphinTimer:Make;SCM_Member:Make;SwimClubMeet:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

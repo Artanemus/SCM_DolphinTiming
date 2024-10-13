@@ -1,8 +1,9 @@
 object dtBoot: TdtBoot
   Left = 0
   Top = 0
+  BorderStyle = bsSingle
   Caption = 'Login to SwimClubMeet database server.'
-  ClientHeight = 429
+  ClientHeight = 413
   ClientWidth = 721
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -10,7 +11,11 @@ object dtBoot: TdtBoot
   Font.Height = -16
   Font.Name = 'Segoe UI'
   Font.Style = []
+  KeyPreview = True
+  Position = poMainFormCenter
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyUp = FormKeyUp
   TextHeight = 21
   object lblServer: TLabel
     Left = 264
@@ -107,12 +112,13 @@ object dtBoot: TdtBoot
     Left = 0
     Top = 0
     Width = 217
-    Height = 429
+    Height = 413
     Align = alLeft
     BevelOuter = bvNone
     Caption = 'Panel1'
     ShowCaption = False
     TabOrder = 7
+    ExplicitHeight = 429
     object imgDTBanner: TImage
       Left = 0
       Top = 0
@@ -11968,10 +11974,8 @@ object dtBoot: TdtBoot
     Top = 224
     Width = 335
     Height = 32
-    Caption = 'DOLPHIN TIMING'
+    Action = actnDolphinTiming
     TabOrder = 8
-    Visible = False
-    OnClick = btnDolphinTimingClick
   end
   object ActionList1: TActionList
     Left = 296
@@ -11988,6 +11992,8 @@ object dtBoot: TdtBoot
     end
     object actnDolphinTiming: TAction
       Caption = 'Dolphin Timing'
+      OnExecute = btnDolphinTimingClick
+      OnUpdate = actnDolphinTimingUpdate
     end
   end
   object Timer1: TTimer
