@@ -112,6 +112,7 @@ object DTData: TDTData
       '      ,[IsScratched]'
       '      ,[HeatID]'
       '      ,[DisqualifyCodeID]'
+      '      ,0 AS imgPatch '
       '  FROM [SwimClubMeet].[dbo].[Entrant]'
       '  ORDER BY [Lane]')
     Left = 152
@@ -167,32 +168,32 @@ object DTData: TDTData
   end
   object dsSession: TDataSource
     DataSet = qrySession
-    Left = 400
+    Left = 464
     Top = 24
   end
   object dsEvent: TDataSource
     DataSet = qryEvent
-    Left = 400
+    Left = 464
     Top = 88
   end
   object dsHeat: TDataSource
     DataSet = qryHeat
-    Left = 400
+    Left = 464
     Top = 152
   end
   object dsINDV: TDataSource
     DataSet = qryINDV
-    Left = 464
+    Left = 528
     Top = 152
   end
   object dsTEAM: TDataSource
     DataSet = qryTEAM
-    Left = 520
+    Left = 584
     Top = 152
   end
   object dsTEAMEntrant: TDataSource
     DataSet = qryTEAMEntrant
-    Left = 464
+    Left = 528
     Top = 216
   end
   object imgcolDT: TImageCollection
@@ -1676,7 +1677,7 @@ object DTData: TDTData
       'WHERE NOT EXISTS (SELECT 1 FROM NearestUpcoming);'
       ''
       '')
-    Left = 224
+    Left = 456
     Top = 344
   end
   object memtblLink: TFDMemTable
@@ -1723,8 +1724,8 @@ object DTData: TDTData
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
     StoreDefs = True
-    Left = 480
-    Top = 344
+    Left = 456
+    Top = 408
     object memtblLinkID: TFDAutoIncField
       FieldName = 'ID'
       ProviderFlags = [pfInUpdate, pfInWhere]
@@ -1792,5 +1793,195 @@ object DTData: TDTData
       '')
     Left = 224
     Top = 88
+  end
+  object vimglistDTGrid: TVirtualImageList
+    Images = <
+      item
+        CollectionIndex = 14
+        CollectionName = 'EvBlue'
+        Name = 'EvBlue'
+      end>
+    ImageCollection = imgcolDT
+    Width = 24
+    Height = 24
+    Left = 216
+    Top = 408
+  end
+  object memtblDT: TFDMemTable
+    FieldDefs = <
+      item
+        Name = 'ID'
+        DataType = ftAutoInc
+      end
+      item
+        Name = 'fSessionNum'
+        DataType = ftInteger
+      end
+      item
+        Name = 'fEventNum'
+        DataType = ftInteger
+      end
+      item
+        Name = 'fHeatNum'
+        DataType = ftInteger
+      end
+      item
+        Name = 'fGender'
+        DataType = ftString
+        Size = 1
+      end
+      item
+        Name = 'fRaceID'
+        DataType = ftString
+        Size = 20
+      end
+      item
+        Name = 'fCreationDT'
+        DataType = ftDateTime
+      end
+      item
+        Name = 'fFileType'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Session'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Event'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Heat'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Gender'
+        DataType = ftString
+        Size = 1
+      end
+      item
+        Name = 'LaneNum'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Time1'
+        DataType = ftTime
+      end
+      item
+        Name = 'Time2'
+        DataType = ftTime
+      end
+      item
+        Name = 'Time3'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split1'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split2'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split4'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split5'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split6'
+        DataType = ftTime
+      end
+      item
+        Name = 'CheckSum'
+        DataType = ftString
+        Size = 20
+      end>
+    IndexDefs = <>
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    StoreDefs = True
+    Left = 576
+    Top = 408
+    object memtblDTID: TFDAutoIncField
+      FieldName = 'ID'
+      ProviderFlags = [pfInUpdate, pfInWhere]
+      ReadOnly = False
+      IdentityInsert = True
+    end
+    object memtblDTfSessionNum: TIntegerField
+      FieldName = 'fSessionNum'
+    end
+    object memtblDTfEventNum: TIntegerField
+      FieldName = 'fEventNum'
+    end
+    object memtblDTfHeatNum: TIntegerField
+      FieldName = 'fHeatNum'
+    end
+    object memtblDTfGender: TStringField
+      FieldName = 'fGender'
+      Size = 1
+    end
+    object memtblDTfRaceID: TStringField
+      FieldName = 'fRaceID'
+    end
+    object memtblDTfCreationDT: TDateTimeField
+      FieldName = 'fCreationDT'
+    end
+    object memtblDTfFileType: TIntegerField
+      FieldName = 'fFileType'
+    end
+    object memtblDTSession: TIntegerField
+      FieldName = 'Session'
+    end
+    object memtblDTEvent: TIntegerField
+      FieldName = 'Event'
+    end
+    object memtblDTHeat: TIntegerField
+      FieldName = 'Heat'
+    end
+    object memtblDTGender: TStringField
+      FieldName = 'Gender'
+      Size = 1
+    end
+    object memtblDTLaneNum: TIntegerField
+      FieldName = 'LaneNum'
+    end
+    object memtblDTTime1: TTimeField
+      FieldName = 'Time1'
+    end
+    object memtblDTTime2: TTimeField
+      FieldName = 'Time2'
+    end
+    object memtblDTTime3: TTimeField
+      FieldName = 'Time3'
+    end
+    object memtblDTSplit1: TTimeField
+      FieldName = 'Split1'
+    end
+    object memtblDTSplit2: TTimeField
+      FieldName = 'Split2'
+    end
+    object memtblDTSplit4: TTimeField
+      FieldName = 'Split4'
+    end
+    object memtblDTSplit5: TTimeField
+      FieldName = 'Split5'
+    end
+    object memtblDTSplit6: TTimeField
+      FieldName = 'Split6'
+    end
+    object memtblDTCheckSum: TStringField
+      FieldName = 'CheckSum'
+    end
   end
 end

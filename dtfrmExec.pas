@@ -24,7 +24,6 @@ type
     Setup1: TMenuItem;
     Button1: TButton;
     btnRefresh: TButton;
-    dbgridSCM: TDBGrid;
     dbgridDT: TDBGrid;
     sbtnSync: TSpeedButton;
     vimgStrokeBug: TVirtualImage;

@@ -9,7 +9,8 @@ uses
   Data.DB, FireDAC.Comp.Client, FireDAC.Stan.Param, FireDAC.DatS,
   FireDAC.DApt.Intf, FireDAC.DApt, FireDAC.Comp.DataSet, dmSCM,
   System.ImageList, Vcl.ImgList, Vcl.VirtualImageList, Vcl.BaseImageCollection,
-  Vcl.ImageCollection, SCMDefines, Windows, Winapi.Messages, vcl.Forms;
+  Vcl.ImageCollection, SCMDefines, Windows, Winapi.Messages, vcl.Forms,
+  FireDAC.Phys.SQLiteVDataSet;
 
 type
   TDTData = class(TDataModule)
@@ -39,6 +40,30 @@ type
     memtblLinkDTFileName: TStringField;
     qryDistance: TFDQuery;
     qryStroke: TFDQuery;
+    vimglistDTGrid: TVirtualImageList;
+    memtblDT: TFDMemTable;
+    memtblDTID: TFDAutoIncField;
+    memtblDTfSessionNum: TIntegerField;
+    memtblDTfEventNum: TIntegerField;
+    memtblDTfHeatNum: TIntegerField;
+    memtblDTfGender: TStringField;
+    memtblDTfRaceID: TStringField;
+    memtblDTfCreationDT: TDateTimeField;
+    memtblDTfFileType: TIntegerField;
+    memtblDTSession: TIntegerField;
+    memtblDTEvent: TIntegerField;
+    memtblDTHeat: TIntegerField;
+    memtblDTGender: TStringField;
+    memtblDTLaneNum: TIntegerField;
+    memtblDTTime1: TTimeField;
+    memtblDTTime2: TTimeField;
+    memtblDTTime3: TTimeField;
+    memtblDTSplit1: TTimeField;
+    memtblDTSplit2: TTimeField;
+    memtblDTSplit4: TTimeField;
+    memtblDTSplit5: TTimeField;
+    memtblDTSplit6: TTimeField;
+    memtblDTCheckSum: TStringField;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure qryEventAfterScroll(DataSet: TDataSet);

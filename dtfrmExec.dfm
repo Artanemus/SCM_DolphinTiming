@@ -3,7 +3,7 @@ object dtExec: TdtExec
   Top = 0
   Caption = 'SwimClubMeet - Dolphin Timing.'
   ClientHeight = 638
-  ClientWidth = 1310
+  ClientWidth = 1139
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -75,16 +75,16 @@ object dtExec: TdtExec
   object lblEventDetails: TLabel
     Left = 136
     Top = 64
-    Width = 393
+    Width = 450
     Height = 21
     Alignment = taCenter
     AutoSize = False
     Caption = '50M Freestyle - Boys under 10y'
   end
   object lblDTFileName: TLabel
-    Left = 560
+    Left = 656
     Top = 61
-    Width = 393
+    Width = 450
     Height = 21
     Alignment = taCenter
     AutoSize = False
@@ -115,7 +115,7 @@ object dtExec: TdtExec
   object btnPrevEvent: TButton
     Left = 136
     Top = 8
-    Width = 393
+    Width = 450
     Height = 50
     Caption = 'PREVIOUS'
     TabOrder = 0
@@ -123,23 +123,23 @@ object dtExec: TdtExec
   object btnNextEvent: TButton
     Left = 136
     Top = 567
-    Width = 393
+    Width = 450
     Height = 50
     Caption = 'NEXT'
     TabOrder = 1
   end
   object btnPrevDTFile: TButton
-    Left = 560
+    Left = 656
     Top = 8
-    Width = 393
+    Width = 450
     Height = 52
     Caption = 'PREVIOUS'
     TabOrder = 2
   end
   object btnNextDTFile: TButton
-    Left = 561
+    Left = 657
     Top = 567
-    Width = 392
+    Width = 449
     Height = 50
     Caption = 'NEXT'
     TabOrder = 3
@@ -160,80 +160,12 @@ object dtExec: TdtExec
     Caption = 'Refresh'
     TabOrder = 5
   end
-  object dbgridSCM: TDBGrid
-    Left = 136
-    Top = 91
-    Width = 393
-    Height = 470
-    DataSource = DTData.dsINDV
-    Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
-    TabOrder = 6
-    TitleFont.Charset = DEFAULT_CHARSET
-    TitleFont.Color = clWindowText
-    TitleFont.Height = -16
-    TitleFont.Name = 'Segoe UI'
-    TitleFont.Style = []
-    Columns = <
-      item
-        Expanded = False
-        FieldName = 'EntrantID'
-        Visible = False
-      end
-      item
-        Expanded = False
-        FieldName = 'MemberID'
-        Visible = False
-      end
-      item
-        Expanded = False
-        FieldName = 'Lane'
-        Width = 40
-        Visible = True
-      end
-      item
-        Expanded = False
-        FieldName = 'RaceTime'
-        Visible = True
-      end
-      item
-        Expanded = False
-        FieldName = 'TimeToBeat'
-        Title.Caption = 'TTB'
-        Visible = True
-      end
-      item
-        Expanded = False
-        FieldName = 'PersonalBest'
-        Title.Caption = 'PB'
-        Visible = True
-      end
-      item
-        Expanded = False
-        FieldName = 'IsDisqualified'
-        Visible = False
-      end
-      item
-        Expanded = False
-        FieldName = 'IsScratched'
-        Visible = False
-      end
-      item
-        Expanded = False
-        FieldName = 'HeatID'
-        Visible = False
-      end
-      item
-        Expanded = False
-        FieldName = 'DisqualifyCodeID'
-        Visible = False
-      end>
-  end
   object dbgridDT: TDBGrid
-    Left = 560
+    Left = 656
     Top = 88
-    Width = 393
+    Width = 450
     Height = 473
-    TabOrder = 7
+    TabOrder = 6
     TitleFont.Charset = DEFAULT_CHARSET
     TitleFont.Color = clWindowText
     TitleFont.Height = -16
@@ -241,42 +173,48 @@ object dtExec: TdtExec
     TitleFont.Style = []
   end
   object scmGrid: TDBAdvGrid
-    Left = 959
+    Left = 136
     Top = 88
-    Width = 346
+    Width = 450
     Height = 473
     Cursor = crDefault
-    Color = clWhite
-    ColCount = 11
+    BevelInner = bvNone
+    BevelKind = bkFlat
+    BevelOuter = bvNone
+    Color = 6445643
+    ColCount = 9
+    Ctl3D = True
     DefaultRowHeight = 34
     DrawingStyle = gdsClassic
-    FixedColor = clWhite
+    FixedColor = 3880234
     RowCount = 8
     FixedRows = 1
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBlack
+    Font.Color = clWindow
     Font.Height = -16
     Font.Name = 'Segoe UI'
     Font.Style = []
-    Options = [goVertLine, goHorzLine, goRangeSelect, goFixedRowDefAlign]
+    GradientStartColor = 6445643
+    Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
+    ParentCtl3D = False
     ParentFont = False
-    ScrollBars = ssBoth
-    TabOrder = 8
-    GridLineColor = 15987699
-    GridFixedLineColor = 15987699
+    ScrollBars = ssVertical
+    TabOrder = 7
+    StyleElements = [seFont, seBorder]
     HoverRowCells = [hcNormal, hcSelected]
     ActiveCellFont.Charset = DEFAULT_CHARSET
     ActiveCellFont.Color = 4474440
-    ActiveCellFont.Height = -12
+    ActiveCellFont.Height = -16
     ActiveCellFont.Name = 'Tahoma'
     ActiveCellFont.Style = [fsBold]
     ActiveCellColor = 11565130
     ActiveCellColorTo = 11565130
     BorderColor = 11250603
-    ControlLook.FixedGradientFrom = clWhite
-    ControlLook.FixedGradientTo = clWhite
-    ControlLook.FixedGradientMirrorFrom = clWhite
-    ControlLook.FixedGradientMirrorTo = clWhite
+    ControlLook.FixedGradientFrom = 3880234
+    ControlLook.FixedGradientTo = 3880234
+    ControlLook.FixedGradientMirrorFrom = 3880234
+    ControlLook.FixedGradientMirrorTo = 3880234
+    ControlLook.FixedGradientHoverFrom = clGray
     ControlLook.FixedGradientHoverTo = clWhite
     ControlLook.FixedGradientHoverMirrorFrom = clWhite
     ControlLook.FixedGradientHoverMirrorTo = clWhite
@@ -322,8 +260,8 @@ object dtExec: TdtExec
     FixedColWidth = 20
     FixedRowHeight = 34
     FixedFont.Charset = DEFAULT_CHARSET
-    FixedFont.Color = clBlack
-    FixedFont.Height = -12
+    FixedFont.Color = clWindow
+    FixedFont.Height = -16
     FixedFont.Name = 'Tahoma'
     FixedFont.Style = [fsBold]
     FloatFormat = '%.2f'
@@ -370,14 +308,15 @@ object dtExec: TdtExec
     SearchFooter.MatchCaseCaption = 'Match case'
     SearchFooter.ResultFormat = '(%d of %d)'
     SelectionColor = 13744549
+    SelectionTextColor = clWindowText
     SortSettings.DefaultFormat = ssAutomatic
     SortSettings.HeaderColor = clWhite
     SortSettings.HeaderColorTo = clWhite
     SortSettings.HeaderMirrorColor = clWhite
     SortSettings.HeaderMirrorColorTo = clWhite
     Version = '2.5.1.3'
-    AutoCreateColumns = True
-    AutoRemoveColumns = True
+    AutoCreateColumns = False
+    AutoRemoveColumns = False
     Columns = <
       item
         Borders = []
@@ -385,15 +324,15 @@ object dtExec: TdtExec
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -405,76 +344,23 @@ object dtExec: TdtExec
         Width = 20
       end
       item
-        Alignment = taRightJustify
+        Alignment = taCenter
         Borders = []
         BorderPen.Color = clSilver
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
-        FieldName = 'EntrantID'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
-        Font.Name = 'Segoe UI'
-        Font.Style = []
-        HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
-        HeaderFont.Name = 'Segoe UI'
-        HeaderFont.Style = []
-        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-        PrintFont.Charset = DEFAULT_CHARSET
-        PrintFont.Color = clWindowText
-        PrintFont.Height = -12
-        PrintFont.Name = 'Segoe UI'
-        PrintFont.Style = []
-        Width = 64
-      end
-      item
-        Alignment = taRightJustify
-        Borders = []
-        BorderPen.Color = clSilver
-        ButtonHeight = 18
-        CheckFalse = 'N'
-        CheckTrue = 'Y'
-        Color = clWindow
-        FieldName = 'MemberID'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
-        Font.Name = 'Segoe UI'
-        Font.Style = []
-        HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
-        HeaderFont.Name = 'Segoe UI'
-        HeaderFont.Style = []
-        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-        PrintFont.Charset = DEFAULT_CHARSET
-        PrintFont.Color = clWindowText
-        PrintFont.Height = -12
-        PrintFont.Name = 'Segoe UI'
-        PrintFont.Style = []
-        Width = 64
-      end
-      item
-        Alignment = taRightJustify
-        Borders = []
-        BorderPen.Color = clSilver
-        ButtonHeight = 18
-        CheckFalse = 'N'
-        CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         FieldName = 'Lane'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'Lane'
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -483,7 +369,7 @@ object dtExec: TdtExec
         PrintFont.Height = -12
         PrintFont.Name = 'Segoe UI'
         PrintFont.Style = []
-        Width = 64
+        Width = 44
       end
       item
         Borders = []
@@ -491,16 +377,16 @@ object dtExec: TdtExec
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         FieldName = 'RaceTime'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -509,7 +395,7 @@ object dtExec: TdtExec
         PrintFont.Height = -12
         PrintFont.Name = 'Segoe UI'
         PrintFont.Style = []
-        Width = 64
+        Width = 90
       end
       item
         Borders = []
@@ -517,16 +403,17 @@ object dtExec: TdtExec
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         FieldName = 'TimeToBeat'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'TTB'
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -535,7 +422,7 @@ object dtExec: TdtExec
         PrintFont.Height = -12
         PrintFont.Name = 'Segoe UI'
         PrintFont.Style = []
-        Width = 64
+        Width = 90
       end
       item
         Borders = []
@@ -543,16 +430,17 @@ object dtExec: TdtExec
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         FieldName = 'PersonalBest'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'PB'
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -561,7 +449,7 @@ object dtExec: TdtExec
         PrintFont.Height = -12
         PrintFont.Name = 'Segoe UI'
         PrintFont.Style = []
-        Width = 64
+        Width = 90
       end
       item
         Borders = []
@@ -569,96 +457,45 @@ object dtExec: TdtExec
         ButtonHeight = 18
         CheckFalse = 'N'
         CheckTrue = 'Y'
-        Color = clWindow
-        FieldName = 'IsDisqualified'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
-        Font.Name = 'Segoe UI'
-        Font.Style = []
-        HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
-        HeaderFont.Name = 'Segoe UI'
-        HeaderFont.Style = []
-        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-        PrintFont.Charset = DEFAULT_CHARSET
-        PrintFont.Color = clWindowText
-        PrintFont.Height = -12
-        PrintFont.Name = 'Segoe UI'
-        PrintFont.Style = []
-        Width = 64
-      end
-      item
-        Borders = []
-        BorderPen.Color = clSilver
-        ButtonHeight = 18
-        CheckFalse = 'N'
-        CheckTrue = 'Y'
-        Color = clWindow
-        FieldName = 'IsScratched'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
-        Font.Name = 'Segoe UI'
-        Font.Style = []
-        HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
-        HeaderFont.Name = 'Segoe UI'
-        HeaderFont.Style = []
-        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-        PrintFont.Charset = DEFAULT_CHARSET
-        PrintFont.Color = clWindowText
-        PrintFont.Height = -12
-        PrintFont.Name = 'Segoe UI'
-        PrintFont.Style = []
-        Width = 64
-      end
-      item
-        Alignment = taRightJustify
-        Borders = []
-        BorderPen.Color = clSilver
-        ButtonHeight = 18
-        CheckFalse = 'N'
-        CheckTrue = 'Y'
-        Color = clWindow
-        FieldName = 'HeatID'
-        Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
-        Font.Name = 'Segoe UI'
-        Font.Style = []
-        HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
-        HeaderFont.Name = 'Segoe UI'
-        HeaderFont.Style = []
-        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-        PrintFont.Charset = DEFAULT_CHARSET
-        PrintFont.Color = clWindowText
-        PrintFont.Height = -12
-        PrintFont.Name = 'Segoe UI'
-        PrintFont.Style = []
-        Width = 64
-      end
-      item
-        Alignment = taRightJustify
-        Borders = []
-        BorderPen.Color = clSilver
-        ButtonHeight = 18
-        CheckFalse = 'N'
-        CheckTrue = 'Y'
-        Color = clWindow
+        Color = 6445643
         FieldName = 'DisqualifyCodeID'
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
-        Font.Height = -12
+        Font.Color = clWindow
+        Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'DCODE'
         HeaderFont.Charset = DEFAULT_CHARSET
-        HeaderFont.Color = 3881787
-        HeaderFont.Height = -12
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
+        HeaderFont.Name = 'Segoe UI'
+        HeaderFont.Style = []
+        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+        PrintFont.Charset = DEFAULT_CHARSET
+        PrintFont.Color = clWindow
+        PrintFont.Height = -16
+        PrintFont.Name = 'Segoe UI'
+        PrintFont.Style = []
+        Width = -1
+      end
+      item
+        Borders = []
+        BorderPen.Color = clSilver
+        ButtonHeight = 18
+        CheckBoxField = True
+        CheckFalse = 'N'
+        CheckTrue = 'Y'
+        Color = 6445643
+        FieldName = 'IsDisqualified'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindow
+        Font.Height = -16
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        Header = 'D'
+        HeaderFont.Charset = DEFAULT_CHARSET
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
         HeaderFont.Name = 'Segoe UI'
         HeaderFont.Style = []
         PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
@@ -667,7 +504,63 @@ object dtExec: TdtExec
         PrintFont.Height = -12
         PrintFont.Name = 'Segoe UI'
         PrintFont.Style = []
-        Width = 64
+        Width = 30
+      end
+      item
+        Borders = []
+        BorderPen.Color = clSilver
+        ButtonHeight = 18
+        CheckBoxField = True
+        CheckFalse = 'N'
+        CheckTrue = 'Y'
+        Color = 6445643
+        FieldName = 'IsScratched'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindow
+        Font.Height = -16
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        Header = 'S'
+        HeaderFont.Charset = DEFAULT_CHARSET
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
+        HeaderFont.Name = 'Segoe UI'
+        HeaderFont.Style = []
+        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+        PrintFont.Charset = DEFAULT_CHARSET
+        PrintFont.Color = clWindowText
+        PrintFont.Height = -12
+        PrintFont.Name = 'Segoe UI'
+        PrintFont.Style = []
+        Width = 30
+      end
+      item
+        Borders = []
+        BorderPen.Color = clSilver
+        ButtonHeight = 18
+        CheckFalse = 'N'
+        CheckTrue = 'Y'
+        Color = 6445643
+        DataImageField = True
+        FieldName = 'imgPatch'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindow
+        Font.Height = -16
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        Header = ' '
+        HeaderFont.Charset = DEFAULT_CHARSET
+        HeaderFont.Color = clWindow
+        HeaderFont.Height = -16
+        HeaderFont.Name = 'Segoe UI'
+        HeaderFont.Style = []
+        Images = DTData.vimglistDTGrid
+        PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+        PrintFont.Charset = DEFAULT_CHARSET
+        PrintFont.Color = clBlack
+        PrintFont.Height = -16
+        PrintFont.Name = 'Segoe UI'
+        PrintFont.Style = []
       end>
     DataSource = DTData.dsINDV
     InvalidPicture.Data = {
@@ -809,16 +702,23 @@ object dtExec: TdtExec
     ShowUnicode = False
     ColWidths = (
       20
-      64
-      64
-      64
-      64
-      64
-      64
-      64
-      64
-      64
-      64)
+      44
+      90
+      90
+      90
+      -1
+      30
+      30
+      50)
+    RowHeights = (
+      34
+      34
+      34
+      34
+      34
+      34
+      34
+      34)
   end
   object MainMenu1: TMainMenu
     Left = 24

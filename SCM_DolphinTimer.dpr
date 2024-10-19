@@ -14,7 +14,8 @@ uses
   SCMSimpleConnect in '..\SCM_SHARED\SCMSimpleConnect.pas',
   SCMUtility in '..\SCM_SHARED\SCMUtility.pas',
   exeinfo in '..\SCM_SHARED\exeinfo.pas',
-  dmDTData in 'dmDTData.pas' {DTData: TDataModule};
+  dmDTData in 'dmDTData.pas' {DTData: TDataModule},
+  uDTUtils in 'uDTUtils.pas';
 
 {$R *.res}
 
