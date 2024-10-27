@@ -15,7 +15,8 @@ uses
   SCMUtility in '..\SCM_SHARED\SCMUtility.pas',
   exeinfo in '..\SCM_SHARED\exeinfo.pas',
   dmDTData in 'dmDTData.pas' {DTData: TDataModule},
-  uDTUtils in 'uDTUtils.pas';
+  dtUtils in 'dtUtils.pas',
+  dlgSessionPicker in 'dlgSessionPicker.pas' {SessionPicker};
 
 {$R *.res}
 

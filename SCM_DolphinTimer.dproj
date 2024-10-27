@@ -154,7 +154,11 @@
             <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="uDTUtils.pas"/>
+        <DCCReference Include="dtUtils.pas"/>
+        <DCCReference Include="dlgSessionPicker.pas">
+            <Form>SessionPicker</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
