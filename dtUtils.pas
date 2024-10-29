@@ -2,7 +2,7 @@ unit dtUtils;
 
 interface
 
-uses dmDTData;
+uses dmDTData, vcl.ComCtrls, Math;
 
 function GetFileCreationTime(const FileName: string): TDateTime;
 
@@ -20,7 +20,7 @@ procedure ExtractTextFieldsDO3(const InputStr: string;
   var Time2: TTime;
   var Time3: TTime);
 
-procedure ExtractDataDO3Files(const ADirectory: string);
+procedure ExtractDataDO3Files(const ADirectory: string; pBar: TProgressBar);
 procedure ExtractFileNameFieldsDO3(const InputStr: string;
   var Session: integer;
   var Event: integer;
@@ -65,6 +65,8 @@ Example:
   2B,Girls 100 M Breaststroke,2,2,P
 ...
 }
+
+
 
 implementation
 
@@ -148,8 +150,10 @@ procedure ExtractHeaderFields(const InputStr: string; var Session: integer;
 var
   Fields: TArray<string>;
 begin
-  // Split string by the '-' character
-  Fields := SplitString(InputStr, '-');
+  // Split string by the ';' character
+  // example 0;0;1;A  (DO3)
+  // example 1;1;1;A (DO4)
+  Fields := SplitString(InputStr, ';');
   if Length(Fields) <> 4 then
     raise Exception.Create('Invalid format');
   Session := StrToInt(Fields[0]);
@@ -328,17 +332,23 @@ var
   LList: TStringDynArray;
   I, J: integer;
   LSearchOption: TSearchOption;
-  fileMask, fn: string;
+  fileMask, fn, fn2: string;
   // filename params
   fCreationDT: TDateTime;
-  fSessionNum, fEventNum, fHeatNum: integer;
-  fGender, fRaceID: string;
+  fSessionNum, fEventNum, fHeatNum, newDTID, newDTHeatID: integer;
+  // NOTE: fGender is available in DO4 only.
+  // NOTE: GUID in DO4 can be converted to integer.
+  fGender, fGUID: string;
   // fileheader params
   Session, Event, Heat: integer;
   Gender: string;
   // filebody params
   lane: integer;
   Time1, Time2, Time3: TTime;
+  // Split data DO4 only.
+  Split1, Split2, Split3, Split4, Split5: TTime;
+  Split6, Split7, Split8, Split9, Split10: TTime;
+
   sl: TStringList;
   checksum: string;
 begin
@@ -361,61 +371,115 @@ begin
   for I := 0 to Length(LList) - 1 do
   begin
     fn := LList[I];
+    fn2 := ExtractFileName(fn);   // includes file extension
     // Get the creation time of the specified file
     fCreationDT := TFile.GetCreationTime(fn);
     // Filename used can show session, event. (After correct DT setup).
-    // fRaceID is unique string(do3)/number(do4) given to each file by DT.
+    // fGUID is unique string(do3)/number(do4) given to each file by DT.
     ExtractFileNameFieldsDO4(fn, fSessionNum, fEventNum, fHeatNum, fGender,
-      fRaceID);
+      fGUID);
+
+    // write out DTData.tblDT record
+    // CREATE NEW RECORD - one for each lane.
+    DTData.tblDT.Append;
+    // FILENAME = INFORMATION (prefix f)  common
+    DTData.tblDT.fieldbyName('CreatedDT').AsDateTime := fCreationDT;
+    DTData.tblDT.fieldbyName('FileName').AsString := fn2; // include file ext.
+    DTData.tblDT.fieldbyName('fSession').AsInteger := fSessionNum;
+    DTData.tblDT.fieldbyName('fEvent').AsInteger := fEventNum;
+    DTData.tblDT.fieldbyName('fHeat').AsInteger:= fHeatNum; // DO4 only.
+    DTData.tblDT.fieldbyName('fGender').AsString := fGender; // DO4 only.
+    DTData.tblDT.fieldbyName('fGUID').AsString := fGUID;
+    // FINALIZE - POST NEW RECORD.
+    DTData.tblDT.Post;
+
+    newDTID := DTData.tblDT.fieldbyName('DTID').AsInteger;
+
     // read header and lane information (Racetimes x3).
     sl := TStringList.Create();
     sl.LoadFromFile(fn);
     if not sl.IsEmpty then
     begin
+
+      // clear all data records ....
+      DTData.tblDTHeat.EmptyDataSet;
+
       // first line represents session, event, heat, gender (A,B,X)
       // delimeter is ';'
       ExtractHeaderFields(sl[0], Session, Event, Heat, Gender);
       // checksum is the last line
       checksum := sl[sl.Count - 1];
-      // A record for each lane. Ignore first (header) and last line (checkSum).
+      DTData.tblDTHeat.Append;
+      DTData.tblDTHeat.fieldbyName('DTID').AsInteger := newDTID; // master - detail.
+      // HEADER - first line of text - common
+      DTData.tblDTHeat.fieldbyName('Session').AsInteger := Session;
+      DTData.tblDTHeat.fieldbyName('Event').AsInteger := Event;
+      DTData.tblDTHeat.fieldbyName('Heat').AsInteger := Heat;
+      DTData.tblDTHeat.fieldbyName('Gender').AsString := Gender;
+      // CHECKSUM - last line of text - common
+      DTData.tblDTHeat.fieldbyName('CheckSum').AsString := checksum;
+      DTData.tblDTHeat.Post;
+      newDTHeatID := DTData.tblDTHeat.fieldbyName('DTHeatID').AsInteger;
+
+      // clear all data records ....
+      DTData.tblDTLane.EmptyDataSet;
+
+      // A record for each lane.
+      //Ignore first (header) and last line (checkSum).
       for J := 1 to (sl.Count - 2) do
       begin
         // CREATE NEW RECORD - one for each lane.
-        DTData.tblDT.Insert;
-        // FILENAME = INFORMATION (prefix f)  common
-        DTData.tblDT.fieldbyName('CreateDT').AsDateTime := fCreationDT;
-        DTData.tblDT.fieldbyName('fSessionNum').AsInteger := fSessionNum;
-        DTData.tblDT.fieldbyName('fEventNum').AsInteger := fSessionNum;
-        DTData.tblDT.fieldbyName('fHeatNum').AsInteger := fSessionNum;
-        // Note: single character - either A (boys), B (girls) or X (any).
-        DTData.tblDT.fieldbyName('fGender').AsString := fGender;
-        // Note: in DO$ fRaceID can safely converted to integer.
-        DTData.tblDT.fieldbyName('fRaceID').AsString := fRaceID;
-        // HEADER - first line of text - common
-        DTData.tblDT.fieldbyName('Session').AsInteger := Session;
-        DTData.tblDT.fieldbyName('Event').AsInteger := Event;
-        DTData.tblDT.fieldbyName('Heat').AsInteger := Heat;
-        DTData.tblDT.fieldbyName('Gender').AsString := Gender;
-        // CHECKSUM - last line of text - common
-        DTData.tblDT.fieldbyName('CheckSum').AsString := checksum;
-        // BODY -  (LANE and RACETIMES)
-        // Lane data - up to 10 lanes ... 3 timekeepers per lane
+        DTData.tblDTLane.Append;
+
         ExtractTextFieldsDO4(sl[J], lane, Time1, Time2, Time3);
-        DTData.tblDT.fieldbyName('Lane').AsInteger := lane;
-        DTData.tblDT.fieldbyName('Time1').AsDateTime := TDateTime(Time1);
-        DTData.tblDT.fieldbyName('Time2').AsDateTime := TDateTime(Time2);
-        DTData.tblDT.fieldbyName('Time3').AsDateTime := TDateTime(Time3);
-        // FINALIZE - POST NEW RECORD.
-        DTData.tblDT.Post;
+        ExtractSplitsDO4(sl[J], Split1, Split2, Split3, Split4, Split5, Split6);
+        DTData.tblDTLane.fieldbyName('DTHeatID').AsInteger := newDTHeatID; // master - detail.
+        DTData.tblDTLane.fieldbyName('Lane').AsInteger := lane;
+
+        if (Time1 > 0) then
+          DTData.tblDTLane.fieldbyName('Time1').AsDateTime := TDateTime(Time1)
+        else
+          DTData.tblDTLane.fieldbyName('Time1').Clear;
+
+        if (Time2 > 0) then
+          DTData.tblDTLane.fieldbyName('Time2').AsDateTime := TDateTime(Time2)
+        else
+          DTData.tblDTLane.fieldbyName('Time2').Clear;
+
+        if (Time3 > 0) then
+          DTData.tblDTLane.fieldbyName('Time3').AsDateTime := TDateTime(Time3)
+        else
+          DTData.tblDTLane.fieldbyName('Time3').Clear;
+
+        DTData.tblDTLane.fieldbyName('AutoTime').AsBoolean := true;
+        if (Time1 > 0) then
+          DTData.tblDTLane.fieldbyName('UseTime1').AsBoolean := true else
+          DTData.tblDTLane.fieldbyName('UseTime1').AsBoolean := false;
+        if (Time2 > 0) then
+          DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := true else
+          DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := false;
+        if (Time3 > 0) then
+          DTData.tblDTLane.fieldbyName('UseTime3').AsBoolean := true else
+          DTData.tblDTLane.fieldbyName('UseTime3').AsBoolean := false;
+        // DO4 only....
+        DTData.tblDTLane.fieldbyName('Split1').Clear;
+        DTData.tblDTLane.fieldbyName('Split2').Clear;
+        DTData.tblDTLane.fieldbyName('Split3').Clear;
+        DTData.tblDTLane.fieldbyName('Split4').Clear;
+        DTData.tblDTLane.fieldbyName('Split5').Clear;
+        DTData.tblDTLane.fieldbyName('Split6').Clear;
+        DTData.tblDTLane.fieldbyName('Split7').Clear;
+        DTData.tblDTLane.fieldbyName('Split8').Clear;
+        DTData.tblDTLane.fieldbyName('Split9').Clear;
+        DTData.tblDTLane.fieldbyName('Split10').Clear;
+        DTData.tblDTLane.Post;
       end;
     end;
-
     sl.Free;
-
   end;
 end;
 
-procedure ExtractDataDO3Files(const ADirectory: string);
+procedure ExtractDataDO3Files(const ADirectory: string; pBar: TProgressBar);
 var
   LList: TStringDynArray;
   I, J: integer;
@@ -435,6 +499,7 @@ var
   checksum: string;
 begin
   fileMask := '*.DO3';
+  if Assigned(pBar) then pBar.Position := 0;
   { Select the search option }
   // do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
@@ -449,6 +514,9 @@ begin
   end;
   // clear all data records ....
   DTData.tblDT.EmptyDataSet;
+
+  pBar.Position := 0;
+
   { Extract DATA and Populate the memory table. }
   for I := 0 to Length(LList) - 1 do
   begin
@@ -457,7 +525,7 @@ begin
     // Get the creation time of the specified file
     fCreationDT := TFile.GetCreationTime(fn);
     // Filename used can show session, event. (After correct DT setup).
-    // fRaceID is unique string(do3)/number(do4) given to each file by DT.
+    // fGUID is unique string(do3)/number(do4) given to each file by DT.
     ExtractFileNameFieldsDO3(fn2, fSessionNum, fEventNum, fGUID);
     // write out DTData.tblDT record
     // CREATE NEW RECORD - one for each lane.
@@ -480,6 +548,7 @@ begin
     sl.LoadFromFile(fn);
     if not sl.IsEmpty then
     begin
+
       // clear all data records ....
       DTData.tblDTHeat.EmptyDataSet;
 
@@ -507,13 +576,28 @@ begin
        // Ignore first (header) and last line (checkSum).
       for J := 1 to (sl.Count - 2) do
       begin
+
+
         DTData.tblDTLane.Append;
         ExtractTextFieldsDO3(sl[J], lane, Time1, Time2, Time3);
         DTData.tblDTLane.fieldbyName('DTHeatID').AsInteger := newDTHeatID; // master - detail.
         DTData.tblDTLane.fieldbyName('Lane').AsInteger := lane;
-        DTData.tblDTLane.fieldbyName('Time1').AsDateTime := TDateTime(Time1);
-        DTData.tblDTLane.fieldbyName('Time2').AsDateTime := TDateTime(Time2);
-        DTData.tblDTLane.fieldbyName('Time3').AsDateTime := TDateTime(Time3);
+
+        if (Time1 > 0) then
+          DTData.tblDTLane.fieldbyName('Time1').AsDateTime := TDateTime(Time1)
+        else
+          DTData.tblDTLane.fieldbyName('Time1').Clear;
+
+        if (Time2 > 0) then
+          DTData.tblDTLane.fieldbyName('Time2').AsDateTime := TDateTime(Time2)
+        else
+          DTData.tblDTLane.fieldbyName('Time2').Clear;
+
+        if (Time3 > 0) then
+          DTData.tblDTLane.fieldbyName('Time3').AsDateTime := TDateTime(Time3)
+        else
+          DTData.tblDTLane.fieldbyName('Time3').Clear;
+
         DTData.tblDTLane.fieldbyName('AutoTime').AsBoolean := true;
         if (Time1 > 0) then
           DTData.tblDTLane.fieldbyName('UseTime1').AsBoolean := true else
@@ -521,9 +605,10 @@ begin
         if (Time2 > 0) then
           DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := true else
           DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := false;
-        if (Time2 > 0) then
-          DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := true else
-          DTData.tblDTLane.fieldbyName('UseTime2').AsBoolean := false;
+        if (Time3 > 0) then
+          DTData.tblDTLane.fieldbyName('UseTime3').AsBoolean := true else
+          DTData.tblDTLane.fieldbyName('UseTime3').AsBoolean := false;
+
         // DO4 only....
         DTData.tblDTLane.fieldbyName('Split1').Clear;
         DTData.tblDTLane.fieldbyName('Split2').Clear;
@@ -535,24 +620,17 @@ begin
         DTData.tblDTLane.fieldbyName('Split8').Clear;
         DTData.tblDTLane.fieldbyName('Split9').Clear;
         DTData.tblDTLane.fieldbyName('Split10').Clear;
+        DTData.tblDTLane.Post;
 
-        DTData.tblDTHeat.Post;
       end;
 
 
+      pBar.Position := Trunc(Ceil(i / (Length(LList) - 1))   * 100);
+      pBar.RePaint;
+
     end;
-
-
-
-
-
-
-
-
     sl.Free;
-
   end;
-
 end;
 
 end.

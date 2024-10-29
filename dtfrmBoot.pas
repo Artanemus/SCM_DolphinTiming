@@ -65,8 +65,8 @@ uses exeinfo, dtfrmExec;
 
 procedure TdtBoot.FormDestroy(Sender: TObject);
 begin
-    if Assigned(SCM) then  // handle data module.
-      FreeAndNil(SCM);
+    FreeAndNil(SCM);
+    FreeAndNil(Settings);
 end;
 
 procedure TdtBoot.actnConnectExecute(Sender: TObject);

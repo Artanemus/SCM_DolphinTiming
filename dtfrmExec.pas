@@ -26,38 +26,39 @@ uses
   Data.DB, Vcl.Grids, Vcl.DBGrids, SCMDefines, System.StrUtils, AdvUtil, AdvObj,
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ExtDlgs, FireDAC.Stan.Param;
+  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls;
 
 type
   TdtExec = class(TForm)
-    btnPrevEvent: TButton;
-    btnNextEvent: TButton;
-    btnPrevDTFile: TButton;
-    btnNextDTFile: TButton;
-    SpeedButton1: TSpeedButton;
-    SpeedButton2: TSpeedButton;
-    Button1: TButton;
-    btnRefresh: TButton;
-    sbtnSync: TSpeedButton;
-    vimgStrokeBug: TVirtualImage;
-    vimgHeatStatus: TVirtualImage;
-    lblHeatNum: TLabel;
-    lblEventDetails: TLabel;
-    lblDTFileName: TLabel;
-    vimgHeatNum: TVirtualImage;
-    vimgRelayBug: TVirtualImage;
-    scmGrid: TDBAdvGrid;
+    actnCreateDTCSV: TAction;
     actnManager: TActionManager;
     actnMenuBar: TActionMainMenuBar;
-    actnSetDTFolder: TAction;
     actnPickSession: TAction;
-    actnCreateDTCSV: TAction;
-    FileSaveDlgCSV: TFileSaveDialog;
-    lblMeters: TLabel;
+    actnSetDTFolder: TAction;
     advgrid1: TDBAdvGrid;
+    btnNextDTFile: TButton;
+    btnNextEvent: TButton;
+    btnPrevDTFile: TButton;
+    btnPrevEvent: TButton;
+    btnRefresh: TButton;
+    Button1: TButton;
+    FileSaveDlgCSV: TFileSaveDialog;
+    lblDTFileName: TLabel;
+    lblEventDetails: TLabel;
+    lblHeatNum: TLabel;
+    lblMeters: TLabel;
+    PickDTFolderDlg: TFileOpenDialog;
     sbtnLoadDO3: TSpeedButton;
     sbtnLoadDO4: TSpeedButton;
-    PickDTFolderDlg: TFileOpenDialog;
+    sbtnSync: TSpeedButton;
+    scmGrid: TDBAdvGrid;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
+    vimgHeatNum: TVirtualImage;
+    vimgHeatStatus: TVirtualImage;
+    vimgRelayBug: TVirtualImage;
+    vimgStrokeBug: TVirtualImage;
+    pBar: TProgressBar;
     procedure actnCreateDTCSVExecute(Sender: TObject);
     procedure actnCreateDTCSVUpdate(Sender: TObject);
     procedure actnPickSessionExecute(Sender: TObject);
@@ -65,28 +66,27 @@ type
     procedure btnNextEventClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure sbtnLoadDO3Click(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
     fDolphinFolder: string;
-    procedure UpdateEventDetailsLabel();
-    procedure UpdateCaption();
+    procedure LoadFromSettings; // JSON Program Settings
+    procedure LoadSettings; // JSON Program Settings
+    procedure SaveToSettings; // JSON Program Settings
     procedure SetSession(ASessionID: integer);
-
+    procedure UpdateCaption();
+    procedure UpdateEventDetailsLabel();
   protected
-    procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
-
-
+    procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
   public
+  const
+  AcceptedTimeKeeperDeviation = 0.3;
     { Public declarations }
     procedure Prepare(AConnection: TFDConnection; aSessionID: Integer = 0);
     property DolphinFolder: string read FDolphinFolder write FDolphinFolder;
-
-const
-  AcceptedTimeKeeperDeviation = 0.3;
-
   end;
 
 var
@@ -193,6 +193,39 @@ begin
   // C R E A T E   T H E   D A T A M O D U L E .
   if NOT Assigned(DTData) then
     DTData := TDTData.Create(Self);
+
+  // A Class that uses JSON to read and write application configuration .
+  // Created on bootup by dtfrmBoot.
+  {if Settings = nil then
+    Settings := TPrgSetting.Create; }
+  LoadSettings;
+end;
+
+procedure TdtExec.FormDestroy(Sender: TObject);
+begin
+  SaveToSettings;
+  // destroyed by dtfrmBoot.
+  {FreeAndNil(Settings);}
+end;
+
+procedure TdtExec.LoadFromSettings;
+begin
+  fDolphinFolder := Settings.DolphinFolder;
+end;
+
+procedure TdtExec.LoadSettings;
+begin
+  // created by dtfrmBoot.
+  {if Settings = nil then
+    Settings := TPrgSetting.Create; }
+
+  if not FileExists(Settings.GetDefaultSettingsFilename()) then
+  begin
+    ForceDirectories(Settings.GetSettingsFolder());
+    Settings.SaveToFile();
+  end;
+  Settings.LoadFromFile();
+  LoadFromSettings();
 end;
 
 procedure TdtExec.MSG_AfterEventScroll(var Msg: TMessage);
@@ -269,12 +302,30 @@ begin
   UpdateCaption;
 end;
 
+procedure TdtExec.SaveToSettings;
+begin
+  Settings.DolphinFolder := fDolphinFolder;
+  Settings.SaveToFile();
+end;
+
 procedure TdtExec.sbtnLoadDO3Click(Sender: TObject);
+var
+s: string;
 begin
   if DirectoryExists(fDolphinFolder) then
-    ExtractDataDO3Files(fDolphinFolder)
+  begin
+    pBar.Visible := true;
+    ExtractDataDO3Files(fDolphinFolder, pBar);
+    pBar.Visible := false;
+  end
   else
-    MessageBox(0, PChar('The Dolphin Timing folder could not be found.'+#13+#10+'Use the File menu to setup the folder''s location.'), PChar('Missing DT Folder '), MB_ICONERROR or MB_OK);
+  begin
+    s := '''
+      The Dolphin Timing folder couldn''t be found.
+      Use the File menu to setup the folder''s location.
+    ''';
+    MessageBox(0, PChar(s), PChar('Missing DT Folder '), MB_ICONERROR or MB_OK);
+  end;
 end;
 
 procedure TdtExec.SetSession(ASessionID: integer);
@@ -290,7 +341,6 @@ end;
 procedure TdtExec.UpdateCaption;
 var
 s, s2: string;
-i: integer;
 v: variant;
 dt: TDateTime;
 begin

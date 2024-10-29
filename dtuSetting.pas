@@ -23,6 +23,7 @@ type
     Password: string;
     OSAuthent: boolean;
     LoginTimeOut: integer;
+    DolphinFolder: string;
 
     constructor Create();
     function GetDefaultSettingsFilename(): string;
@@ -48,6 +49,7 @@ begin
   Password := '';
   OSAuthent := false;
   LoginTimeOut := CONNECTIONTIMEOUT;
+  DolphinFolder := 'c:\Dolphin\Meets';
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in

@@ -118,7 +118,6 @@ object dtBoot: TdtBoot
     Caption = 'Panel1'
     ShowCaption = False
     TabOrder = 7
-    ExplicitHeight = 429
     object imgDTBanner: TImage
       Left = 0
       Top = 0
