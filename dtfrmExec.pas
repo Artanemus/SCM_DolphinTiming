@@ -26,7 +26,7 @@ uses
   Data.DB, Vcl.Grids, Vcl.DBGrids, SCMDefines, System.StrUtils, AdvUtil, AdvObj,
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls;
+  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls;
 
 type
   TdtExec = class(TForm)
@@ -35,7 +35,7 @@ type
     actnMenuBar: TActionMainMenuBar;
     actnPickSession: TAction;
     actnSetDTFolder: TAction;
-    advgrid1: TDBAdvGrid;
+    dtGrid: TDBAdvGrid;
     btnNextDTFile: TButton;
     btnNextEvent: TButton;
     btnPrevDTFile: TButton;
@@ -49,7 +49,6 @@ type
     lblMeters: TLabel;
     PickDTFolderDlg: TFileOpenDialog;
     sbtnLoadDO3: TSpeedButton;
-    sbtnLoadDO4: TSpeedButton;
     sbtnSync: TSpeedButton;
     scmGrid: TDBAdvGrid;
     SpeedButton1: TSpeedButton;
@@ -59,11 +58,17 @@ type
     vimgRelayBug: TVirtualImage;
     vimgStrokeBug: TVirtualImage;
     pBar: TProgressBar;
+    dbtxtDTFileName: TDBText;
+    dbgrid1: TDBGrid;
+    dbgrid2: TDBGrid;
+    dbgrid3: TDBGrid;
     procedure actnCreateDTCSVExecute(Sender: TObject);
     procedure actnCreateDTCSVUpdate(Sender: TObject);
     procedure actnPickSessionExecute(Sender: TObject);
     procedure actnSetDTFolderExecute(Sender: TObject);
+    procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
+    procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -106,8 +111,9 @@ begin
     fn := FileSaveDlgCSV.FileName
   else
     Exit; // User cancelled.
+
   // Build CSV Event Data and save to file.
-  BuildCSVEventData(fn);
+  DTData.BuildCSVEventData(fn);
 end;
 
 procedure TdtExec.actnCreateDTCSVUpdate(Sender: TObject);
@@ -149,6 +155,15 @@ begin
   // SavePreferencesToJSON.
 end;
 
+procedure TdtExec.btnNextDTFileClick(Sender: TObject);
+begin
+    if not DTData.dsDT.DataSet.EOF then
+    begin
+      DTData.dsDT.DataSet.next;
+      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+    end;
+end;
+
 procedure TdtExec.btnNextEventClick(Sender: TObject);
 begin
   if (GetKeyState(VK_CONTROL) < 0) then
@@ -165,6 +180,15 @@ begin
     end
     else
       DTData.dsHeat.DataSet.next;
+  end;
+end;
+
+procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
+begin
+  if not DTData.dsdt.DataSet.BOF then
+  begin
+      DTData.dsdt.DataSet.prior;
+      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
   end;
 end;
 
@@ -315,8 +339,10 @@ begin
   if DirectoryExists(fDolphinFolder) then
   begin
     pBar.Visible := true;
-    ExtractDataDO3Files(fDolphinFolder, pBar);
+    ProcessDTFiles(fDolphinFolder, pBar);
     pBar.Visible := false;
+    DTData.dsDT.DataSet.First;
+    lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
   end
   else
   begin
