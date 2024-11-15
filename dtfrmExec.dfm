@@ -2,8 +2,8 @@ object dtExec: TdtExec
   Left = 0
   Top = 0
   Caption = 'SwimClubMeet - Dolphin Timing.'
-  ClientHeight = 951
-  ClientWidth = 1702
+  ClientHeight = 864
+  ClientWidth = 1613
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,21 +16,21 @@ object dtExec: TdtExec
   TextHeight = 21
   object SpeedButton1: TSpeedButton
     Left = 8
-    Top = 373
+    Top = 447
     Width = 112
     Height = 41
     Caption = 'AutoConnect'
   end
   object SpeedButton2: TSpeedButton
     Left = 2
-    Top = 420
+    Top = 494
     Width = 112
     Height = 41
     Caption = 'Post'
   end
   object sbtnSync: TSpeedButton
     Left = 8
-    Top = 326
+    Top = 400
     Width = 112
     Height = 41
     Caption = 'AutoSync'
@@ -134,13 +134,13 @@ object dtExec: TdtExec
     Font.Style = []
     ParentFont = False
   end
-  object sbtnLoadDO3: TSpeedButton
-    Left = 2
-    Top = 279
+  object sbtnScrub: TSpeedButton
+    Left = 8
+    Top = 207
     Width = 112
     Height = 41
-    Caption = 'Load'
-    OnClick = sbtnLoadDO3Click
+    Caption = 'Scrub'
+    OnClick = sbtnScrubClick
   end
   object dbtxtDTFileName: TDBText
     Left = 657
@@ -149,6 +149,28 @@ object dtExec: TdtExec
     Height = 25
     DataField = 'FileName'
     DataSource = DTData.dsDT
+  end
+  object sbtnExport: TSpeedButton
+    Left = 2
+    Top = 254
+    Width = 112
+    Height = 41
+    Caption = 'Export'
+  end
+  object sbtnImport: TSpeedButton
+    Left = 8
+    Top = 301
+    Width = 112
+    Height = 41
+    Caption = 'Import'
+  end
+  object sbtnCreateTestData: TSpeedButton
+    Left = 8
+    Top = 663
+    Width = 112
+    Height = 41
+    Caption = 'TestData'
+    OnClick = sbtnCreateTestDataClick
   end
   object btnPrevEvent: TButton
     Left = 136
@@ -188,7 +210,7 @@ object dtExec: TdtExec
   end
   object Button1: TButton
     Left = 8
-    Top = 514
+    Top = 588
     Width = 106
     Height = 41
     Caption = 'Close'
@@ -196,7 +218,7 @@ object dtExec: TdtExec
   end
   object btnRefresh: TButton
     Left = 8
-    Top = 467
+    Top = 541
     Width = 106
     Height = 41
     Caption = 'Refresh'
@@ -668,7 +690,7 @@ object dtExec: TdtExec
   object actnMenuBar: TActionMainMenuBar
     Left = 0
     Top = 0
-    Width = 1702
+    Width = 1613
     Height = 25
     UseSystemFont = False
     ActionManager = actnManager
@@ -925,6 +947,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'Timer A'
         HeaderFont.Charset = DEFAULT_CHARSET
         HeaderFont.Color = clWindow
         HeaderFont.Height = -16
@@ -951,6 +974,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'Timer B'
         HeaderFont.Charset = DEFAULT_CHARSET
         HeaderFont.Color = clWindow
         HeaderFont.Height = -16
@@ -977,6 +1001,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        Header = 'Timer C'
         HeaderFont.Charset = DEFAULT_CHARSET
         HeaderFont.Color = clWindow
         HeaderFont.Height = -16
@@ -1213,8 +1238,8 @@ object dtExec: TdtExec
           end>
         ActionBar = actnMenuBar
       end>
-    Left = 32
-    Top = 616
+    Left = 480
+    Top = 752
     StyleName = 'Platform Default'
     object actnPickSession: TAction
       Category = 'File'

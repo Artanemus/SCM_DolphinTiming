@@ -297,6 +297,18 @@ var
   Fields: TArray<string>;
   i: Integer;
 begin
+
+{
+Number of Splits – (1-10) Enter 1 to use the first time as the final time. A single length
+race would have only one split (i.e. the final time), and multi length races would have
+one split for every lap.
+o Example 1: A 25 yard race in a 25 yard pool would have a split count of 1
+meaning only on one time is collected (i.e. the final time)
+o Example 2: A 100 meter race in a 50 meter pool would also have a split count
+of 1 (i.e: the final time of the single lap.)
+o Example 3: A 200 yard race in a 25 yard pool would have a split count of 4.
+}
+
   // Split string by the ';' character
   Fields := InputStr.Split([';']);
 

@@ -26,7 +26,7 @@ uses
   Data.DB, Vcl.Grids, Vcl.DBGrids, SCMDefines, System.StrUtils, AdvUtil, AdvObj,
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls;
+  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtTestData;
 
 type
   TdtExec = class(TForm)
@@ -48,7 +48,7 @@ type
     lblHeatNum: TLabel;
     lblMeters: TLabel;
     PickDTFolderDlg: TFileOpenDialog;
-    sbtnLoadDO3: TSpeedButton;
+    sbtnScrub: TSpeedButton;
     sbtnSync: TSpeedButton;
     scmGrid: TDBAdvGrid;
     SpeedButton1: TSpeedButton;
@@ -62,6 +62,9 @@ type
     dbgrid1: TDBGrid;
     dbgrid2: TDBGrid;
     dbgrid3: TDBGrid;
+    sbtnExport: TSpeedButton;
+    sbtnImport: TSpeedButton;
+    sbtnCreateTestData: TSpeedButton;
     procedure actnCreateDTCSVExecute(Sender: TObject);
     procedure actnCreateDTCSVUpdate(Sender: TObject);
     procedure actnPickSessionExecute(Sender: TObject);
@@ -72,7 +75,8 @@ type
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure sbtnLoadDO3Click(Sender: TObject);
+    procedure sbtnCreateTestDataClick(Sender: TObject);
+    procedure sbtnScrubClick(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
@@ -332,7 +336,19 @@ begin
   Settings.SaveToFile();
 end;
 
-procedure TdtExec.sbtnLoadDO3Click(Sender: TObject);
+procedure TdtExec.sbtnCreateTestDataClick(Sender: TObject);
+var
+i: integer;
+begin
+  if DTData.qrysession.Active then
+  begin
+    i := DTData.qrysession.FieldByName('SessionID').AsInteger;
+    TestDataSess(i);
+
+  end;
+end;
+
+procedure TdtExec.sbtnScrubClick(Sender: TObject);
 var
 s: string;
 begin
