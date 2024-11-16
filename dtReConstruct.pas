@@ -1,14 +1,14 @@
-unit dtTestData;
+unit dtReConstruct;
 
 interface
 
 uses dmSCM, dmDTData, System.SysUtils, System.Classes, system.Hash,
-DateUtils, variants, SCMDefines, Data.DB;
+DateUtils, variants, SCMDefines, Data.DB, dtuSetting;
 
 procedure BuildTestDataDO3();
 procedure TestDataSess(SessionID: integer);
 procedure TestDataEv(sess: string; sl: TStringList);
-procedure TestDataHt(sess, ev: string; aEventType: scmEventType; var ht: string; sl: TStringList);
+procedure TestDataHt(sess, ev, id, gender: string; aEventType: scmEventType; var ht: string; sl: TStringList);
 procedure TestDataINDV(sl: TStringList);
 procedure TestDataTEAM(sl: TStringList);
 
@@ -192,9 +192,9 @@ var
 sess: string;
 sl: TStringList;
 begin
-  DTData.qrySession.Filter := 'SessionID = ' + inttostr(SessionID);
-  if not DTData.qrySession.Filtered then
-    DTData.qrySession.Filtered := true;
+//  DTData.qrySession.Filter := 'SessionID = ' + inttostr(SessionID);
+//  if not DTData.qrySession.Filtered then
+//    DTData.qrySession.Filtered := true;
   sl := TStringList.Create;
   if DTData.qrySession.RecordCount = 1 then
   begin
@@ -202,14 +202,87 @@ begin
     TestDataEv(sess, sl);
   end;
   sl.Free;
-  DTData.qrySession.Filtered := false;
-  DTData.qrySession.first;
+//  DTData.qrySession.Filtered := false;
+//  DTData.qrySession.first;
 end;
+
+
+function GetGenderTypeStr(AEventID: integer): string;
+var
+  v: Variant;
+  boysCount, girlsCount: Integer;
+  SQL: string;
+begin
+  // Default result is 'X' (mixed genders)
+  Result := 'X';
+
+  // Ensure the query isn't empty
+  if not DTData.qryEvent.IsEmpty then
+  begin
+    // Combine the count of genders into a single query
+    SQL := 'SELECT ' +
+           '  SUM(CASE WHEN GenderID = 1 THEN 1 ELSE 0 END) AS BoysCount, ' +
+           '  SUM(CASE WHEN GenderID = 2 THEN 1 ELSE 0 END) AS GirlsCount ' +
+           'FROM [SwimClubMeet].[dbo].[Event] ' +
+           'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
+           'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
+           'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
+           'WHERE [Event].EventID = :ID';
+
+    // Execute the query and retrieve counts
+    v := SCM.scmConnection.ExecSQLScalar(SQL, [AEventID]);
+    if VarArrayDimCount(v) = 2 then
+    begin
+      boysCount := v[0];
+      girlsCount := v[1];
+
+      // Determine the result based on counts
+      if (boysCount > 0) and (girlsCount > 0) then
+        Result := 'X'
+      else if boysCount > 0 then
+        Result := 'A'
+      else if girlsCount > 0 then
+        Result := 'B';
+    end;
+  end;
+end;
+
+{
+function  GetGenderTypeStr(AEventID: integer): string;
+var
+  v: variant;
+  SQL: string;
+  boys, girls: boolean;
+begin
+  // gender string types - A=boys, B=girls, X=mixed.
+  result := 'X'; // default - mixed genders
+  if not DTData.qryEvent.IsEmpty then
+  begin
+    SQL := 'SELECT Count(genderID) FROM [SwimClubMeet].[dbo].[Event] ' +
+      'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
+      'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
+      'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
+      'WHERE EventID = :ID AND GenderID = 1 ';
+    v := SCM.scmConnection.ExecSQLScalar(SQL, [aEventID]);
+    if VarIsNull(v) or VarIsEmpty(v) or (v = 0) then boys := false;
+    SQL := 'SELECT Count(genderID) FROM [SwimClubMeet].[dbo].[Event] ' +
+      'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
+      'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
+      'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
+      'WHERE EventID = :ID AND GenderID = 2 ';
+    v := SCM.scmConnection.ExecSQLScalar(SQL, [aEventID]);
+    if VarIsNull(v) or VarIsEmpty(v) or (v = 0) then girls := false;
+    if boys then  result := 'A';
+    if girls then  result := 'B';
+    if boys and girls then result := 'X';
+  end;
+end;
+}
 
 procedure TestDataEv(sess: string; sl: TStringList);
 var
 i, seed: integer;
-ev, ht, id, fn: string;
+ev, ht, id, fn, gender: string;
 aEventType: scmEventType;
 success: boolean;
 begin
@@ -226,28 +299,20 @@ begin
     aEventType := GetEventType(i);
     sl.Clear;
     id := Get4Digits(seed);
+    gender := GetGenderTypeStr(i);
     // populate the stringlist with text lines (data).
-    TestDataHt(sess, ev, aEventType, ht, sl);
-    // A=boys, B=girls, X=mixed.
-    fn := sess + '-' + ev + '-' + ht + 'X-' + id + '.DO4';
-    fn := MYPATH + fn;
-    if not sl.IsEmpty then
-    begin
-      success := true;
-      if fileExists(fn) then
-        success := DeleteFile(fn);
-      if success then
-        sl.SaveToFile(fn);
-    end;
+    TestDataHt(sess, ev, id, gender, aEventType, ht, sl);
+
     inc(seed);
     DTData.qryEvent.next;
   end;
 end;
 
-procedure TestDataHt(sess, ev: string; aEventType: scmEventType; var ht: string; sl: TStringList);
+procedure TestDataHt(sess, ev, id, gender: string; aEventType: scmEventType; var ht: string; sl: TStringList);
 var
   i: integer;
-  s: string;
+  s, fn: string;
+  success: boolean;
 begin
 
   if DTData.qryHeat.IsEmpty then exit;
@@ -269,6 +334,18 @@ begin
     s := GetStringListChecksum(sl, 8);
 //    s := THashSHA2.GetHashString(sl.Text, SHA256);
     sl.Add(s);
+    // GENDER :: A=boys, B=girls, X=mixed.
+    fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
+    fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstructDO4) + fn;
+    if not sl.IsEmpty then
+    begin
+      success := true;
+      if fileExists(fn) then
+        success := DeleteFile(fn);
+      if success then
+        sl.SaveToFile(fn);
+    end;
+
     DTData.qryHeat.Next
   end;
 end;

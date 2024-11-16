@@ -25,7 +25,6 @@ type
     lblEventCSV: TLabel;
     lblReConstructDO4: TLabel;
     pgcntrl: TPageControl;
-    PickCSVFolder: TFileOpenDialog;
     pnlBody: TPanel;
     pnlFooter: TPanel;
     pnlHeader: TPanel;
@@ -33,6 +32,12 @@ type
     tabSettings: TTabSheet;
     tabsheetPaths: TTabSheet;
     vimgDT: TVirtualImage;
+    BrowseFolderDlg: TFileOpenDialog;
+    procedure btnCloseClick(Sender: TObject);
+    procedure btnedtAppDataRightButtonClick(Sender: TObject);
+    procedure btnedtEventCSVRightButtonClick(Sender: TObject);
+    procedure btnedtMeetFolderRightButtonClick(Sender: TObject);
+    procedure btnedtReConstructDO4RightButtonClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -49,6 +54,100 @@ implementation
 
 {$R *.dfm}
 
+
+procedure TdlgOptions.btnCloseClick(Sender: TObject);
+begin
+  ModalResult := mrOk;
+end;
+
+procedure TdlgOptions.btnedtAppDataRightButtonClick(Sender: TObject);
+var
+ft: TFileTypeItem;
+begin
+  // browse for application data folder.
+  BrowseFolderDlg.DefaultFolder :=
+    IncludeTrailingPathDelimiter(btnedtAppData.Text) ;
+  BrowseFolderDlg.DefaultExtension := '.CSV';
+  BrowseFolderDlg.OkButtonLabel := 'Select Folder';
+  BrowseFolderDlg.FileTypes.Clear;
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'All Files';
+  ft.FileMask :=   '*.*';
+  BrowseFolderDlg.Title := 'Select SCM_DolphinTiming data folder.';
+  if BrowseFolderDlg.Execute then
+  begin
+    btnedtAppData.Text := BrowseFolderDlg.FileName;
+  end;
+end;
+
+procedure TdlgOptions.btnedtEventCSVRightButtonClick(Sender: TObject);
+var
+ft: TFileTypeItem;
+begin
+  // browse for DT events CSV export folder.
+  BrowseFolderDlg.DefaultFolder :=
+    IncludeTrailingPathDelimiter(btnedtEventCSV.Text) ;
+  BrowseFolderDlg.DefaultExtension := '.CSV';
+  BrowseFolderDlg.OkButtonLabel := 'Select Folder';
+  BrowseFolderDlg.FileTypes.Clear;
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'All Files';
+  ft.FileMask :=   '*.*';
+  BrowseFolderDlg.Title := 'Select Dolphin Timing event CSV folder.';
+  if BrowseFolderDlg.Execute then
+  begin
+    btnedtEventCSV.Text := BrowseFolderDlg.FileName;
+  end;
+end;
+
+procedure TdlgOptions.btnedtMeetFolderRightButtonClick(Sender: TObject);
+var
+ft: TFileTypeItem;
+begin
+  // browse for meets folder.
+  BrowseFolderDlg.DefaultFolder :=
+    IncludeTrailingPathDelimiter(btnedtMeetFolder.Text) ;
+  BrowseFolderDlg.DefaultExtension := '.DO4';
+  BrowseFolderDlg.OkButtonLabel := 'Select Folder';
+  BrowseFolderDlg.FileTypes.Clear;
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'Dolphin Timing meets DO4';
+  ft.FileMask :=   '*.DO4';
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'Dolphin Timing meets DO3';
+  ft.FileMask :=   '*.DO3';
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'All Files';
+  ft.FileMask :=   '*.*';
+  BrowseFolderDlg.Title := 'Select Dolphin Timing meets folder.';
+  if BrowseFolderDlg.Execute then
+  begin
+    btnedtMeetFolder.Text := BrowseFolderDlg.FileName;
+  end;
+end;
+
+procedure TdlgOptions.btnedtReConstructDO4RightButtonClick(Sender: TObject);
+var
+ft: TFileTypeItem;
+begin
+  // browse for export of SCM to Dolphin Timing DO4 folder.
+  BrowseFolderDlg.DefaultFolder :=
+    IncludeTrailingPathDelimiter(btnedtReConstructDO4.Text) ;
+  BrowseFolderDlg.DefaultExtension := '.CSV';
+  BrowseFolderDlg.OkButtonLabel := 'Select Folder';
+  BrowseFolderDlg.FileTypes.Clear;
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'Dolphin Timing meets DO4';
+  ft.FileMask :=   '*.DO4';
+  ft := BrowseFolderDlg.FileTypes.Add;
+  ft.DisplayName :=  'All Files';
+  ft.FileMask :=   '*.*';
+  BrowseFolderDlg.Title := 'Select re-construct DO4 folder.';
+  if BrowseFolderDlg.Execute then
+  begin
+    btnedtReConstructDO4.Text := BrowseFolderDlg.FileName;
+  end;
+end;
 
 procedure TdlgOptions.FormDestroy(Sender: TObject);
 begin

@@ -166,7 +166,8 @@
             <Form>dlgOptions</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="dtTestData.pas"/>
+        <DCCReference Include="dtReConstruct.pas"/>
+        <DCCReference Include="..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

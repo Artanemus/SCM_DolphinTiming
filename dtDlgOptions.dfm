@@ -8410,12 +8410,13 @@ object dlgOptions: TdlgOptions
     BevelOuter = bvNone
     TabOrder = 2
     object btnClose: TButton
-      Left = 296
-      Top = 8
-      Width = 75
-      Height = 25
+      Left = 574
+      Top = 6
+      Width = 80
+      Height = 32
       Caption = 'Close'
       TabOrder = 0
+      OnClick = btnCloseClick
     end
   end
   object pnlBody: TPanel
@@ -8431,7 +8432,7 @@ object dlgOptions: TdlgOptions
       Top = 0
       Width = 661
       Height = 365
-      ActivePage = tabSettings
+      ActivePage = tabsheetPaths
       Align = alClient
       TabOrder = 0
       object tabSettings: TTabSheet
@@ -8535,7 +8536,8 @@ object dlgOptions: TdlgOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 1
-          Text = 'c:\CTSDolphin\EventCSV'
+          Text = 'c:\CTSDolphin\EventCSV\'
+          OnRightButtonClick = btnedtEventCSVRightButtonClick
         end
         object btnedtAppData: TButtonedEdit
           Left = 3
@@ -8547,7 +8549,8 @@ object dlgOptions: TdlgOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 2
-          Text = 'c:\CTSDolphin\AppData'
+          Text = 'c:\CTSDolphin\AppData\'
+          OnRightButtonClick = btnedtAppDataRightButtonClick
         end
         object btnedtMeetFolder: TButtonedEdit
           Left = 3
@@ -8560,6 +8563,7 @@ object dlgOptions: TdlgOptions
           RightButton.Visible = True
           TabOrder = 0
           Text = 'c:\CTSDolphin\Meets'
+          OnRightButtonClick = btnedtMeetFolderRightButtonClick
         end
         object btnedtReConstructDO4: TButtonedEdit
           Left = 3
@@ -8571,18 +8575,17 @@ object dlgOptions: TdlgOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 3
-          Text = 'c:\CTSDolphin\ReConstructDO4'
+          Text = 'c:\CTSDolphin\ReConstructDO4\'
+          OnRightButtonClick = btnedtReConstructDO4RightButtonClick
         end
       end
     end
   end
-  object PickCSVFolder: TFileOpenDialog
+  object BrowseFolderDlg: TFileOpenDialog
     FavoriteLinks = <>
     FileTypes = <>
-    OkButtonLabel = 'Use folder'
-    Options = [fdoPickFolders, fdoPathMustExist]
-    Title = 'Pick a folder to save DT Event CSV ... '
-    Left = 28
-    Top = 393
+    Options = [fdoPickFolders, fdoDontAddToRecent]
+    Left = 492
+    Top = 251
   end
 end

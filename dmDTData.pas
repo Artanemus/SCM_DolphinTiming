@@ -97,6 +97,7 @@ type
     tblDTNoodleTeamID: TIntegerField;
     tblDTNoodleLaneNumber: TIntegerField;
     FDStanStorageBinLink1: TFDStanStorageBinLink;
+    vimglistMenu: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure qryEventAfterScroll(DataSet: TDataSet);

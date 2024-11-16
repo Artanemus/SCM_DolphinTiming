@@ -1,4 +1,4 @@
-unit dtfrmExec;
+﻿unit dtfrmExec;
 
 {
 (Typical Meet Manager)  ... will read the data into the proper lanes.
@@ -26,29 +26,26 @@ uses
   Data.DB, Vcl.Grids, Vcl.DBGrids, SCMDefines, System.StrUtils, AdvUtil, AdvObj,
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtTestData;
+  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
+  Vcl.PlatformVclStylesActnCtrls;
 
 type
   TdtExec = class(TForm)
-    actnCreateDTCSV: TAction;
     actnManager: TActionManager;
     actnMenuBar: TActionMainMenuBar;
-    actnPickSession: TAction;
-    actnSetDTFolder: TAction;
+    actnSelectSession: TAction;
     dtGrid: TDBAdvGrid;
     btnNextDTFile: TButton;
     btnNextEvent: TButton;
     btnPrevDTFile: TButton;
     btnPrevEvent: TButton;
     btnRefresh: TButton;
-    Button1: TButton;
+    btnClose: TButton;
     FileSaveDlgCSV: TFileSaveDialog;
-    lblDTFileName: TLabel;
     lblEventDetails: TLabel;
     lblHeatNum: TLabel;
     lblMeters: TLabel;
     PickDTFolderDlg: TFileOpenDialog;
-    sbtnScrub: TSpeedButton;
     sbtnSync: TSpeedButton;
     scmGrid: TDBAdvGrid;
     SpeedButton1: TSpeedButton;
@@ -59,28 +56,34 @@ type
     vimgStrokeBug: TVirtualImage;
     pBar: TProgressBar;
     dbtxtDTFileName: TDBText;
-    dbgrid1: TDBGrid;
-    dbgrid2: TDBGrid;
-    dbgrid3: TDBGrid;
-    sbtnExport: TSpeedButton;
-    sbtnImport: TSpeedButton;
-    sbtnCreateTestData: TSpeedButton;
-    procedure actnCreateDTCSVExecute(Sender: TObject);
-    procedure actnCreateDTCSVUpdate(Sender: TObject);
-    procedure actnPickSessionExecute(Sender: TObject);
-    procedure actnSetDTFolderExecute(Sender: TObject);
+    actnExportDTCSV: TAction;
+    actnReConstructDO4: TAction;
+    actnReConstructDO3: TAction;
+    actnPreferences: TAction;
+    actnImportDO4: TAction;
+    actnImportDO3: TAction;
+    pnlFooter: TPanel;
+    pnlSCM: TPanel;
+    pnlDT: TPanel;
+    procedure actnExportDTCSVExecute(Sender: TObject);
+    procedure actnExportDTCSVUpdate(Sender: TObject);
+    procedure actnImportDO4Execute(Sender: TObject);
+    procedure actnPreferencesExecute(Sender: TObject);
+    procedure actnReConstructDO4Execute(Sender: TObject);
+    procedure actnSelectSessionExecute(Sender: TObject);
+    procedure actnSetDTMeetsFolderExecute(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure sbtnCreateTestDataClick(Sender: TObject);
-    procedure sbtnScrubClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
-    fDolphinFolder: string;
+    fSessionID: integer;
+    fDolphinMeetsFolder: string;
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
     procedure SaveToSettings; // JSON Program Settings
@@ -91,11 +94,13 @@ type
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
   public
+    property SessionID: integer read FSessionID write FSessionID;
+
   const
   AcceptedTimeKeeperDeviation = 0.3;
     { Public declarations }
     procedure Prepare(AConnection: TFDConnection; aSessionID: Integer = 0);
-    property DolphinFolder: string read FDolphinFolder write FDolphinFolder;
+    property DolphinFolder: string read fDolphinMeetsFolder write fDolphinMeetsFolder;
   end;
 
 var
@@ -105,9 +110,9 @@ implementation
 
 {$R *.dfm}
 
-uses dtUtils, UITypes, DateUtils ,dlgSessionPicker;
+uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions;
 
-procedure TdtExec.actnCreateDTCSVExecute(Sender: TObject);
+procedure TdtExec.actnExportDTCSVExecute(Sender: TObject);
 var
   fn: TFileName;
 begin
@@ -120,7 +125,7 @@ begin
   DTData.BuildCSVEventData(fn);
 end;
 
-procedure TdtExec.actnCreateDTCSVUpdate(Sender: TObject);
+procedure TdtExec.actnExportDTCSVUpdate(Sender: TObject);
 begin
   if Assigned(DTData) then
   begin
@@ -131,7 +136,55 @@ begin
       TAction(Sender).Enabled := false;
 end;
 
-procedure TdtExec.actnPickSessionExecute(Sender: TObject);
+procedure TdtExec.actnImportDO4Execute(Sender: TObject);
+var
+s: string;
+begin
+  if DirectoryExists(fDolphinMeetsFolder) then
+  begin
+    pBar.Visible := true;
+    ProcessDTFiles(fDolphinMeetsFolder, pBar);
+    pBar.Visible := false;
+    DTData.dsDT.DataSet.First;
+    // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+  end
+  else
+  begin
+    s := '''
+      The Dolphin Timing meets folder couldn''t be found.
+      Use the Edit|Preference menu to setup the folder''s location.
+    ''';
+    MessageBox(0, PChar(s), PChar('Missing meets folder.'), MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure TdtExec.actnPreferencesExecute(Sender: TObject);
+var
+  dlg: TDlgOptions;
+  mr: TModalResult;
+begin
+  // open options menu
+  dlg := TDlgOptions.Create(Self);
+  mr := dlg.ShowModal;
+  if IsPositiveResult(mr) then
+    // Update any preference changes
+    LoadSettings;
+  dlg.Free;
+  UpdateCaption;
+end;
+
+procedure TdtExec.actnReConstructDO4Execute(Sender: TObject);
+var
+i: integer;
+begin
+  if DTData.qrysession.Active then
+  begin
+    i := DTData.qrysession.FieldByName('SessionID').AsInteger;
+    TestDataSess(i);
+  end;
+end;
+
+procedure TdtExec.actnSelectSessionExecute(Sender: TObject);
 var
   dlg: TSessionPicker;
   mr: TModalResult;
@@ -146,7 +199,7 @@ begin
   UpdateCaption;
 end;
 
-procedure TdtExec.actnSetDTFolderExecute(Sender: TObject);
+procedure TdtExec.actnSetDTMeetsFolderExecute(Sender: TObject);
 var
   fn: TFileName;
 begin
@@ -155,7 +208,7 @@ begin
   else
     Exit; // User cancelled.
   // Make the path persistent in JSON.
-  fDolphinFolder := fn;
+  fDolphinMeetsFolder := fn;
   // SavePreferencesToJSON.
 end;
 
@@ -164,7 +217,7 @@ begin
     if not DTData.dsDT.DataSet.EOF then
     begin
       DTData.dsDT.DataSet.next;
-      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+      // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
     end;
 end;
 
@@ -192,7 +245,7 @@ begin
   if not DTData.dsdt.DataSet.BOF then
   begin
       DTData.dsdt.DataSet.prior;
-      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+//      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
   end;
 end;
 
@@ -217,7 +270,7 @@ end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
 begin
-  { test for and connect to DTData}
+  fSessionID := 0;
   // C R E A T E   T H E   D A T A M O D U L E .
   if NOT Assigned(DTData) then
     DTData := TDTData.Create(Self);
@@ -227,26 +280,52 @@ begin
   {if Settings = nil then
     Settings := TPrgSetting.Create; }
   LoadSettings;
+
+  {
+    Sort out the menubar font height - so tiny!
+
+    The font of the MenuItemTextNormal element (or any other) in the style
+    designer has no effect, this is because the Vcl Style Engine simply
+    ignores the font-size and font-name, and just uses the font color defined in
+    the vcl style file.
+
+    S O L U T I O N :
+
+    Define and register a new TActionBarStyleEx descendent and override
+    the DrawText methods of the TCustomMenuItem and TCustomMenuButton
+    classes, using the values of the Screen.MenuFont to draw the menu
+  }
+
+  Screen.MenuFont.Name := 'Segoe UI Semibold';
+  Screen.MenuFont.Size := 12;
+  actnManager.Style := PlatformVclStylesStyle;
+
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
 begin
   SaveToSettings;
-  // destroyed by dtfrmBoot.
-  {FreeAndNil(Settings);}
+end;
+
+procedure TdtExec.FormShow(Sender: TObject);
+begin
+  if fSessionID = 0 then
+  begin
+    pnlSCM.Visible := false;
+    pnlDT.Visible := false;
+    actnSelectSession.Execute;
+  end;
+    pnlSCM.Visible := true;
+    pnlDT.Visible := true;
 end;
 
 procedure TdtExec.LoadFromSettings;
 begin
-  fDolphinFolder := Settings.DolphinFolder;
+  fDolphinMeetsFolder := Settings.DolphinMeetsFolder;
 end;
 
 procedure TdtExec.LoadSettings;
 begin
-  // created by dtfrmBoot.
-  {if Settings = nil then
-    Settings := TPrgSetting.Create; }
-
   if not FileExists(Settings.GetDefaultSettingsFilename()) then
   begin
     ForceDirectories(Settings.GetSettingsFolder());
@@ -332,42 +411,8 @@ end;
 
 procedure TdtExec.SaveToSettings;
 begin
-  Settings.DolphinFolder := fDolphinFolder;
+  Settings.DolphinMeetsFolder := fDolphinMeetsFolder;
   Settings.SaveToFile();
-end;
-
-procedure TdtExec.sbtnCreateTestDataClick(Sender: TObject);
-var
-i: integer;
-begin
-  if DTData.qrysession.Active then
-  begin
-    i := DTData.qrysession.FieldByName('SessionID').AsInteger;
-    TestDataSess(i);
-
-  end;
-end;
-
-procedure TdtExec.sbtnScrubClick(Sender: TObject);
-var
-s: string;
-begin
-  if DirectoryExists(fDolphinFolder) then
-  begin
-    pBar.Visible := true;
-    ProcessDTFiles(fDolphinFolder, pBar);
-    pBar.Visible := false;
-    DTData.dsDT.DataSet.First;
-    lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
-  end
-  else
-  begin
-    s := '''
-      The Dolphin Timing folder couldn''t be found.
-      Use the File menu to setup the folder''s location.
-    ''';
-    MessageBox(0, PChar(s), PChar('Missing DT Folder '), MB_ICONERROR or MB_OK);
-  end;
 end;
 
 procedure TdtExec.SetSession(ASessionID: integer);
@@ -428,7 +473,9 @@ begin
         i:=DTData.qryHeat.FieldByName('HeatNum').AsInteger;
         s := s + ' - Heat: ' + IntToStr(i);
         if Length(s) > 0 then
+        begin
           lblEventDetails.Caption := s;
+        end;
       end;
 end;
 

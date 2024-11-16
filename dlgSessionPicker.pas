@@ -17,6 +17,7 @@ type
     dbgridSession: TDBGrid;
     btnOk: TButton;
     btnCancel: TButton;
+    btnSelectClub: TButton;
     procedure btnCancelClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);

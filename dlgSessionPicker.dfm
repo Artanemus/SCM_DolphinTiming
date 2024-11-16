@@ -3,7 +3,7 @@ object SessionPicker: TSessionPicker
   Top = 0
   BorderStyle = bsDialog
   BorderWidth = 2
-  Caption = 'Pick Session'
+  Caption = 'Select swimming session ...'
   ClientHeight = 482
   ClientWidth = 501
   Color = clBtnFace
@@ -30,11 +30,10 @@ object SessionPicker: TSessionPicker
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitWidth = 505
     object dbtxtClubName: TDBText
       Left = 0
       Top = 7
-      Width = 225
+      Width = 168
       Height = 21
       AutoSize = True
       DataField = 'Caption'
@@ -58,8 +57,6 @@ object SessionPicker: TSessionPicker
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 432
-    ExplicitWidth = 505
     object btnOk: TButton
       Left = 387
       Top = 9
@@ -78,7 +75,17 @@ object SessionPicker: TSessionPicker
       Caption = 'Cancel'
       ModalResult = 2
       TabOrder = 1
+      Visible = False
       OnClick = btnCancelClick
+    end
+    object btnSelectClub: TButton
+      Left = 0
+      Top = 9
+      Width = 165
+      Height = 35
+      Caption = 'Select Swim Club'
+      Enabled = False
+      TabOrder = 2
     end
   end
   object pnlBody: TPanel
@@ -89,8 +96,6 @@ object SessionPicker: TSessionPicker
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitWidth = 505
-    ExplicitHeight = 367
     object dbgridSession: TDBGrid
       Left = 0
       Top = 0

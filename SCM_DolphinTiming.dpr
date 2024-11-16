@@ -18,7 +18,8 @@ uses
   dtUtils in 'dtUtils.pas',
   dlgSessionPicker in 'dlgSessionPicker.pas' {SessionPicker},
   dtDlgOptions in 'dtDlgOptions.pas' {dlgOptions},
-  dtTestData in 'dtTestData.pas';
+  dtReConstruct in 'dtReConstruct.pas',
+  Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas';
 
 {$R *.res}
 

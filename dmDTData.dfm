@@ -9870,4 +9870,12 @@ object DTData: TDTData
     Left = 528
     Top = 512
   end
+  object vimglistMenu: TVirtualImageList
+    Images = <>
+    ImageCollection = imgcolDT
+    Width = 32
+    Height = 32
+    Left = 360
+    Top = 408
+  end
 end
