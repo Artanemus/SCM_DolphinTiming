@@ -34,7 +34,6 @@ object dtExec: TdtExec
     Font.Name = 'Segoe UI'
     Font.Style = []
     Spacing = 0
-    ExplicitWidth = 1613
   end
   object pnlFooter: TPanel
     Left = 0
@@ -44,8 +43,6 @@ object dtExec: TdtExec
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 696
-    ExplicitWidth = 1152
     object SpeedButton1: TSpeedButton
       Left = 120
       Top = 15
@@ -1194,6 +1191,7 @@ object dtExec: TdtExec
                 Items = <
                   item
                     Action = actnImportDO3
+                    Caption = 'I&mport DO3 files ...'
                   end
                   item
                     Action = actnImportDO4
@@ -1241,6 +1239,7 @@ object dtExec: TdtExec
     object actnExportDTCSV: TAction
       Category = 'Export'
       Caption = 'Export Dolphin Timing Event CSV ...'
+      OnExecute = actnExportDTCSVExecute
     end
     object actnReConstructDO4: TAction
       Category = 'Export'
@@ -1269,12 +1268,8 @@ object dtExec: TdtExec
   end
   object FileSaveDlgCSV: TFileSaveDialog
     DefaultExtension = '.csv'
-    DefaultFolder = 'c:\Dolphin\Meets'
+    DefaultFolder = 'c:\CTSDolphin\EventCSV'
     FavoriteLinks = <>
-    FileName = 
-      'C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DT_events_setup.' +
-      'csv'
-    FileNameLabel = 'DT setup file.'
     FileTypes = <
       item
         DisplayName = 'Comma-separated values (*.csv)'
@@ -1284,6 +1279,7 @@ object dtExec: TdtExec
         DisplayName = 'Any file type (*.*)'
         FileMask = '*.*'
       end>
+    OkButtonLabel = 'Save DT Event file'
     Options = []
     Title = 'Create a Dolphin Timing '#39'event setup'#39' csv file.'
     Left = 48

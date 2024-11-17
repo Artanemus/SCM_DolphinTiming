@@ -5,18 +5,13 @@ interface
 uses dmSCM, dmDTData, System.SysUtils, System.Classes, system.Hash,
 DateUtils, variants, SCMDefines, Data.DB, dtuSetting;
 
-procedure BuildTestDataDO3();
-procedure TestDataSess(SessionID: integer);
-procedure TestDataEv(sess: string; sl: TStringList);
-procedure TestDataHt(sess, ev, id, gender: string; aEventType: scmEventType; var ht: string; sl: TStringList);
-procedure TestDataINDV(sl: TStringList);
-procedure TestDataTEAM(sl: TStringList);
-
-const
-MYPATH = 'C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\TESTDATA\';
-
+procedure ReConstructDO4(SessionID: integer);
+function Get3Digits(i: integer): string;
+function Get4Digits(i: integer): string;
 
 implementation
+
+var seed: integer = 1;
 
 
 function GetStringListChecksum(sl: TStringList; hashLength: Integer = 8): string;
@@ -29,7 +24,6 @@ begin
   // Truncate to the desired length if needed (e.g., first 8 characters for a short checksum)
   Result := Copy(fullHash, 1, hashLength);
 end;
-
 
 function GetEventType(aEventID: integer): scmEventType;
 var
@@ -67,7 +61,6 @@ begin
   Result := s;
 end;
 
-
 function Get3Digits(i: integer): string;
 var
 s: string;
@@ -96,120 +89,8 @@ begin
   Result := IntToHex(combinedValue, 7);
 end;
 
-procedure BuildTestDataDO3();
-var
-sess, ev, ht, fn, hash: string;
-i, j, k: integer;
-begin
-  DTData.qrySession.first;
-  while not DTData.qrySession.eof do
-  begin
-    i := DTData.qrySession.FieldByName('SessionId').AsInteger;
-    sess := Get3Digits(i);
-    j := DTData.qryEvent.FieldByName('EventNum').AsInteger;
-    ev := Get3Digits(j);
-    k := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-    ht := Get3Digits(k);
-    hash := CreateHash(i, j, k);
-    fn := sess + '-' + ev + '-' + hash + '.DO3';
-    fn := MYPATH + fn;
-    DTData.qrySession.next;
-  end;
-end;
-
-procedure BuildTestDataDO4();
-var
-sess, ev, ht, fn, id, s, lane: string;
-i, j, k, seed: integer;
-sl: TStringList;
-rt: TTime;
-msec: double;
-lanevalue: variant;
-begin
-  seed := 1;
-  sl := TStringList.Create;
-  DTData.qrySession.first;
-  while not DTData.qrySession.eof do
-  begin
-    i := DTData.qrySession.FieldByName('SessionId').AsInteger;
-    sess := Get3Digits(i);
-    DTData.qryEvent.first;
-    while not DTData.qryEvent.eof do
-    begin
-      j := DTData.qryEvent.FieldByName('EventNum').AsInteger;
-      ev := Get3Digits(j);
-      DTData.qryHeat.first;
-      while not DTData.qryHeat.eof do
-      begin
-        sl.Clear;
-        k := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-        ht := Get3Digits(k);
-        id := Get4Digits(seed);
-        // A=boys, B=girls, X=mixed.
-        fn := sess + '-' + ev + '-' + ht + 'X-' + id + '.DO4';
-        inc(seed);
-        // populate sl with lane details....
-        // header
-        s := sess + ';' + ev + ';' + ht + ';X';
-        sl.Add(s);
-        // lanes
-        DTData.qryINDV.first;
-        while not DTData.qryINDV.eof do
-        begin
-          // lane data
-          laneValue := DTData.qryINDV.FieldByName('LaneNum').Value;
-          if not VarIsNull(laneValue) then
-            lane := IntToStr(laneValue)
-          else
-            lane := '0'; // or some default value
-
-          rt := TimeOf(DTData.qryINDV.FieldByName('RaceTime').AsDateTime);
-          msec := TimeToMilliseconds(rt) / 1000.00;
-
-          if msec <> 0.0 then
-            s := 'Lane' + lane + ';' + Format('%8.3f', [msec]) + ';;'
-          else
-            s := 'Lane' + lane + ';0.000;;'; // or some default value
-
-          sl.Add(s);
-          DTData.qryINDV.next;
-        end;
-        // checksum
-        s := THashSHA2.GetHashString(sl.Text, SHA256);
-        sl.Add(s);
-        sl.SaveToFile(fn);
-        DTData.qryHeat.next;
-      end;
-      DTData.qryEvent.next;
-    end;
-    DTData.qrySession.next;
-  end;
-  sl.Free;
-end;
-
-procedure TestDataSess(SessionID: integer);
-var
-sess: string;
-sl: TStringList;
-begin
-//  DTData.qrySession.Filter := 'SessionID = ' + inttostr(SessionID);
-//  if not DTData.qrySession.Filtered then
-//    DTData.qrySession.Filtered := true;
-  sl := TStringList.Create;
-  if DTData.qrySession.RecordCount = 1 then
-  begin
-    sess := Get3Digits(SessionID);
-    TestDataEv(sess, sl);
-  end;
-  sl.Free;
-//  DTData.qrySession.Filtered := false;
-//  DTData.qrySession.first;
-end;
-
-
 function GetGenderTypeStr(AEventID: integer): string;
 var
-  v: Variant;
   boysCount, girlsCount: Integer;
   SQL: string;
 begin
@@ -219,141 +100,36 @@ begin
   // Ensure the query isn't empty
   if not DTData.qryEvent.IsEmpty then
   begin
-    // Combine the count of genders into a single query
-    SQL := 'SELECT ' +
-           '  SUM(CASE WHEN GenderID = 1 THEN 1 ELSE 0 END) AS BoysCount, ' +
-           '  SUM(CASE WHEN GenderID = 2 THEN 1 ELSE 0 END) AS GirlsCount ' +
-           'FROM [SwimClubMeet].[dbo].[Event] ' +
+    // Query to get boys count
+    SQL := 'SELECT COUNT(*) FROM [SwimClubMeet].[dbo].[Event] ' +
            'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
            'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
            'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
-           'WHERE [Event].EventID = :ID';
+           'WHERE [Event].EventID = :ID AND GenderID = 1';
+    boysCount := SCM.scmConnection.ExecSQLScalar(SQL, [AEventID]);
 
-    // Execute the query and retrieve counts
-    v := SCM.scmConnection.ExecSQLScalar(SQL, [AEventID]);
-    if VarArrayDimCount(v) = 2 then
-    begin
-      boysCount := v[0];
-      girlsCount := v[1];
+    // Query to get girls count
+    SQL := 'SELECT COUNT(*) FROM [SwimClubMeet].[dbo].[Event] ' +
+           'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
+           'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
+           'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
+           'WHERE [Event].EventID = :ID AND GenderID = 2';
+    girlsCount := SCM.scmConnection.ExecSQLScalar(SQL, [AEventID]);
 
-      // Determine the result based on counts
-      if (boysCount > 0) and (girlsCount > 0) then
-        Result := 'X'
-      else if boysCount > 0 then
-        Result := 'A'
-      else if girlsCount > 0 then
-        Result := 'B';
-    end;
-  end;
-end;
-
-{
-function  GetGenderTypeStr(AEventID: integer): string;
-var
-  v: variant;
-  SQL: string;
-  boys, girls: boolean;
-begin
-  // gender string types - A=boys, B=girls, X=mixed.
-  result := 'X'; // default - mixed genders
-  if not DTData.qryEvent.IsEmpty then
-  begin
-    SQL := 'SELECT Count(genderID) FROM [SwimClubMeet].[dbo].[Event] ' +
-      'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
-      'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
-      'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
-      'WHERE EventID = :ID AND GenderID = 1 ';
-    v := SCM.scmConnection.ExecSQLScalar(SQL, [aEventID]);
-    if VarIsNull(v) or VarIsEmpty(v) or (v = 0) then boys := false;
-    SQL := 'SELECT Count(genderID) FROM [SwimClubMeet].[dbo].[Event] ' +
-      'INNER JOIN HeatIndividual ON [Event].EventID = HeatIndividual.EventID ' +
-      'INNER JOIN Entrant ON [HeatIndividual].HeatID = Entrant.HeatID ' +
-      'INNER JOIN Member ON [Entrant].MemberID = Member.MemberID ' +
-      'WHERE EventID = :ID AND GenderID = 2 ';
-    v := SCM.scmConnection.ExecSQLScalar(SQL, [aEventID]);
-    if VarIsNull(v) or VarIsEmpty(v) or (v = 0) then girls := false;
-    if boys then  result := 'A';
-    if girls then  result := 'B';
-    if boys and girls then result := 'X';
-  end;
-end;
-}
-
-procedure TestDataEv(sess: string; sl: TStringList);
-var
-i, seed: integer;
-ev, ht, id, fn, gender: string;
-aEventType: scmEventType;
-success: boolean;
-begin
-  seed := 1;
-
-  if DTData.qryEvent.IsEmpty then exit;
-
-  DTData.qryEvent.first;
-  while not DTData.qryEvent.eof do
-  begin
-    i := DTData.qryEvent.FieldByName('EventNum').AsInteger;
-    ev := Get3Digits(i);
-    i := DTData.qryEvent.FieldByName('EventID').AsInteger;
-    aEventType := GetEventType(i);
-    sl.Clear;
-    id := Get4Digits(seed);
-    gender := GetGenderTypeStr(i);
-    // populate the stringlist with text lines (data).
-    TestDataHt(sess, ev, id, gender, aEventType, ht, sl);
-
-    inc(seed);
-    DTData.qryEvent.next;
-  end;
-end;
-
-procedure TestDataHt(sess, ev, id, gender: string; aEventType: scmEventType; var ht: string; sl: TStringList);
-var
-  i: integer;
-  s, fn: string;
-  success: boolean;
-begin
-
-  if DTData.qryHeat.IsEmpty then exit;
-
-  DTData.qryHeat.first;
-  while not DTData.qryHeat.eof do
-  begin
-    i := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-    ht := Get3Digits(i);
-    // first line - header.
-    s := sess + ';' + ev + ';' + ht + ';X';
-    sl.Add(s);
-    // body - lanes and timekeepers times.
-    if aEventType = etINDV then
-      TestDataINDV(sl)
-    else if aEventType = etTEAM then
-      TestDataTEAM(sl);
-    // last line - footer. - checksum
-    s := GetStringListChecksum(sl, 8);
-//    s := THashSHA2.GetHashString(sl.Text, SHA256);
-    sl.Add(s);
-    // GENDER :: A=boys, B=girls, X=mixed.
-    fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
-    fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstructDO4) + fn;
-    if not sl.IsEmpty then
-    begin
-      success := true;
-      if fileExists(fn) then
-        success := DeleteFile(fn);
-      if success then
-        sl.SaveToFile(fn);
-    end;
-
-    DTData.qryHeat.Next
+    // Determine the result based on counts
+    if (boysCount > 0) and (girlsCount > 0) then
+      Result := 'X'
+    else if boysCount > 0 then
+      Result := 'A'
+    else if girlsCount > 0 then
+      Result := 'B';
   end;
 end;
 
 
 procedure TestDataINDV(sl: TStringList);
 var
-lanevalue: integer;
+lanevalue: variant;
 s, lane: string;
 rt: TTime;
 msec: double;
@@ -364,7 +140,7 @@ begin
   while not DTData.qryINDV.eof do
   begin
     // lane data
-    laneValue := DTData.qryINDV.FieldByName('Lane').Value;
+    laneValue := DTData.qryINDV.FieldByName('Lane').AsVariant;
     if not VarIsNull(laneValue) then
       lane := IntToStr(laneValue)
     else
@@ -374,7 +150,7 @@ begin
     msec := TimeToMilliseconds(rt) / 1000.00;
 
     if msec <> 0.0 then
-      s := 'Lane' + lane + ';' + Format('%8.3f', [msec]) + ';;'
+      s := 'Lane' + lane + ';' + Format('%0.3f', [msec]) + ';;'
     else
       s := 'Lane' + lane + ';;;'; // or some default value
 
@@ -385,22 +161,23 @@ end;
 
 procedure TestDataTEAM(sl: TStringList);
 var
-lanevalue: integer;
+lanevalue: variant;
 s, lane: string;
 rt: TTime;
 msec: double;
+seed: integer;
 begin
   if DTData.qryTEAM.IsEmpty then exit;
-
+  seed := 1;
   DTData.qryTEAM.first;
   while not DTData.qryTEAM.eof do
   begin
     // lane data
-    laneValue := DTData.qryTEAM.FieldByName('Lane').Value;
+    laneValue := DTData.qryTEAM.FieldByName('Lane').AsVariant;
     if not VarIsNull(laneValue) then
       lane := IntToStr(laneValue)
     else
-      lane := '0'; // or some default value
+      lane := IntToStr(seed);
 
     rt := TimeOf(DTData.qryTEAM.FieldByName('RaceTime').AsDateTime);
     msec := TimeToMilliseconds(rt) / 1000.00;
@@ -411,8 +188,98 @@ begin
       s := 'Lane' + lane + ';0.000;;'; // or some default value
 
     sl.Add(s);
+    inc(seed);
     DTData.qryTEAM.next;
   end;
 end;
+
+procedure ReConstructHeat(SessionID, eventNum: integer; gender: string;
+   aEventType: scmEventType; sl: TStringList);
+var
+  HeatNum: integer;
+  s, fn, id, sess, ev, ht: string;
+  success: boolean;
+begin
+  if DTData.qryHeat.IsEmpty then exit;
+  // Assert the state of the local param 'seed' (int) ...
+  if (seed > 999) or (seed = 0) then seed := 1;
+  DTData.qryHeat.first;
+  while not DTData.qryHeat.eof do
+  begin
+    sl.Clear; // ensures - only one heat per file.
+    HeatNum := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
+    // first line - header.
+    s := IntTostr(SessionID) + ';' + IntTostr(EventNum) + ';' + IntTostr(HeatNum) + ';' + gender;
+    sl.Add(s);
+    // body - lanes and timekeepers times.
+    if aEventType = etINDV then
+      TestDataINDV(sl)
+    else if aEventType = etTEAM then
+      TestDataTEAM(sl);
+    // last line - footer. - checksum
+    s := UpperCase(GetStringListChecksum(sl, 16));
+    // ALT METHOD : THashSHA2.GetHashString(sl.Text, SHA256);
+    sl.Add(s);
+    if not sl.IsEmpty then
+    begin
+      success := true;
+      // C o n s t r u c t   f i l e n a m e .
+      // NOTE: GENDER >> A=boys, B=girls, X=mixed.
+      // pad numbers with leading zeros.
+      ht := Get3Digits(HeatNum);
+      ev := Get3Digits(EventNum);
+      id := Get4Digits(seed);
+      sess := Get3Digits(SessionID);
+      fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
+      fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstructDO4) + fn;
+      // trap for exception error.
+      if fileExists(fn) then
+        success := DeleteFile(fn);
+      if success then
+      begin
+        sl.SaveToFile(fn);
+        inc(seed); // calculate next seed number.
+        if seed > 9999 then seed := 1; // check - out of bounds.
+      end;
+    end;
+    DTData.qryHeat.Next
+  end;
+end;
+
+procedure ReConstructEvent(SessionID: integer; sl: TStringList);
+var
+i, EventNum: integer;
+gender: string;
+aEventType: scmEventType;
+begin
+  if DTData.qryEvent.IsEmpty then exit;
+  DTData.qryEvent.first;
+  while not DTData.qryEvent.eof do
+  begin
+    EventNum := DTData.qryEvent.FieldByName('EventNum').AsInteger;
+    i := DTData.qryEvent.FieldByName('EventID').AsInteger;
+    // NOTE: scmEventType >> etUnknown, etINDV, etTEAM.
+    aEventType := GetEventType(i);
+    // NOTE: GENDER >> A=boys, B=girls, X=mixed.
+    gender := GetGenderTypeStr(i);
+    // R e - c o n s t r u c t   D O 4 .
+    ReConstructHeat(SessionID, EventNum, gender, aEventType, sl);
+    DTData.qryEvent.next;
+  end;
+end;
+
+procedure ReConstructDO4(SessionID: integer);
+var
+sl: TStringList;
+begin
+  // Core DTData tables are Master-Detail schema.
+  // qrySession is cued, ready to process.
+  seed := 1;
+  sl := TStringList.Create;
+  ReConstructEvent(SessionID, sl);
+  sl.Free;
+end;
+
+
 
 end.

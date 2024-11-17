@@ -116,6 +116,8 @@ type
 
     procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
+    function LocateEvent(AEventID: integer): boolean;
+    function LocateHeat(AHeatID: integer): boolean;
 
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
@@ -230,6 +232,30 @@ begin
   if VarIsNull(v) or VarIsEmpty(v) then exit;
   result := v;
 
+end;
+
+function TDTData.LocateEvent(AEventID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (aEventID = 0) then exit;
+  SearchOptions := [];
+  if dsEvent.DataSet.Active then
+      result := dsEvent.DataSet.Locate('EventID', aEventID, SearchOptions);
+end;
+
+function TDTData.LocateHeat(AHeatID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (AHeatID = 0) then exit;
+  SearchOptions := [];
+  if dsHeat.DataSet.Active then
+      result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
 end;
 
 function TDTData.GetNumberOfHeats(AEventID: integer): integer;

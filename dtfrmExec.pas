@@ -90,6 +90,8 @@ type
     procedure SetSession(ASessionID: integer);
     procedure UpdateCaption();
     procedure UpdateEventDetailsLabel();
+    procedure DeleteFilesWithWildcard(const APath, APattern: string);
+
   protected
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
@@ -115,14 +117,18 @@ uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions;
 procedure TdtExec.actnExportDTCSVExecute(Sender: TObject);
 var
   fn: TFileName;
+  i: integer;
 begin
+  FileSaveDlgCSV.DefaultFolder := Settings.DolphinEventFolder;
+  i := DTData.qrySession.FieldByName('SessionID').AsInteger;
+  fn := 'SCM_DTEvent_session' + IntToStr(i) + '.csv';
+  FileSaveDlgCSV.FileName := fn;
   if FileSaveDlgCSV.Execute then
-    fn := FileSaveDlgCSV.FileName
-  else
-    Exit; // User cancelled.
+  begin
+    fn := FileSaveDlgCSV.FileName;
+    DTData.BuildCSVEventData(fn); // Build CSV Event Data and save to file.
+  end;
 
-  // Build CSV Event Data and save to file.
-  DTData.BuildCSVEventData(fn);
 end;
 
 procedure TdtExec.actnExportDTCSVUpdate(Sender: TObject);
@@ -173,14 +179,47 @@ begin
   UpdateCaption;
 end;
 
+
+procedure TdtExec.DeleteFilesWithWildcard(const APath, APattern: string);
+var
+  SR: TSearchRec;
+  FullPath: string;
+begin
+  FullPath := IncludeTrailingPathDelimiter(APath) + APattern;
+  if FindFirst(FullPath, faAnyFile, SR) = 0 then
+  try
+    repeat
+      // Build the full filename
+      if (SR.Attr and faDirectory) = 0 then
+        DeleteFile(IncludeTrailingPathDelimiter(APath) + SR.Name);
+    until FindNext(SR) <> 0;
+  finally
+    FindClose(SR);
+  end;
+end;
+
+
 procedure TdtExec.actnReConstructDO4Execute(Sender: TObject);
 var
-i: integer;
+SessionID, currEv, currHt: integer;
+sess: string;
 begin
   if DTData.qrysession.Active then
   begin
-    i := DTData.qrysession.FieldByName('SessionID').AsInteger;
-    TestDataSess(i);
+    scmGrid.BeginUpdate;
+    scmGrid.DataSource.DataSet.DisableControls;
+    currEv := DTData.qryEvent.FieldByName('EventID').AsInteger;
+    currHt := DTData.qryHeat.FieldByName('HeatID').AsInteger;
+    SessionID := DTData.qrysession.FieldByName('SessionID').AsInteger;
+    // remove the current session DO4 files.
+    sess := Get3Digits(SessionID);
+    DeleteFilesWithWildcard(Settings.DolphinReConstructDO4,sess +  '-*.DO4');
+    // re-contruct the Dolphin Timing DO4 files for this session.
+    ReConstructDO4(SessionID);
+    DTData.LocateEvent(currEv);
+    DTData.LocateHeat(currHt);
+    scmGrid.DataSource.DataSet.EnableControls;
+    scmGrid.EndUpdate;
   end;
 end;
 
