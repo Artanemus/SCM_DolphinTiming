@@ -26,7 +26,7 @@ type
     DolphinMeetsFolder: string;
     DolphinEventFolder: string;
     DolphinAppData: string;
-    DolphinReConstructDO4: string;
+    DolphinReConstruct: string;
 
     constructor Create();
     function GetDefaultSettingsFilename(): string;
@@ -52,10 +52,10 @@ begin
   Password := '';
   OSAuthent := false;
   LoginTimeOut := CONNECTIONTIMEOUT;
-  DolphinMeetsFolder := 'c:\Dolphin\Meets';
-  DolphinEventFolder := 'c:\Dolphin\EventCSV';
-  DolphinAppData := 'c:\Dolphin\AppData';
-  DolphinReConstructDO4 := 'c:\Dolphin\ReConstructDO4';
+  DolphinMeetsFolder := 'c:\CTSDolphin\Meets';
+  DolphinEventFolder := 'c:\CTSDolphin\EventCSV';
+  DolphinAppData := 'c:\CTSDolphin\AppData';
+  DolphinReConstruct := 'c:\CTSDolphin\ReConstruct';
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in

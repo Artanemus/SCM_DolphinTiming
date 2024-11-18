@@ -78,6 +78,7 @@ object dtExec: TdtExec
       Width = 106
       Height = 41
       Caption = 'Close'
+      ModalResult = 8
       TabOrder = 1
     end
   end
@@ -1229,7 +1230,7 @@ object dtExec: TdtExec
       end>
     Images = DTData.vimglistMenu
     Left = 48
-    Top = 368
+    Top = 216
     StyleName = 'Platform Default'
     object actnSelectSession: TAction
       Category = 'File'
@@ -1240,16 +1241,19 @@ object dtExec: TdtExec
       Category = 'Export'
       Caption = 'Export Dolphin Timing Event CSV ...'
       OnExecute = actnExportDTCSVExecute
+      OnUpdate = actnExportDTCSVUpdate
+    end
+    object actnReConstructDO3: TAction
+      Category = 'Export'
+      Caption = 'Re-construct and export DO3 files ...'
+      OnExecute = actnReConstructDO3Execute
+      OnUpdate = actnReConstructDO3Update
     end
     object actnReConstructDO4: TAction
       Category = 'Export'
       Caption = 'Re-construct and export DO4 files ...'
       OnExecute = actnReConstructDO4Execute
-    end
-    object actnReConstructDO3: TAction
-      Category = 'Export'
-      Caption = 'Re-construct and export DO3 files ...'
-      Enabled = False
+      OnUpdate = actnReConstructDO4Update
     end
     object actnPreferences: TAction
       Category = 'Edit'
@@ -1283,7 +1287,7 @@ object dtExec: TdtExec
     Options = []
     Title = 'Create a Dolphin Timing '#39'event setup'#39' csv file.'
     Left = 48
-    Top = 240
+    Top = 272
   end
   object PickDTFolderDlg: TFileOpenDialog
     DefaultFolder = 'c:\Dolphin\Meets'
@@ -1293,6 +1297,6 @@ object dtExec: TdtExec
     Options = [fdoPickFolders]
     Title = 'Select the Dolphin Timing folder.'
     Left = 48
-    Top = 304
+    Top = 328
   end
 end

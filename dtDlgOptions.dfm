@@ -8508,9 +8508,11 @@ object dlgOptions: TdlgOptions
         object lblReConstructDO4: TLabel
           Left = 3
           Top = 251
-          Width = 395
+          Width = 464
           Height = 21
-          Caption = 'Application'#39's export folder for re-constructed .DO4 files ...'
+          Caption = 
+            'Application'#39's export folder for re-constructed .DO3 and .DO4 fil' +
+            'es ...'
         end
         object lblAppCaption1: TLabel
           Left = 3
@@ -8565,7 +8567,7 @@ object dlgOptions: TdlgOptions
           Text = 'c:\CTSDolphin\Meets'
           OnRightButtonClick = btnedtMeetFolderRightButtonClick
         end
-        object btnedtReConstructDO4: TButtonedEdit
+        object btnedtReConstruct: TButtonedEdit
           Left = 3
           Top = 278
           Width = 647
@@ -8575,8 +8577,8 @@ object dlgOptions: TdlgOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 3
-          Text = 'c:\CTSDolphin\ReConstructDO4\'
-          OnRightButtonClick = btnedtReConstructDO4RightButtonClick
+          Text = 'c:\CTSDolphin\ReConstruct\'
+          OnRightButtonClick = btnedtReConstructRightButtonClick
         end
       end
     end

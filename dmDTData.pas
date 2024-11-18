@@ -168,22 +168,22 @@ heats may be run in any order.
     s := '';
     // Event Number – Up to 5 alpha-numeric characters. Example: 12B ...
     i := qryEvent.FieldByName('EventNum').AsInteger;
-    s := s + IntToStr(i) + ', ';
+    s := s + IntToStr(i) + ',';
     // Event Name – Up to 25 alpha-numeric characters. Example: Men’s 50 Meter Freestyle
     s2 := qryDistance.FieldByName('Caption').AsString + ' ' +
     qryStroke.FieldByName('Caption').AsString;
     s3 := qryEvent.FieldByName('Caption').AsString;
     if Length(s3) > 0 then
       s2 := s2 + ' ' + s3;
-    s := s + s2 + ', ';
+    s := s + s2 + ',';
     // Get Number of Heats
     // Number of Heats – (0-99) Number of expected heats for the given event
     id := qryEvent.FieldByName('EventID').AsInteger;
     i := GetNumberOfHeats(id);
-    s := s + IntToStr(i) + ', ';
+    s := s + IntToStr(i) + ',';
     { TODO -oBSA : Implement Splits for Dolphin Timing }
     // Number of Splits - NOT AVAILABLE IN THIS VERSION.
-    s := s + '0, ';
+    s := s + '0,';
     { Round .... requires db v1.1.5.4.
     * A: ALL  (CTS DOLPHIN - ref F912 ).
     * P: Preliminary (DEFAULT)

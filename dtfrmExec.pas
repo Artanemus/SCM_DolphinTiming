@@ -69,7 +69,10 @@ type
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
     procedure actnPreferencesExecute(Sender: TObject);
+    procedure actnReConstructDO3Execute(Sender: TObject);
+    procedure actnReConstructDO3Update(Sender: TObject);
     procedure actnReConstructDO4Execute(Sender: TObject);
+    procedure actnReConstructDO4Update(Sender: TObject);
     procedure actnSelectSessionExecute(Sender: TObject);
     procedure actnSetDTMeetsFolderExecute(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
@@ -91,7 +94,7 @@ type
     procedure UpdateCaption();
     procedure UpdateEventDetailsLabel();
     procedure DeleteFilesWithWildcard(const APath, APattern: string);
-
+    procedure ReconstructAndExportFiles(fileExtension: string; messageText: string);
   protected
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
@@ -114,6 +117,15 @@ implementation
 
 uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions;
 
+const
+  MSG_CONFIRM_RECONSTRUCT =
+    'This uses the data in the current session to build Dolphin Timing %s files.%sFiles are saved to the EventCSV folder specified in preferences.%sDo you want to perform the reconstruct?';
+  MSG_RECONSTRUCT_COMPLETE = 'Re-construct and export of %s files is complete.';
+  CAPTION_RECONSTRUCT = '%s files ...';
+  DO4_FILE_EXTENSION = 'DO4';
+  DO3_FILE_EXTENSION = 'DO3';
+
+
 procedure TdtExec.actnExportDTCSVExecute(Sender: TObject);
 var
   fn: TFileName;
@@ -127,8 +139,10 @@ begin
   begin
     fn := FileSaveDlgCSV.FileName;
     DTData.BuildCSVEventData(fn); // Build CSV Event Data and save to file.
+    MessageBox(0,
+      PChar('Export of the Dolphin Timing event csv has been completed.'),
+      PChar('Export Event CSV'), MB_ICONINFORMATION or MB_OK);
   end;
-
 end;
 
 procedure TdtExec.actnExportDTCSVUpdate(Sender: TObject);
@@ -198,29 +212,117 @@ begin
   end;
 end;
 
-
+{
 procedure TdtExec.actnReConstructDO4Execute(Sender: TObject);
 var
-SessionID, currEv, currHt: integer;
-sess: string;
+  SessionID, currEv, currHt: integer;
+  sess: string;
+  mr: TModalResult;
 begin
   if DTData.qrysession.Active then
   begin
-    scmGrid.BeginUpdate;
-    scmGrid.DataSource.DataSet.DisableControls;
-    currEv := DTData.qryEvent.FieldByName('EventID').AsInteger;
-    currHt := DTData.qryHeat.FieldByName('HeatID').AsInteger;
-    SessionID := DTData.qrysession.FieldByName('SessionID').AsInteger;
-    // remove the current session DO4 files.
-    sess := Get3Digits(SessionID);
-    DeleteFilesWithWildcard(Settings.DolphinReConstructDO4,sess +  '-*.DO4');
-    // re-contruct the Dolphin Timing DO4 files for this session.
-    ReConstructDO4(SessionID);
-    DTData.LocateEvent(currEv);
-    DTData.LocateHeat(currHt);
-    scmGrid.DataSource.DataSet.EnableControls;
-    scmGrid.EndUpdate;
+    mr := MessageBox(0,
+      PChar('''
+      This uses the data in the current session to build Dolphin Timing DO4 files.
+      Files are saved to the EventCSV folder specified in preferences.
+      Do you want to perform the reconstruct?
+      '''),
+      PChar('Re-construct and export DO4 files...'), MB_ICONQUESTION or
+        MB_YESNO);
+    if isPositiveResult(mr) then
+    begin
+      scmGrid.BeginUpdate;
+      scmGrid.DataSource.DataSet.DisableControls;
+      currEv := DTData.qryEvent.FieldByName('EventID').AsInteger;
+      currHt := DTData.qryHeat.FieldByName('HeatID').AsInteger;
+      SessionID := DTData.qrysession.FieldByName('SessionID').AsInteger;
+      // remove the current session DO4 files.
+      sess := Get3Digits(SessionID);
+      DeleteFilesWithWildcard(Settings.DolphinReConstructDO4, sess + '-*.DO4');
+      // re-contruct the Dolphin Timing DO4 files for this session.
+      ReConstructDO4(SessionID);
+      DTData.LocateEvent(currEv);
+      DTData.LocateHeat(currHt);
+      scmGrid.DataSource.DataSet.EnableControls;
+      scmGrid.EndUpdate;
+      MessageBox(0,
+        PChar('Re-construct and export of DO4 files is complete.'),
+        PChar('DO4 files ...'), MB_ICONINFORMATION or MB_OK);
+    end;
   end;
+end;
+
+procedure TdtExec.actnReConstructDO3Execute(Sender: TObject);
+var
+  SessionID, currEv, currHt: integer;
+  sess: string;
+  mr: TModalResult;
+begin
+  if DTData.qrysession.Active then
+  begin
+    mr := MessageBox(0,
+      PChar('''
+      This uses the data in the current session to build Dolphin Timing DO3 files.
+      Files are saved to the EventCSV folder specified in preferences.
+      Do you want to perform the reconstruct?
+      '''),
+      PChar('Re-construct and export DO3 files...'), MB_ICONQUESTION or
+        MB_YESNO);
+    if isPositiveResult(mr) then
+    begin
+      scmGrid.BeginUpdate;
+      scmGrid.DataSource.DataSet.DisableControls;
+      currEv := DTData.qryEvent.FieldByName('EventID').AsInteger;
+      currHt := DTData.qryHeat.FieldByName('HeatID').AsInteger;
+      SessionID := DTData.qrysession.FieldByName('SessionID').AsInteger;
+      // remove the current session DO3 files.
+      sess := Get3Digits(SessionID);
+      DeleteFilesWithWildcard(Settings.DolphinReConstructDO3, sess + '-*.DO3');
+      // re-contruct the Dolphin Timing DO3 files for this session.
+      ReConstructDO4(SessionID);
+      DTData.LocateEvent(currEv);
+      DTData.LocateHeat(currHt);
+      scmGrid.DataSource.DataSet.EnableControls;
+      scmGrid.EndUpdate;
+      MessageBox(0,
+        PChar('Re-construct and export of DO3 files is complete.'),
+        PChar('DO3 files ...'), MB_ICONINFORMATION or MB_OK);
+    end;
+  end;
+end;
+}
+
+procedure TdtExec.actnReConstructDO4Execute(Sender: TObject);
+begin
+  ReconstructAndExportFiles(DO4_FILE_EXTENSION, 'DO4');
+end;
+
+procedure TdtExec.actnReConstructDO3Execute(Sender: TObject);
+begin
+  ReconstructAndExportFiles(DO3_FILE_EXTENSION, 'DO3');
+end;
+
+
+procedure TdtExec.actnReConstructDO3Update(Sender: TObject);
+begin
+  if Assigned(DTData) then
+  begin
+    if not TAction(Sender).Enabled then
+      TAction(Sender).Enabled := true;
+  end
+  else
+      TAction(Sender).Enabled := false;
+end;
+
+procedure TdtExec.actnReConstructDO4Update(Sender: TObject);
+begin
+  if Assigned(DTData) then
+  begin
+    if not TAction(Sender).Enabled then
+      TAction(Sender).Enabled := true;
+  end
+  else
+      TAction(Sender).Enabled := false;
 end;
 
 procedure TdtExec.actnSelectSessionExecute(Sender: TObject);
@@ -447,6 +549,47 @@ begin
   end;
   UpdateCaption;
 end;
+
+procedure TdtExec.ReconstructAndExportFiles(fileExtension: string; messageText:
+  string);
+var
+  SessionID, currEv, currHt: integer;
+  sessionPrefix: string;
+  mr: TModalResult;
+begin
+  if DTData.qrysession.Active then
+  begin
+    mr := MessageBox(0,
+      PChar(Format(MSG_CONFIRM_RECONSTRUCT, [fileExtension, sLineBreak,
+        sLineBreak])),
+      PChar(Format(CAPTION_RECONSTRUCT, [fileExtension])), MB_ICONQUESTION or
+      MB_YESNO);
+    if isPositiveResult(mr) then
+    begin
+      scmGrid.BeginUpdate;
+      scmGrid.DataSource.DataSet.DisableControls;
+      currEv := DTData.qryEvent.FieldByName('EventID').AsInteger;
+      currHt := DTData.qryHeat.FieldByName('HeatID').AsInteger;
+      SessionID := DTData.qrysession.FieldByName('SessionID').AsInteger;
+      sessionPrefix := Get3Digits(SessionID);
+      DeleteFilesWithWildcard(Settings.DolphinReConstruct + fileExtension,
+        sessionPrefix + '-*.%' + fileExtension);
+      if messageText = 'DO3' then
+        ReConstructDO3(SessionID)
+      else
+        ReConstructDO4(SessionID);
+      DTData.LocateEvent(currEv);
+      DTData.LocateHeat(currHt);
+      scmGrid.DataSource.DataSet.EnableControls;
+      scmGrid.EndUpdate;
+      MessageBox(0,
+        PChar(Format(MSG_RECONSTRUCT_COMPLETE, [fileExtension])),
+        PChar(Format(CAPTION_RECONSTRUCT, [fileExtension])), MB_ICONINFORMATION
+          or MB_OK);
+    end;
+  end;
+end;
+
 
 procedure TdtExec.SaveToSettings;
 begin

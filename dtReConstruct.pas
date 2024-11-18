@@ -5,13 +5,18 @@ interface
 uses dmSCM, dmDTData, System.SysUtils, System.Classes, system.Hash,
 DateUtils, variants, SCMDefines, Data.DB, dtuSetting;
 
+procedure ReConstructDO3(SessionID: integer);
 procedure ReConstructDO4(SessionID: integer);
 function Get3Digits(i: integer): string;
 function Get4Digits(i: integer): string;
 
 implementation
 
-var seed: integer = 1;
+var
+seed: integer = 1;
+
+type
+dtFileType = (dtUnknown, dtDO3, dtDO4);
 
 
 function GetStringListChecksum(sl: TStringList; hashLength: Integer = 8): string;
@@ -86,7 +91,7 @@ begin
   // Step 2: Generate a seven-digit hex hash (mod a large prime to constrain size)
   combinedValue := combinedValue mod 9999999;
   // Step 3: Convert to a hexadecimal string, padded to ensure seven digits
-  Result := IntToHex(combinedValue, 7);
+  Result := UpperCase(IntToHex(combinedValue, 7));
 end;
 
 function GetGenderTypeStr(AEventID: integer): string;
@@ -126,13 +131,12 @@ begin
   end;
 end;
 
-
-procedure TestDataINDV(sl: TStringList);
+procedure TestDataINDV(sl: TStringList; adtFileType: dtFileType);
 var
-lanevalue: variant;
-s, lane: string;
-rt: TTime;
-msec: double;
+  lanevalue: variant;
+  s, lane: string;
+  rt: TTime;
+  msec: double;
 begin
   if DTData.qryINDV.IsEmpty then exit;
 
@@ -148,18 +152,23 @@ begin
 
     rt := TimeOf(DTData.qryINDV.FieldByName('RaceTime').AsDateTime);
     msec := TimeToMilliseconds(rt) / 1000.00;
+    case adtFileType of
+      dtUnknown: ;
+      dtDO3: ;
+      dtDO4: lane := 'Lane' + lane;
+    end;
 
     if msec <> 0.0 then
-      s := 'Lane' + lane + ';' + Format('%0.3f', [msec]) + ';;'
+      s := lane + ';' + Format('%0.3f', [msec]) + ';;'
     else
-      s := 'Lane' + lane + ';;;'; // or some default value
+      s := lane + ';;;'; // or some default value
 
     sl.Add(s);
     DTData.qryINDV.next;
   end;
 end;
 
-procedure TestDataTEAM(sl: TStringList);
+procedure TestDataTEAM(sl: TStringList; adtFileType: dtFileType);
 var
 lanevalue: variant;
 s, lane: string;
@@ -181,11 +190,16 @@ begin
 
     rt := TimeOf(DTData.qryTEAM.FieldByName('RaceTime').AsDateTime);
     msec := TimeToMilliseconds(rt) / 1000.00;
+    case adtFileType of
+      dtUnknown: ;
+      dtDO3: ;
+      dtDO4: lane := 'Lane' + lane;
+    end;
 
     if msec <> 0.0 then
-      s := 'Lane' + lane + ';' + Format('%8.3f', [msec]) + ';;'
+      s := lane + ';' + Format('%8.3f', [msec]) + ';;'
     else
-      s := 'Lane' + lane + ';0.000;;'; // or some default value
+      s := lane + ';0.000;;'; // or some default value
 
     sl.Add(s);
     inc(seed);
@@ -194,13 +208,15 @@ begin
 end;
 
 procedure ReConstructHeat(SessionID, eventNum: integer; gender: string;
-   aEventType: scmEventType; sl: TStringList);
+   aEventType: scmEventType; sl: TStringList; adtFileType: dtFileType);
 var
   HeatNum: integer;
   s, fn, id, sess, ev, ht: string;
   success: boolean;
 begin
   if DTData.qryHeat.IsEmpty then exit;
+  if adtFileType = dtUnknown then exit;
+
   // Assert the state of the local param 'seed' (int) ...
   if (seed > 999) or (seed = 0) then seed := 1;
   DTData.qryHeat.first;
@@ -213,9 +229,9 @@ begin
     sl.Add(s);
     // body - lanes and timekeepers times.
     if aEventType = etINDV then
-      TestDataINDV(sl)
+      TestDataINDV(sl, adtFileType)
     else if aEventType = etTEAM then
-      TestDataTEAM(sl);
+      TestDataTEAM(sl, adtFileType);
     // last line - footer. - checksum
     s := UpperCase(GetStringListChecksum(sl, 16));
     // ALT METHOD : THashSHA2.GetHashString(sl.Text, SHA256);
@@ -228,10 +244,22 @@ begin
       // pad numbers with leading zeros.
       ht := Get3Digits(HeatNum);
       ev := Get3Digits(EventNum);
-      id := Get4Digits(seed);
       sess := Get3Digits(SessionID);
-      fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
-      fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstructDO4) + fn;
+      case adtFileType of
+        dtUnknown:
+          fn := '';
+        dtDO3:
+          begin
+          id := CreateHash(SessionID, EventNum, HeatNum);
+          fn := sess + '-' + ev + '-' + id + '.DO3';
+          end;
+        dtDO4:
+        begin
+          id := Get4Digits(seed);
+          fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
+        end;
+      end;
+      fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstruct) + fn;
       // trap for exception error.
       if fileExists(fn) then
         success := DeleteFile(fn);
@@ -246,7 +274,7 @@ begin
   end;
 end;
 
-procedure ReConstructEvent(SessionID: integer; sl: TStringList);
+procedure ReConstructEvent(SessionID: integer; sl: TStringList; adtFileType: dtFileType);
 var
 i, EventNum: integer;
 gender: string;
@@ -263,7 +291,7 @@ begin
     // NOTE: GENDER >> A=boys, B=girls, X=mixed.
     gender := GetGenderTypeStr(i);
     // R e - c o n s t r u c t   D O 4 .
-    ReConstructHeat(SessionID, EventNum, gender, aEventType, sl);
+    ReConstructHeat(SessionID, EventNum, gender, aEventType, sl, adtFileType);
     DTData.qryEvent.next;
   end;
 end;
@@ -276,7 +304,19 @@ begin
   // qrySession is cued, ready to process.
   seed := 1;
   sl := TStringList.Create;
-  ReConstructEvent(SessionID, sl);
+  ReConstructEvent(SessionID, sl, dtDO4);
+  sl.Free;
+end;
+
+procedure ReConstructDO3(SessionID: integer);
+var
+sl: TStringList;
+begin
+  // Core DTData tables are Master-Detail schema.
+  // qrySession is cued, ready to process.
+  seed := 1;
+  sl := TStringList.Create;
+  ReConstructEvent(SessionID, sl, dtDO3);
   sl.Free;
 end;
 

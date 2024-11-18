@@ -14,7 +14,7 @@ type
     btnedtAppData: TButtonedEdit;
     btnedtEventCSV: TButtonedEdit;
     btnedtMeetFolder: TButtonedEdit;
-    btnedtReConstructDO4: TButtonedEdit;
+    btnedtReConstruct: TButtonedEdit;
     chkbxEnableManualMeanTime: TCheckBox;
     chkbxRenameSession: TCheckBox;
     lblAppCaption1: TLabel;
@@ -37,7 +37,7 @@ type
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtEventCSVRightButtonClick(Sender: TObject);
     procedure btnedtMeetFolderRightButtonClick(Sender: TObject);
-    procedure btnedtReConstructDO4RightButtonClick(Sender: TObject);
+    procedure btnedtReConstructRightButtonClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -126,26 +126,26 @@ begin
   end;
 end;
 
-procedure TdlgOptions.btnedtReConstructDO4RightButtonClick(Sender: TObject);
+procedure TdlgOptions.btnedtReConstructRightButtonClick(Sender: TObject);
 var
 ft: TFileTypeItem;
 begin
   // browse for export of SCM to Dolphin Timing DO4 folder.
   BrowseFolderDlg.DefaultFolder :=
-    IncludeTrailingPathDelimiter(btnedtReConstructDO4.Text) ;
+    IncludeTrailingPathDelimiter(btnedtReConstruct.Text) ;
   BrowseFolderDlg.DefaultExtension := '.CSV';
   BrowseFolderDlg.OkButtonLabel := 'Select Folder';
   BrowseFolderDlg.FileTypes.Clear;
   ft := BrowseFolderDlg.FileTypes.Add;
-  ft.DisplayName :=  'Dolphin Timing meets DO4';
-  ft.FileMask :=   '*.DO4';
+  ft.DisplayName :=  'Dolphin Timing meets file.';
+  ft.FileMask :=   '*.DO4;*.DO3';
   ft := BrowseFolderDlg.FileTypes.Add;
   ft.DisplayName :=  'All Files';
   ft.FileMask :=   '*.*';
-  BrowseFolderDlg.Title := 'Select re-construct DO4 folder.';
+  BrowseFolderDlg.Title := 'Select re-construct folder.';
   if BrowseFolderDlg.Execute then
   begin
-    btnedtReConstructDO4.Text := BrowseFolderDlg.FileName;
+    btnedtReConstruct.Text := BrowseFolderDlg.FileName;
   end;
 end;
 
@@ -170,7 +170,7 @@ begin
   btnedtMeetFolder.Text := Settings.DolphinMeetsFolder;
   btnedtEventCSV.Text := Settings.DolphinEventFolder;
   btnedtAppData.Text := Settings.DolphinAppData;
-  btnedtReConstructDO4.Text := Settings.DolphinReConstructDO4;
+  btnedtReConstruct.Text := Settings.DolphinReConstruct;
 end;
 
 procedure TdlgOptions.LoadSettings;
@@ -191,7 +191,7 @@ begin
   Settings.DolphinMeetsFolder := btnedtMeetFolder.Text;
   Settings.DolphinEventFolder := btnedtEventCSV.Text;
   Settings.DolphinAppData := btnedtAppData.Text;
-  Settings.DolphinReConstructDO4 := btnedtReConstructDO4.Text;
+  Settings.DolphinReConstruct := btnedtReConstruct.Text;
 
   Settings.SaveToFile();
 end;
