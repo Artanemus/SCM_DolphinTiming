@@ -27,7 +27,7 @@ uses
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
-  Vcl.PlatformVclStylesActnCtrls;
+  Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls;
 
 type
   TdtExec = class(TForm)
@@ -48,8 +48,8 @@ type
     PickDTFolderDlg: TFileOpenDialog;
     sbtnSync: TSpeedButton;
     scmGrid: TDBAdvGrid;
-    SpeedButton1: TSpeedButton;
-    SpeedButton2: TSpeedButton;
+    spbtnAutoConnect: TSpeedButton;
+    spbtnPost: TSpeedButton;
     vimgHeatNum: TVirtualImage;
     vimgHeatStatus: TVirtualImage;
     vimgRelayBug: TVirtualImage;
@@ -62,9 +62,19 @@ type
     actnPreferences: TAction;
     actnImportDO4: TAction;
     actnImportDO3: TAction;
-    pnlFooter: TPanel;
     pnlSCM: TPanel;
     pnlDT: TPanel;
+    actnSaveSession: TAction;
+    actnLoadSession: TAction;
+    rpnlBody: TRelativePanel;
+    pnlTool1: TPanel;
+    pnlTool2: TPanel;
+    stackpnlTool2: TStackPanel;
+    ShapeSpacer: TShape;
+    actnAbout: TAction;
+    actnSync: TAction;
+    actnConnect: TAction;
+    actnPost: TAction;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
@@ -75,6 +85,7 @@ type
     procedure actnReConstructDO4Update(Sender: TObject);
     procedure actnSelectSessionExecute(Sender: TObject);
     procedure actnSetDTMeetsFolderExecute(Sender: TObject);
+    procedure actnSyncExecute(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
@@ -82,10 +93,10 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure sbtnSyncClick(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
-    fSessionID: integer;
     fDolphinMeetsFolder: string;
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
@@ -99,7 +110,6 @@ type
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
   public
-    property SessionID: integer read FSessionID write FSessionID;
 
   const
   AcceptedTimeKeeperDeviation = 0.3;
@@ -332,10 +342,10 @@ var
 begin
   dlg := TSessionPicker.Create(Self);
   // the picker will locate to the given session id.
-  dlg.SessionID := DTData.qrySession.FieldByName('SessionID').AsInteger;
+  dlg.rtnSessionID := DTData.qrySession.FieldByName('SessionID').AsInteger;
   mr := dlg.ShowModal;
-  if IsPositiveResult(mr) and (dlg.SessionID > 0) then
-    SetSession(dlg.SessionID);
+  if IsPositiveResult(mr) and (dlg.rtnSessionID > 0) then
+    SetSession(dlg.rtnSessionID);
   dlg.Free;
   UpdateCaption;
 end;
@@ -351,6 +361,13 @@ begin
   // Make the path persistent in JSON.
   fDolphinMeetsFolder := fn;
   // SavePreferencesToJSON.
+end;
+
+procedure TdtExec.actnSyncExecute(Sender: TObject);
+begin
+  LoadSession(DTData.ActiveSessionID, Settings.DolphinMeetsFolder, pBar);
+  DTData.LocateEvent(0);
+  DTData.LocateHeat(0);
 end;
 
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
@@ -411,17 +428,9 @@ end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
 begin
-  fSessionID := 0;
-  // C R E A T E   T H E   D A T A M O D U L E .
-  if NOT Assigned(DTData) then
-    DTData := TDTData.Create(Self);
-
   // A Class that uses JSON to read and write application configuration .
   // Created on bootup by dtfrmBoot.
-  {if Settings = nil then
-    Settings := TPrgSetting.Create; }
   LoadSettings;
-
   {
     Sort out the menubar font height - so tiny!
 
@@ -436,7 +445,6 @@ begin
     the DrawText methods of the TCustomMenuItem and TCustomMenuButton
     classes, using the values of the Screen.MenuFont to draw the menu
   }
-
   Screen.MenuFont.Name := 'Segoe UI Semibold';
   Screen.MenuFont.Size := 12;
   actnManager.Style := PlatformVclStylesStyle;
@@ -450,14 +458,17 @@ end;
 
 procedure TdtExec.FormShow(Sender: TObject);
 begin
-  if fSessionID = 0 then
+  if DTData.qrySession.IsEmpty then
   begin
     pnlSCM.Visible := false;
     pnlDT.Visible := false;
     actnSelectSession.Execute;
-  end;
+  end
+  else
+  begin
     pnlSCM.Visible := true;
     pnlDT.Visible := true;
+  end;
 end;
 
 procedure TdtExec.LoadFromSettings;
@@ -541,12 +552,6 @@ end;
 procedure TdtExec.Prepare(AConnection: TFDConnection; aSessionID: Integer);
 begin
   FConnection := AConnection;
-  if Assigned(DTData) then
-  begin
-    DTData.Connection := FConnection;
-    DTData.SessionID := aSessionID;
-    DTData.ActivateData;
-  end;
   UpdateCaption;
 end;
 
@@ -595,6 +600,23 @@ procedure TdtExec.SaveToSettings;
 begin
   Settings.DolphinMeetsFolder := fDolphinMeetsFolder;
   Settings.SaveToFile();
+end;
+
+procedure TdtExec.sbtnSyncClick(Sender: TObject);
+begin
+  // sync DT DO data with the current session - event - heat
+  {
+    1. get sessionID
+    2. check session current in memory db tables else load
+    3. get event + Heat
+    4. locate event ... locate heat ...  chech grid ui state
+    5. draw doodles if needed.
+  }
+  // - fSessionID;
+  LoadSession(DTData.ActiveSessionID, Settings.DolphinMeetsFolder, pBar);
+  DTData.LocateEvent(0);
+  DTData.LocateHeat(0);
+
 end;
 
 procedure TdtExec.SetSession(ASessionID: integer);

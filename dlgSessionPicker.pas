@@ -27,7 +27,7 @@ type
   private
     fSessionID: integer;
   public
-    property SessionID: integer read FSessionID write FSessionID;
+    property rtnSessionID: integer read FSessionID write FSessionID;
   end;
 
 var
@@ -86,7 +86,7 @@ begin
         success := DTData.qrySessionList.Locate('SessionID', fSessionID, SearchOptions);
         if not success then
         begin
-//          DTData.qrySessionList.First;
+          DTData.qrySessionList.First;
         end;
     end;
   end;

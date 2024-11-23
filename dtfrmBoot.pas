@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, System.Actions,
   Vcl.ActnList, Vcl.Imaging.pngimage, Vcl.WinXCtrls, Vcl.StdCtrls, dmSCM,
-  dtuSetting, SCMDefines, SCMSimpleConnect;
+  dtuSetting, SCMDefines, SCMSimpleConnect, dmDTData;
 
 type
   TdtBoot = class(TForm)
@@ -179,15 +179,25 @@ dlg: TdtExec;
 begin
   if Assigned(SCM) and SCM.IsActive and SCM.scmConnection.Connected then
   begin
-    dlg := TdtExec.Create(Self);
-    // TFDConnection, SessionID.
-    dlg.Prepare(SCM.scmConnection, fSessionID); // init Dolphin Timing.
-    Visible := false; // hide boot form.
-    dlg.ShowModal(); // Execute - Dolphin Timing
-    dlg.Free;
-    if Assigned(SCM) then  // handle data module.
-      FreeAndNil(SCM);
-    Visible := true; // redundant?
+    // C R E A T E   T H E   D T  D A T A M O D U L E .
+    if NOT Assigned(DTData) then
+      DTData := TDTData.Create(Self);
+
+    if Assigned(DTData) then
+    begin
+      DTData.Connection := SCM.scmConnection;
+      DTData.ActivateData; // ... and cue-to most recent session.
+      dlg := TdtExec.Create(Self);
+      dlg.Prepare(SCM.scmConnection, DTData.ActiveSessionID); // init Dolphin Timing.
+      Visible := false; // hide boot form.
+      dlg.ShowModal(); // Execute - Dolphin Timing
+      dlg.Free;
+    end;
+
+    // F R E E   D T   D A T A M O D U L E .
+    FreeAndNil(DTData);
+
+    Visible := true;
     ExecuteAction(actnDisconnect);
     Close();  // terminate application ....
   end;

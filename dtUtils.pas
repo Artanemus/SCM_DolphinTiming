@@ -50,7 +50,11 @@ procedure ExtractFileNameFieldsDO4(const InputStr:
 //procedure ProcessDO3Files(const ADirectory: string; pBar: TProgressBar);
 
 Procedure ProcessDTFiles(const ADirectory: string; pBar: TProgressBar);
-
+procedure LoadSession(aSessionID: integer; const ADirectory: string; pBar: TProgressBar);
+// function HasSession(aSessionID: integer);
+function GetFileType(const ADirectory: string): integer;
+// procedure SaveDTSession();
+// procedure LoadDTSession();
 
 // ---------------------------------------------------
 
@@ -400,12 +404,28 @@ begin
   RaceID := Copy(Fields[3], 1, Pos('.', Fields[2]) - 1);
 end;
 
-procedure ProcessDO4Files(const ADirectory: string; pBar: TProgressBar);
+function ExtractSessionField(const InputStr: string): integer;
+var
+  Fields: TArray<string>;
+begin
+  result := 0;
+  // Split string by the '-' character
+  Fields := SplitString(InputStr, '-');
+  if Length(Fields) > 1 then
+  try
+    // Extract the first field - SessionID
+    result := StrToInt(Fields[0]);
+  except on E: Exception do
+    result := 0;
+  end;
+end;
+
+procedure ProcessDO4Files(const ADirectory: string; pBar: TProgressBar; SessionID: integer = 0);
 var
   LList: TStringDynArray;
   LSearchOption: TSearchOption;
   fileMask: string;
-  I: integer;
+  I, ID: integer;
 begin
   fileMask := '*.DO4';
   dtFileType := 1;
@@ -413,14 +433,20 @@ begin
   { Select the search option }
   // do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
-
   try
     { For files use GetFiles method }
     LList := TDirectory.GetFiles(ADirectory, fileMask, LSearchOption);
     { Extract DATA and Populate the memory table. }
     for I := 0 to Length(LList) - 1 do
     begin
-      GetDT(LList[I]);
+      if (SessionID = 0) then
+        GetDT(LList[I])
+      else
+      begin
+        ID := ExtractSessionField(LList[I]);
+        if (ID = SessionID) then
+          GetDT(LList[I]);
+      end;
       // update progress
       pBar.Position := Trunc(Ceil(i / (Length(LList) - 1)) * 100);
       pBar.RePaint;
@@ -433,12 +459,12 @@ begin
 
 end;
 
-procedure ProcessDO3Files(const ADirectory: string; pBar: TProgressBar);
+procedure ProcessDO3Files(const ADirectory: string; pBar: TProgressBar; SessionID: integer = 0);
 var
   LList: TStringDynArray;
   LSearchOption: TSearchOption;
   fileMask: string;
-  I: integer;
+  I, ID: integer;
 begin
   fileMask := '*.DO3';
   dtFileType := 0;
@@ -454,7 +480,14 @@ begin
     { Extract DATA and Populate the memory table. }
     for I := 0 to Length(LList) - 1 do
     begin
-      GetDT(LList[I]);
+      if (SessionID = 0) then
+        GetDT(LList[I])
+      else
+      begin
+        ID := ExtractSessionField(LList[I]);
+        if (ID = SessionID) then
+          GetDT(LList[I]);
+      end;
       // update progress
       pBar.Position := Trunc(Ceil(i / (Length(LList) - 1)) * 100);
       pBar.RePaint;
@@ -489,8 +522,8 @@ begin
 
   if Assigned(pBar) then pBar.Position := 0;
 
-  ProcessDO3Files(ADirectory, pBar);
-//  ProcessDO4Files(ADirectory, pBar);
+  ProcessDO3Files(ADirectory, pBar); // assigns filetype 0
+  ProcessDO4Files(ADirectory, pBar); // assigns filetype 1
 
   DTData.tblDT.First;
 
@@ -505,6 +538,93 @@ begin
   DTData.tblDTNoodle.EnableControls;
 
   end;
+
+procedure LoadSession(aSessionID: integer; const ADirectory: string; pBar: TProgressBar);
+var
+  ft: integer;
+begin
+  // clear all data records ....
+  DTData.tblDT.EmptyDataSet;
+  DTData.tblDTHeat.EmptyDataSet;
+  DTData.tblDTLane.EmptyDataSet;
+  DTData.tblDTNoodle.EmptyDataSet;
+
+  DTData.tblDT.DisableControls;
+  DTData.tblDTHeat.DisableControls;
+  DTData.tblDTLane.DisableControls;
+  DTData.tblDTNoodle.DisableControls;
+
+  // Detach from Master Detail ...
+  // For recordcount and ID number assignment.
+  DTData.tblDTHeat.MasterSource := nil;
+  DTData.tblDTLane.MasterSource := nil;
+  DTData.tblDTNoodle.MasterSource := nil;
+
+  if Assigned(pBar) then pBar.Position := 0;
+  ft := GetFileType(ADirectory);
+  if (ft > -1) then
+  begin
+    if (ft = 0) then
+      ProcessDO3Files(ADirectory, pBar, aSessionID) // assigns filetype 0
+    else if (ft = 1) then
+      ProcessDO4Files(ADirectory, pBar, aSessionID); // assigns filetype 1
+  end
+  else
+  begin
+    MessageBox(0, PChar('Only one DT filetype allowed per folder!'),
+      PChar('Get filetype of directory...'), MB_ICONERROR or MB_OK);
+  end;
+
+  DTData.tblDT.First;
+
+  // re-establish Master Detail ...
+  DTData.tblDTHeat.MasterSource := DTData.dsDT;
+  DTData.tblDTLane.MasterSource := DTData.dsDTHeat;
+  DTData.tblDTNoodle.MasterSource := DTData.dsDTLane;
+
+  DTData.tblDT.EnableControls;
+  DTData.tblDTHeat.EnableControls;
+  DTData.tblDTLane.EnableControls;
+  DTData.tblDTNoodle.EnableControls;
+end;
+
+function GetFileType(const ADirectory: string): integer;
+var
+  LList: TStringDynArray;
+  LSearchOption: TSearchOption;
+  fileMask: string;
+  I: integer;
+  foundDO3, foundDO4: boolean;
+begin
+  fileMask := '*.DO?';
+  foundDO3 := false;
+  foundDO4 := false;
+  result := -1;
+  // do not do recursive extract into subfolders
+  LSearchOption := TSearchOption.soTopDirectoryOnly;
+  try
+    { For files use GetFiles method }
+    LList := TDirectory.GetFiles(ADirectory, fileMask, LSearchOption);
+    { Extract DATA and Populate the memory table. }
+    for I := 0 to Length(LList) - 1 do
+    begin
+      if LList[I].Contains('.DO3') then
+        foundDO3 := true;
+      if LList[I].Contains('.DO4') then
+        foundDO4 := true;
+    end;
+  except
+    { Catch the possible exceptions }
+    MessageBox(0, PChar('Incorrect path or search mask'),
+      PChar('Get file type of directory...'), MB_ICONERROR or MB_OK);
+  end;
+  if foundDO3 and not foundDO4 then
+    result := 0
+  else if foundDO4 and not foundDO3 then
+    result := 1;
+end;
+
+
 
 
 end.

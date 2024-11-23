@@ -29,7 +29,7 @@ type
     dsTEAMEntrant: TDataSource;
     imgcolDT: TImageCollection;
     vimglistDTEvent: TVirtualImageList;
-    qryGetCurrentSessionID: TFDQuery;
+    qryNearestSessionID: TFDQuery;
     tblDTNoodle: TFDMemTable;
     qryDistance: TFDQuery;
     qryStroke: TFDQuery;
@@ -98,6 +98,12 @@ type
     tblDTNoodleLaneNumber: TIntegerField;
     FDStanStorageBinLink1: TFDStanStorageBinLink;
     vimglistMenu: TVirtualImageList;
+    qrySessionListSessionID: TFDAutoIncField;
+    qrySessionListCaption: TWideStringField;
+    qrySessionListSessionStart: TSQLTimeStampField;
+    qrySessionListClosedDT: TSQLTimeStampField;
+    qrySessionListSwimClubID: TIntegerField;
+    qrySessionListSessionStatusID: TIntegerField;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure qryEventAfterScroll(DataSet: TDataSet);
@@ -105,9 +111,9 @@ type
   private
     { Private declarations }
     FConnection: TFDConnection;
-    fSessionID: integer;
     fDTDataIsActive: Boolean;
     procedure BuildDTData;
+    function GetActiveSessionID: integer;
 
   public
     { Public declarations }
@@ -116,13 +122,15 @@ type
 
     procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
+    function LocateSession(ASessionID: integer): boolean;
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
+    function LocateNearestSession(aDate: TDateTime): integer;
 
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
     property IsActive: Boolean read fDTDataIsActive write fDTDataIsActive;
-    property SessionID: integer read fSessionID write fSessionID;
+    property ActiveSessionID: integer read GetActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
 
   end;
@@ -136,7 +144,7 @@ implementation
 
 {$R *.dfm}
 
-uses System.Variants;
+uses System.Variants, System.DateUtils;
 
 procedure TDTData.BuildCSVEventData(AFileName: string);
 var
@@ -234,6 +242,7 @@ begin
 
 end;
 
+
 function TDTData.LocateEvent(AEventID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
@@ -256,6 +265,38 @@ begin
   SearchOptions := [];
   if dsHeat.DataSet.Active then
       result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateNearestSession(aDate: TDateTime): integer;
+begin
+  result := 0;
+  // find the session with 'aDate' or bestfit.
+  qryNearestSessionID.Connection := fConnection;
+  qryNearestSessionID.ParamByName('ADATE').AsDateTime := DateOf(aDate);
+  qryNearestSessionID.Prepare;
+  qryNearestSessionID.Open;
+  if not qryNearestSessionID.IsEmpty then
+   result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
+end;
+
+function TDTData.LocateSession(ASessionID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (ASessionID = 0) then exit;
+  SearchOptions := [];
+  if dsSession.DataSet.Active then
+      result := dsSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+end;
+
+function TDTData.GetActiveSessionID: integer;
+begin
+  result := 0;
+  if not fDTDataIsActive then exit;
+  if qrySession.Active and not qrySession.IsEmpty then
+    result := qrySession.FieldByName('SessionID').AsInteger;
 end;
 
 function TDTData.GetNumberOfHeats(AEventID: integer): integer;
@@ -298,40 +339,40 @@ begin
 
   if Assigned(fConnection) and fConnection.Connected then
   begin
-    if fSessionID = 0 then
-    begin
-      // find the current session (today's date) or bestfit.
-      qryGetCurrentSessionID.Connection := fConnection;
-      qryGetCurrentSessionID.Open;
-      if not qryGetCurrentSessionID.IsEmpty then
-        fSessionID := qryGetCurrentSessionID.FieldByName('SessionID').AsInteger;
-    end;
+    // GRAND MASTER.
+    qrySwimClub.Connection := fConnection;
+    qrySwimClub.Active;
+
+    qrySessionList.Connection := fConnection;
+    qrySessionList.Active;
+
+    if qrySessionList.Active and not qrySessionList.IsEmpty then
+      qrySessionList.First;
+
     // setup DB params and master - detail
-    if (fSessionID <> 0) then
+    qrySession.Connection := fConnection;
+    qryEvent.Connection := fConnection;
+    qryDistance.Connection := fConnection;
+    qryStroke.Connection := fConnection;
+    qryHeat.Connection := fConnection;
+    qryINDV.Connection := fConnection;
+    qryTEAM.Connection := fConnection;
+    qryTEAMEntrant.Connection := fConnection;
+    qrySession.Open;
+
+    if qrySwimClub.Active and qrySession.Active then
     begin
-      qrySession.Connection := fConnection;
-      qryEvent.Connection := fConnection;
-      qryDistance.Connection := fConnection;
-      qryStroke.Connection := fConnection;
-      qryHeat.Connection := fConnection;
-      qryINDV.Connection := fConnection;
-      qryTEAM.Connection := fConnection;
-      qryTEAMEntrant.Connection := fConnection;
-      qrySession.ParamByName('SESSIONID').AsInteger := fSessionID;
-      qrySession.Prepare;
-      qrySession.Open;
-      if qrySession.Active then
-      begin
-        qryEvent.Open;
-        qryDistance.Open;
-        qryStroke.Open;
-        qryHeat.Open;
-        qryINDV.Open;
-        qryTEAM.Open;
-        qryTEAMEntrant.Open;
-        fDTDataIsActive := true;
-      end;
+      qrySession.First;
+      qryEvent.Open;
+      qryDistance.Open;
+      qryStroke.Open;
+      qryHeat.Open;
+      qryINDV.Open;
+      qryTEAM.Open;
+      qryTEAMEntrant.Open;
+      fDTDataIsActive := true;
     end;
+
   end;
 end;
 
@@ -450,7 +491,6 @@ end;
 procedure TDTData.DataModuleCreate(Sender: TObject);
 begin
   fDTDataIsActive := false;
-  fSessionID := 0;
   FConnection := nil;
 end;
 
@@ -495,9 +535,6 @@ begin
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
   tblDTLane.LoadFromFile(s + 'DTLane.fsBinary');
 end;
-
-
-
 
 
 end.

@@ -3,9 +3,9 @@ object SessionPicker: TSessionPicker
   Top = 0
   BorderStyle = bsDialog
   BorderWidth = 2
-  Caption = 'Select swimming session ...'
+  Caption = 'Select the SwimClubMeet swimming session ...'
   ClientHeight = 482
-  ClientWidth = 501
+  ClientWidth = 546
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,7 +21,7 @@ object SessionPicker: TSessionPicker
   object pnlHeader: TPanel
     Left = 0
     Top = 0
-    Width = 501
+    Width = 546
     Height = 65
     Margins.Left = 0
     Margins.Top = 0
@@ -30,6 +30,7 @@ object SessionPicker: TSessionPicker
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitWidth = 501
     object dbtxtClubName: TDBText
       Left = 0
       Top = 7
@@ -52,14 +53,15 @@ object SessionPicker: TSessionPicker
   object pnlFooter: TPanel
     Left = 0
     Top = 428
-    Width = 501
+    Width = 546
     Height = 54
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitWidth = 501
     object btnOk: TButton
-      Left = 387
-      Top = 9
+      Left = 455
+      Top = 6
       Width = 91
       Height = 35
       Caption = 'Ok'
@@ -68,8 +70,8 @@ object SessionPicker: TSessionPicker
       OnClick = btnOkClick
     end
     object btnCancel: TButton
-      Left = 282
-      Top = 9
+      Left = 350
+      Top = 6
       Width = 91
       Height = 35
       Caption = 'Cancel'
@@ -91,15 +93,16 @@ object SessionPicker: TSessionPicker
   object pnlBody: TPanel
     Left = 0
     Top = 65
-    Width = 501
+    Width = 546
     Height = 363
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitWidth = 501
     object dbgridSession: TDBGrid
       Left = 0
       Top = 0
-      Width = 501
+      Width = 546
       Height = 363
       Align = alClient
       DataSource = DTData.dsSessionList
@@ -116,37 +119,23 @@ object SessionPicker: TSessionPicker
         item
           Expanded = False
           FieldName = 'SessionID'
-          Width = 0
+          Title.Alignment = taCenter
+          Title.Caption = 'ID'
+          Width = 50
           Visible = True
         end
         item
           Expanded = False
           FieldName = 'SessionStart'
-          Width = 154
+          Title.Caption = 'Session Date.Time'
+          Width = 150
           Visible = True
         end
         item
           Expanded = False
           FieldName = 'Caption'
+          Title.Caption = 'Description'
           Width = 300
-          Visible = True
-        end
-        item
-          Expanded = False
-          FieldName = 'ClosedDT'
-          Width = 0
-          Visible = True
-        end
-        item
-          Expanded = False
-          FieldName = 'SwimClubID'
-          Width = 0
-          Visible = True
-        end
-        item
-          Expanded = False
-          FieldName = 'SessionStatusID'
-          Width = 0
           Visible = True
         end>
     end
