@@ -75,6 +75,10 @@ type
     actnSync: TAction;
     actnConnect: TAction;
     actnPost: TAction;
+    lblMetersRelay: TLabel;
+    lblSessionDate: TLabel;
+    btnPickEvent: TButton;
+    btnPickDTFile: TButton;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
@@ -92,16 +96,23 @@ type
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormHide(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure sbtnSyncClick(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
     fDolphinMeetsFolder: string;
+    { When flag is set...
+        Non-Aware UI controls are re-calculated and re-painted.
+        Non-Data-Aware labels are re-assigned and re-displayed.
+      FALSE : default value.
+      Must be set to false for data requeries else UI responds slowly.
+    }
+    fFlagUIUpdate: boolean;
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
     procedure SaveToSettings; // JSON Program Settings
-    procedure SetSession(ASessionID: integer);
     procedure UpdateCaption();
     procedure UpdateEventDetailsLabel();
     procedure DeleteFilesWithWildcard(const APath, APattern: string);
@@ -109,6 +120,7 @@ type
   protected
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
+    procedure MSG_UpdateUI(var Msg: TMessage); message SCM_UPDATEUI;
   public
 
   const
@@ -345,9 +357,14 @@ begin
   dlg.rtnSessionID := DTData.qrySession.FieldByName('SessionID').AsInteger;
   mr := dlg.ShowModal;
   if IsPositiveResult(mr) and (dlg.rtnSessionID > 0) then
-    SetSession(dlg.rtnSessionID);
+  begin
+    DTData.MSG_Handle := 0;
+    DTData.ActiveSessionID := dlg.rtnSessionID;
+    DTData.MSG_Handle := Self.Handle;
+  end;
   dlg.Free;
   UpdateCaption;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.actnSetDTMeetsFolderExecute(Sender: TObject);
@@ -380,27 +397,46 @@ begin
 end;
 
 procedure TdtExec.btnNextEventClick(Sender: TObject);
+var
+  v: variant;
+  sql: string;
+  id: integer;
 begin
   if (GetKeyState(VK_CONTROL) < 0) then
   begin
+//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.next;
+//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.First;
   end
   else
   begin
-    if DTData.dsHeat.DataSet.EOF then
+    // Get the MAX HeatNum...
+    sql := 'SELECT MAX(HeatNum) FROM [SwimClubMeet].[dbo].[HeatIndividual] WHERE [EventID] = :ID';
+    id := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
+    v := SCM.scmConnection.ExecSQLScalar(sql,[id]);
+    if VarIsNull(v) then v := 0;
+    { After reaching the last record a second click of btnNextEvent is needed to
+      recieve a Eof. Checking for max heatnum removes this UI nonsence.}
+    if DTData.dsHeat.DataSet.Eof or (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = v)  then
     begin
+//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.next;
+//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.First;
     end
     else
+    begin
+//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.next;
+    end;
   end;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
 begin
-  if not DTData.dsdt.DataSet.BOF then
+  if not DTData.dsdt.DataSet.Bof then
   begin
       DTData.dsdt.DataSet.prior;
 //      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
@@ -411,19 +447,30 @@ procedure TdtExec.btnPrevEventClick(Sender: TObject);
 begin
   if (GetKeyState(VK_CONTROL) < 0) then
   begin
+//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.prior;
+//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.first;
   end
   else
   begin
-  if DTData.dsHeat.DataSet.BOF then
+    { After reaching the first record a second click of btnPrevEvent is needed to
+      recieve a Bof. Checking for heatnum = 1 removes this UI nonsence.}
+  if DTData.dsHeat.DataSet.BOF or
+    (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = 1) then
   begin
+//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.prior;
+//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.Last;
     end
     else
+    begin
+//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.prior;
+    end;
   end;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
@@ -449,11 +496,19 @@ begin
   Screen.MenuFont.Size := 12;
   actnManager.Style := PlatformVclStylesStyle;
 
+  fFlagUIUpdate := false;
+
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
 begin
   SaveToSettings;
+  if Assigned(DTData) then DTData.MSG_Handle := 0;
+end;
+
+procedure TdtExec.FormHide(Sender: TObject);
+begin
+  if Assigned(DTData) then DTData.MSG_Handle := 0;
 end;
 
 procedure TdtExec.FormShow(Sender: TObject);
@@ -469,6 +524,10 @@ begin
     pnlSCM.Visible := true;
     pnlDT.Visible := true;
   end;
+  // Windows handle to update UI after data scroll...
+  if Assigned(DTData) then DTData.MSG_Handle := Self.Handle;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0 , 0 );
+
 end;
 
 procedure TdtExec.LoadFromSettings;
@@ -488,25 +547,41 @@ begin
 end;
 
 procedure TdtExec.MSG_AfterEventScroll(var Msg: TMessage);
-var
-  i: Integer;
+//var
+//  i: Integer;
 begin
   // update EVENT UI elements.
-  if Assigned(DTData) AND DTData.IsActive then
+  {
+  if Assigned(DTData) AND DTData.IsActive and fFlagUIUpdate then
   begin
     UpdateEventDetailsLabel;
     i := DTData.qryEvent.FieldByName('StrokeID').AsInteger;
     case i of
       1:
+        begin;
         vimgStrokeBug.ImageName := 'StrokeFS';
+        vimgStrokeBug.ImageIndex := 0;
+        end;
       2:
+        begin
         vimgStrokeBug.ImageName := 'StrokeBS';
+        vimgStrokeBug.ImageIndex := 2;
+        end;
       3:
+        begin
         vimgStrokeBug.ImageName := 'StrokeBK';
+        vimgStrokeBug.ImageIndex := 1;
+        end;
       4:
+        begin
         vimgStrokeBug.ImageName := 'StrokeBF';
+        vimgStrokeBug.ImageIndex := 2;
+        end;
       5:
+        begin
         vimgStrokeBug.ImageName := 'StrokeIM';
+        vimgStrokeBug.ImageIndex := 3;
+        end;
     else
       vimgStrokeBug.ImageIndex := -1;
 
@@ -520,14 +595,17 @@ begin
     end;
     lblMeters.Caption := UpperCase(DTData.qryDistance.FieldByName('Caption').AsString);
   end;
+  }
+  fFlagUIUpdate := false;
 end;
 
 procedure TdtExec.MSG_AfterHeatScroll(var Msg: TMessage);
-var
-i: integer;
+//var
+//i: integer;
 begin
   // update HEATUI elements.
-  if Assigned(DTData) AND DTData.IsActive then
+  {
+  if Assigned(DTData) AND DTData.IsActive and fFlagUIUpdate then
   begin
     UpdateEventDetailsLabel; // append heat number to label
     i := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
@@ -547,6 +625,78 @@ begin
       vimgHeatStatus.ImageIndex := -1;
     end;
   end;
+  }
+  fFlagUIUpdate := false;
+end;
+
+procedure TdtExec.MSG_UpdateUI(var Msg: TMessage);
+var
+i: integer;
+begin
+  // update HEATUI elements.
+  if Assigned(DTData) AND DTData.IsActive then
+  begin
+    UpdateEventDetailsLabel; // append heat number to label
+
+    i := DTData.qryEvent.FieldByName('StrokeID').AsInteger;
+    case i of
+      1:
+        vimgStrokeBug.ImageName := 'StrokeFS';
+      2:
+        vimgStrokeBug.ImageName := 'StrokeBS';
+      3:
+        vimgStrokeBug.ImageName := 'StrokeBK';
+      4:
+        vimgStrokeBug.ImageName := 'StrokeBF';
+      5:
+        vimgStrokeBug.ImageName := 'StrokeIM';
+    else
+      vimgStrokeBug.ImageIndex := -1;
+    end;
+
+    i := DTData.qryDistance.FieldByName('EventTypeID').AsInteger;
+    case i of
+      2:
+      begin
+        vimgRelayBug.ImageName := 'RELAY_DOT'; // RELAY.
+        lblMetersRelay.Caption := UpperCase(DTData.qryDistance.FieldByName('Caption').AsString);
+        lblMetersRelay.Visible := true;
+        lblMeters.Caption := '';
+      end;
+    else
+      begin
+        vimgRelayBug.ImageIndex := -1; // INDV or Swim-O-Thon.
+        lblMeters.Caption := UpperCase(DTData.qryDistance.FieldByName('Caption').AsString);
+        lblMetersRelay.Visible := false;
+      end;
+    end;
+
+    i := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
+    if i = 0 then
+    begin
+      lblHeatNum.Caption := '';
+      vimgHeatNum.ImageIndex := -1;
+      vimgHeatStatus.ImageIndex := -1;
+    end
+    else
+    begin
+      lblHeatNum.Caption := IntToStr(i);
+      vimgHeatNum.ImageIndex := 14;
+      i := DTData.qryHeat.FieldByName('HeatStatusID').AsInteger;
+      case i of
+      1:
+        vimgHeatStatus.ImageName := 'HeatOpen';
+      2:
+        vimgHeatStatus.ImageName := 'HeatRaced';
+      3:
+        vimgHeatStatus.ImageName := 'HeatClosed';
+      else
+        vimgHeatStatus.ImageIndex := -1;
+      end;
+    end;
+
+  end;
+
 end;
 
 procedure TdtExec.Prepare(AConnection: TFDConnection; aSessionID: Integer);
@@ -619,15 +769,6 @@ begin
 
 end;
 
-procedure TdtExec.SetSession(ASessionID: integer);
-begin
-    DTData.qrySession.DisableControls;
-    DTData.qrySession.Close;
-    DTData.qrysession.ParamByName('SESSIONID').AsInteger := ASessionID;
-    DTData.qrysession.Prepare;
-    DTData.qrysession.Open;
-    DTData.qrySession.EnableControls;
-end;
 
 procedure TdtExec.UpdateCaption;
 var
@@ -657,30 +798,30 @@ var
 i: integer;
 s, s2: string;
 begin
-    i := DTData.qryEvent.FieldByName('EventNum').AsInteger;
-    if i = 0 then
-      lblEventDetails.Caption := ''
-    else
+  i := DTData.qryEvent.FieldByName('EventNum').AsInteger;
+  if i = 0 then
+    lblEventDetails.Caption := ''
+  else
+    begin
+      // build the event detail string...  Distance Stroke (OPT: Caption)
+      s := DTData.qryDistance.FieldByName('Caption').AsString;
+      s := s + ' ' + DTData.qryStroke.FieldByName('Caption').AsString;
+      // event description - entered in core app's grid extension mode.
+      s2 := DTData.qryEvent.FieldByName('Caption').AsString;
+      if (length(s2) > 0) then
       begin
-        // build the event detail string...  Distance Stroke (OPT: Caption)
-        s := DTData.qryDistance.FieldByName('Caption').AsString;
-        s := s + ' ' + DTData.qryStroke.FieldByName('Caption').AsString;
-        // event description - entered in core app's grid extension mode.
-        s2 := DTData.qryEvent.FieldByName('Caption').AsString;
-        if (length(s2) > 0) then
-        begin
-          if (length(s2) > 17) then
-            s2 := s2.Substring(0, 14) + '...';
-          s := s +  ' - ' +  s2;
-        end;
-        // heat number...
-        i:=DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-        s := s + ' - Heat: ' + IntToStr(i);
-        if Length(s) > 0 then
-        begin
-          lblEventDetails.Caption := s;
-        end;
+        if (length(s2) > 17) then
+          s2 := s2.Substring(0, 14) + '...';
+        s := s +  ' - ' +  s2;
       end;
+      // heat number...
+      i:=DTData.qryHeat.FieldByName('HeatNum').AsInteger;
+      s := s + ' - Heat: ' + IntToStr(i);
+      if Length(s) > 0 then
+      begin
+        lblEventDetails.Caption := s;
+      end;
+    end;
 end;
 
 end.

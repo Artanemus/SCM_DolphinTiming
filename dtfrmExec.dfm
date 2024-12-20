@@ -13,6 +13,7 @@ object dtExec: TdtExec
   Position = poScreenCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnHide = FormHide
   OnShow = FormShow
   TextHeight = 21
   object actnMenuBar: TActionMainMenuBar
@@ -20,6 +21,7 @@ object dtExec: TdtExec
     Top = 0
     Width = 1268
     Height = 25
+    UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
     Color = clMenuBar
@@ -28,7 +30,7 @@ object dtExec: TdtExec
     ColorMap.BtnSelectedFont = clBlack
     ColorMap.UnusedColor = clWhite
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = clBlack
     Font.Height = -12
     Font.Name = 'Segoe UI'
     Font.Style = []
@@ -96,10 +98,8 @@ object dtExec: TdtExec
       Width = 144
       Height = 646
       BevelOuter = bvNone
-      Color = clDimgray
       ParentBackground = False
       TabOrder = 0
-      StyleElements = [seFont, seBorder]
       object vimgHeatNum: TVirtualImage
         Left = 24
         Top = 112
@@ -146,7 +146,7 @@ object dtExec: TdtExec
       end
       object lblMeters: TLabel
         Left = 9
-        Top = 61
+        Top = 62
         Width = 71
         Height = 37
         Alignment = taRightJustify
@@ -173,6 +173,40 @@ object dtExec: TdtExec
         Font.Style = []
         ParentFont = False
         Transparent = True
+      end
+      object lblMetersRelay: TLabel
+        Left = 34
+        Top = 19
+        Width = 96
+        Height = 37
+        Alignment = taRightJustify
+        Caption = '4x100M'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -27
+        Font.Name = 'Segoe UI Semibold'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Visible = False
+      end
+      object lblSessionDate: TLabel
+        Left = 3
+        Top = 552
+        Width = 134
+        Height = 67
+        Alignment = taCenter
+        AutoSize = False
+        Caption = 'SESSION'#13#10'DD/MM/YYYY'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -21
+        Font.Name = 'Segoe UI Semibold'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Visible = False
+        WordWrap = True
       end
     end
     object pnlSCM: TPanel
@@ -213,7 +247,7 @@ object dtExec: TdtExec
       object btnPrevEvent: TButton
         Left = -1
         Top = 32
-        Width = 450
+        Width = 386
         Height = 50
         Caption = 'PREVIOUS'
         TabOrder = 1
@@ -234,7 +268,7 @@ object dtExec: TdtExec
         DefaultRowHeight = 34
         DrawingStyle = gdsClassic
         FixedColor = 3880234
-        RowCount = 2
+        RowCount = 5
         FixedRows = 1
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
@@ -674,7 +708,21 @@ object dtExec: TdtExec
           34)
         RowHeights = (
           34
+          34
+          34
+          34
           34)
+      end
+      object btnPickEvent: TButton
+        Left = 391
+        Top = 32
+        Width = 58
+        Height = 50
+        Caption = 'PICK'
+        DisabledImages = DTData.vimglistDTEvent
+        Images = DTData.vimglistDTEvent
+        TabOrder = 3
+        OnClick = btnPrevEventClick
       end
     end
     object pnlDT: TPanel
@@ -703,7 +751,7 @@ object dtExec: TdtExec
       object btnPrevDTFile: TButton
         Left = 0
         Top = 32
-        Width = 450
+        Width = 385
         Height = 49
         Caption = 'PREVIOUS'
         TabOrder = 1
@@ -1187,6 +1235,17 @@ object dtExec: TdtExec
         TabOrder = 3
         Visible = False
         StyleElements = []
+      end
+      object btnPickDTFile: TButton
+        Left = 391
+        Top = 32
+        Width = 58
+        Height = 50
+        Caption = 'PICK'
+        DisabledImages = DTData.vimglistDTEvent
+        Images = DTData.vimglistDTEvent
+        TabOrder = 4
+        OnClick = btnPrevEventClick
       end
     end
     object pnlTool2: TPanel

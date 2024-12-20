@@ -10176,7 +10176,6 @@ object DTData: TDTData
     Top = 16
   end
   object qrySessionList: TFDQuery
-    Active = True
     IndexFieldNames = 'SwimClubID'
     MasterSource = dsSwimClub
     MasterFields = 'SwimClubID'
@@ -10189,6 +10188,9 @@ object DTData: TDTData
     UpdateOptions.EnableInsert = False
     UpdateOptions.EnableUpdate = False
     SQL.Strings = (
+      'DECLARE @SwimClubID AS INTEGER;'
+      'SET @SwimClubID = :SWIMCLUBID;'
+      ''
       'SELECT '
       'SessionID'
       ',Caption'
@@ -10197,10 +10199,17 @@ object DTData: TDTData
       ',SwimClubID'
       ',SessionStatusID'
       ' FROM dbo.Session'
-      ' WHERE SessionStatusID = 1'
+      ' WHERE SessionStatusID = 1 AND SwimClubID = SwimClubID'
       ' ORDER BY SessionStart DESC')
     Left = 136
     Top = 88
+    ParamData = <
+      item
+        Name = 'SWIMCLUBID'
+        DataType = ftInteger
+        ParamType = ptInput
+        Value = 1
+      end>
     object qrySessionListSessionID: TFDAutoIncField
       FieldName = 'SessionID'
       Origin = 'SessionID'

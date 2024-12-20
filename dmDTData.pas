@@ -112,8 +112,10 @@ type
     { Private declarations }
     FConnection: TFDConnection;
     fDTDataIsActive: Boolean;
+    msgHandle: HWND;  // TForm.dtfrmExec ...
     procedure BuildDTData;
     function GetActiveSessionID: integer;
+    procedure SetActiveSessionID(const Value: integer);
 
   public
     { Public declarations }
@@ -130,8 +132,10 @@ type
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
     property IsActive: Boolean read fDTDataIsActive write fDTDataIsActive;
-    property ActiveSessionID: integer read GetActiveSessionID;
+    property ActiveSessionID: integer read GetActiveSessionID write SetActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
+    property MSG_Handle: HWND read msgHandle write msgHandle;
+
 
   end;
 
@@ -243,6 +247,7 @@ begin
 end;
 
 
+
 function TDTData.LocateEvent(AEventID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
@@ -312,8 +317,11 @@ begin
 end;
 
 procedure TDTData.ActivateData;
+var
+  currentSessionID: integer;
 begin
 
+  currentSessionID := 0;
   BuildDTData;
 
   // ASSERT Master - Detail
@@ -342,14 +350,22 @@ begin
     // GRAND MASTER.
     qrySwimClub.Connection := fConnection;
     qrySwimClub.Active;
-
+    qrySwimClub.First;
+    // Query used by pick session dialogue.
     qrySessionList.Connection := fConnection;
-    qrySessionList.Active;
-
+    qrySessionList.Close;
+    qrySessionList.ParamByName('SWIMCLUBID').AsInteger :=
+      qrySwimClub.FieldByName('SwimClubID').AsInteger;
+    qrySessionList.Prepare;
+    qrySessionList.Open;
+    // Sessions listed are 'OPEN' and reference SwimClubID.
     if qrySessionList.Active and not qrySessionList.IsEmpty then
+    begin
       qrySessionList.First;
+      currentSessionID := qrySessionList.FieldByName('SessionID').AsInteger;
+    end;
 
-    // setup DB params and master - detail
+    // setup connection for master - detail
     qrySession.Connection := fConnection;
     qryEvent.Connection := fConnection;
     qryDistance.Connection := fConnection;
@@ -358,11 +374,14 @@ begin
     qryINDV.Connection := fConnection;
     qryTEAM.Connection := fConnection;
     qryTEAMEntrant.Connection := fConnection;
+
     qrySession.Open;
 
     if qrySwimClub.Active and qrySession.Active then
     begin
-      qrySession.First;
+      // NO PARAMS: instead a filter is used.
+      // Zero ID is handled.
+      SetActiveSessionID(currentSessionID);
       qryEvent.Open;
       qryDistance.Open;
       qryStroke.Open;
@@ -492,20 +511,21 @@ procedure TDTData.DataModuleCreate(Sender: TObject);
 begin
   fDTDataIsActive := false;
   FConnection := nil;
+  msgHandle := 0;
 end;
 
 procedure TDTData.qryEventAfterScroll(DataSet: TDataSet);
 begin
-  // send message to update dtfrmExec lblHeatNum
-  if Owner is TForm then
-    PostMessage(TForm(Owner).Handle,SCM_EVENTSCROLL, 0, 0);
+  // send message to update dtfrmExec ...
+  if (msgHandle <> 0) then
+    PostMessage(msgHandle, SCM_EVENTSCROLL, 0, 0);
 end;
 
 procedure TDTData.qryHeatAfterScroll(DataSet: TDataSet);
 begin
-  // send message to update dtfrmExec lblHeatNum
-  if Owner is TForm then
-    PostMessage(TForm(Owner).Handle,SCM_HEATSCROLL, 0, 0);
+  // send message to update dtfrmExec ...
+  if (msgHandle <> 0) then
+    PostMessage(msgHandle, SCM_HEATSCROLL, 0, 0);
 end;
 
 procedure TDTData.WriteToBinary(AFilePath:string);
@@ -534,6 +554,31 @@ begin
   tblDT.LoadFromFile(s + 'DTMaster.fsBinary');
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
   tblDTLane.LoadFromFile(s + 'DTLane.fsBinary');
+end;
+
+
+procedure TDTData.SetActiveSessionID(const Value: integer);
+begin
+  {  // NOT using PARAMETERS ... strict Master - Detail build...
+      qrySession.DisableControls;
+      qrySession.Close;
+      qrysession.ParamByName('SESSIONID').AsInteger := ASessionID;
+      qrysession.Prepare;
+      qrysession.Open;
+      qrySession.EnableControls;
+  }
+  if (Value = 0) then
+  begin
+    qrySession.Filtered := false;
+    qrySession.First;
+  end
+  else
+  begin
+    qrySession.Filter := 'SessionID = ' + IntToStr(Value);
+    if not qrySession.Filtered then
+      qrySession.Filtered := true;
+  end;
+
 end;
 
 
