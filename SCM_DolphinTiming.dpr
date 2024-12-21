@@ -19,7 +19,8 @@ uses
   dlgSessionPicker in 'dlgSessionPicker.pas' {SessionPicker},
   dtDlgOptions in 'dtDlgOptions.pas' {dlgOptions},
   dtReConstruct in 'dtReConstruct.pas',
-  Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas';
+  Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas',
+  dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM};
 
 {$R *.res}
 

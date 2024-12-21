@@ -112,6 +112,7 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <Icon_MainIcon>SCM_DolphinTiming_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -168,6 +169,10 @@
         </DCCReference>
         <DCCReference Include="dtReConstruct.pas"/>
         <DCCReference Include="..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas"/>
+        <DCCReference Include="dtTreeViewSCM.pas">
+            <Form>TreeViewSCM</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

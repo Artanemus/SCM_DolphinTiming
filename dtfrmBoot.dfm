@@ -17940,6 +17940,7 @@ object dtBoot: TdtBoot
     Height = 32
     Action = actnDolphinTiming
     TabOrder = 8
+    Visible = False
   end
   object ActionList1: TActionList
     Left = 296
@@ -17956,7 +17957,7 @@ object dtBoot: TdtBoot
     end
     object actnDolphinTiming: TAction
       Caption = 'Dolphin Timing'
-      OnExecute = btnDolphinTimingClick
+      OnExecute = actnDolphinTimingExecute
       OnUpdate = actnDolphinTimingUpdate
     end
   end

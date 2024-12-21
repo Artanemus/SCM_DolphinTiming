@@ -76,9 +76,10 @@ type
     actnConnect: TAction;
     actnPost: TAction;
     lblMetersRelay: TLabel;
-    lblSessionDate: TLabel;
+    lblSessionStart: TLabel;
     btnPickEvent: TButton;
     btnPickDTFile: TButton;
+    actnSelectSwimClub: TAction;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
@@ -92,6 +93,7 @@ type
     procedure actnSyncExecute(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
+    procedure btnPickEventClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -99,6 +101,7 @@ type
     procedure FormHide(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure sbtnSyncClick(Sender: TObject);
+
   private
     { Private declarations }
     FConnection: TFDConnection;
@@ -106,28 +109,38 @@ type
     { When flag is set...
         Non-Aware UI controls are re-calculated and re-painted.
         Non-Data-Aware labels are re-assigned and re-displayed.
-      FALSE : default value.
-      Must be set to false for data requeries else UI responds slowly.
+      A switch to disable UI updates when doing complex table changes.
+      Default value : FALSE
     }
     fFlagUIUpdate: boolean;
+    { On FormShow - prompt user to select session.
+      Default value : FALSE
+    }
+    fFlagSelectSession: boolean;
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
     procedure SaveToSettings; // JSON Program Settings
     procedure UpdateCaption();
+    procedure UpdateSessionStartLabel();
     procedure UpdateEventDetailsLabel();
     procedure DeleteFilesWithWildcard(const APath, APattern: string);
     procedure ReconstructAndExportFiles(fileExtension: string; messageText: string);
+
+  const
+    AcceptedTimeKeeperDeviation = 0.3;
+    SCM_SELECTSESSION = WM_USER + 999;
+
   protected
     procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
     procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
     procedure MSG_UpdateUI(var Msg: TMessage); message SCM_UPDATEUI;
-  public
+    procedure MSG_SelectSession(var Msg: TMessage); message SCM_SELECTSESSION;
 
-  const
-  AcceptedTimeKeeperDeviation = 0.3;
+  public
     { Public declarations }
-    procedure Prepare(AConnection: TFDConnection; aSessionID: Integer = 0);
+    procedure Prepare(AConnection: TFDConnection);
     property DolphinFolder: string read fDolphinMeetsFolder write fDolphinMeetsFolder;
+    property FlagSelectSession: boolean read fFlagSelectSession write fFlagSelectSession;
   end;
 
 var
@@ -137,7 +150,7 @@ implementation
 
 {$R *.dfm}
 
-uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions;
+uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -404,9 +417,7 @@ var
 begin
   if (GetKeyState(VK_CONTROL) < 0) then
   begin
-//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.next;
-//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.First;
   end
   else
@@ -420,18 +431,32 @@ begin
       recieve a Eof. Checking for max heatnum removes this UI nonsence.}
     if DTData.dsHeat.DataSet.Eof or (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = v)  then
     begin
-//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.next;
-//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.First;
     end
     else
     begin
-//      fFlagUIUpdate := True;
       DTData.dsHeat.DataSet.next;
     end;
   end;
   PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+end;
+
+procedure TdtExec.btnPickEventClick(Sender: TObject);
+var
+dlg: TTreeViewSCM;
+ev, ht: integer;
+begin
+  // open SCM TreeView.
+  dlg := TTreeViewSCM.Create(Self);
+  {
+  dlg.SessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
+  dlg.EventID := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
+  dlg.HeatID := DTData.dsHeat.DataSet.FieldByName('HeatID').AsInteger;
+  }
+  dlg.ShowModal;
+    // get select event and heat number .....
+  dlg.Free
 end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
@@ -447,9 +472,7 @@ procedure TdtExec.btnPrevEventClick(Sender: TObject);
 begin
   if (GetKeyState(VK_CONTROL) < 0) then
   begin
-//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.prior;
-//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.first;
   end
   else
@@ -459,14 +482,11 @@ begin
   if DTData.dsHeat.DataSet.BOF or
     (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = 1) then
   begin
-//      fFlagUIUpdate := True;
       DTData.dsEvent.DataSet.prior;
-//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.Last;
     end
     else
     begin
-//      fFlagUIUpdate := true;
       DTData.dsHeat.DataSet.prior;
     end;
   end;
@@ -497,7 +517,17 @@ begin
   actnManager.Style := PlatformVclStylesStyle;
 
   fFlagUIUpdate := false;
-
+  fFlagSelectSession := false;
+  // UI initialization
+  lblSessionStart.Caption := '';
+  lblEventDetails.Caption := '';
+  lblMetersRelay.Caption := '';
+  lblHeatNum.Caption := '';
+  lblMeters.Caption := '';
+  vimgHeatNum.ImageIndex := -1;
+  vimgHeatStatus.ImageIndex := -1;
+  vimgRelayBug.ImageIndex := -1;
+  vimgStrokeBug.ImageIndex := -1;
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
@@ -524,9 +554,14 @@ begin
     pnlSCM.Visible := true;
     pnlDT.Visible := true;
   end;
-  // Windows handle to update UI after data scroll...
+  // Windows handle to message after after data scroll...
   if Assigned(DTData) then DTData.MSG_Handle := Self.Handle;
-  PostMessage(Self.Handle, SCM_UPDATEUI, 0 , 0 );
+  if fFlagSelectSession then
+    // Prompt user to select session. (... and update UI.)
+    PostMessage(Self.Handle, SCM_SELECTSESSION, 0 , 0 )
+  else
+    // Assert UI display is up-to-date.
+    PostMessage(Self.Handle, SCM_UPDATEUI, 0 , 0 );
 
 end;
 
@@ -547,86 +582,18 @@ begin
 end;
 
 procedure TdtExec.MSG_AfterEventScroll(var Msg: TMessage);
-//var
-//  i: Integer;
 begin
-  // update EVENT UI elements.
-  {
-  if Assigned(DTData) AND DTData.IsActive and fFlagUIUpdate then
-  begin
-    UpdateEventDetailsLabel;
-    i := DTData.qryEvent.FieldByName('StrokeID').AsInteger;
-    case i of
-      1:
-        begin;
-        vimgStrokeBug.ImageName := 'StrokeFS';
-        vimgStrokeBug.ImageIndex := 0;
-        end;
-      2:
-        begin
-        vimgStrokeBug.ImageName := 'StrokeBS';
-        vimgStrokeBug.ImageIndex := 2;
-        end;
-      3:
-        begin
-        vimgStrokeBug.ImageName := 'StrokeBK';
-        vimgStrokeBug.ImageIndex := 1;
-        end;
-      4:
-        begin
-        vimgStrokeBug.ImageName := 'StrokeBF';
-        vimgStrokeBug.ImageIndex := 2;
-        end;
-      5:
-        begin
-        vimgStrokeBug.ImageName := 'StrokeIM';
-        vimgStrokeBug.ImageIndex := 3;
-        end;
-    else
-      vimgStrokeBug.ImageIndex := -1;
-
-    end;
-    i := DTData.qryDistance.FieldByName('EventTypeID').AsInteger;
-    case i of
-      2:
-        vimgRelayBug.ImageName := 'RELAY_DOT'; // RELAY.
-    else
-      vimgRelayBug.ImageIndex := -1; // INDV or Swim-O-Thon.
-    end;
-    lblMeters.Caption := UpperCase(DTData.qryDistance.FieldByName('Caption').AsString);
-  end;
-  }
   fFlagUIUpdate := false;
 end;
 
 procedure TdtExec.MSG_AfterHeatScroll(var Msg: TMessage);
-//var
-//i: integer;
 begin
-  // update HEATUI elements.
-  {
-  if Assigned(DTData) AND DTData.IsActive and fFlagUIUpdate then
-  begin
-    UpdateEventDetailsLabel; // append heat number to label
-    i := DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-    if i = 0 then
-      lblHeatNum.Caption := ''
-    else
-      lblHeatNum.Caption := IntToStr(i);
-    i := DTData.qryHeat.FieldByName('HeatStatusID').AsInteger;
-    case i of
-    1:
-      vimgHeatStatus.ImageName := 'HeatOpen';
-    2:
-      vimgHeatStatus.ImageName := 'HeatRaced';
-    3:
-      vimgHeatStatus.ImageName := 'HeatClosed';
-    else
-      vimgHeatStatus.ImageIndex := -1;
-    end;
-  end;
-  }
   fFlagUIUpdate := false;
+end;
+
+procedure TdtExec.MSG_SelectSession(var Msg: TMessage);
+begin
+  actnSelectSessionExecute(Self);
 end;
 
 procedure TdtExec.MSG_UpdateUI(var Msg: TMessage);
@@ -637,6 +604,7 @@ begin
   if Assigned(DTData) AND DTData.IsActive then
   begin
     UpdateEventDetailsLabel; // append heat number to label
+    UpdateSessionStartLabel; //
 
     i := DTData.qryEvent.FieldByName('StrokeID').AsInteger;
     case i of
@@ -699,10 +667,10 @@ begin
 
 end;
 
-procedure TdtExec.Prepare(AConnection: TFDConnection; aSessionID: Integer);
+procedure TdtExec.Prepare(AConnection: TFDConnection);
 begin
   FConnection := AConnection;
-  UpdateCaption;
+  Caption := 'SwimClubMeet - Dolphin Timing. ';
 end;
 
 procedure TdtExec.ReconstructAndExportFiles(fileExtension: string; messageText:
@@ -822,6 +790,33 @@ begin
         lblEventDetails.Caption := s;
       end;
     end;
+end;
+
+procedure TdtExec.UpdateSessionStartLabel;
+var
+s: string;
+v: variant;
+dt: TDateTime;
+begin
+  if not DTData.qrysession.Active then
+  begin
+    lblSessionStart.Caption := ''; // error ...
+    exit;
+  end;
+  if DTData.qrySession.IsEmpty or
+    (DTData.qrySession.FieldByName('SessionID').AsInteger = 0) then
+    lblSessionStart.Caption := ''
+  else
+  begin
+    s := 'SESSION' + sLineBreak;
+    v := DTData.qrysession.FieldByName('SessionStart').AsVariant;
+    if not VarIsNull(v) then
+    begin
+      dt := TDateTime(v);
+      s := s + DateToStr(dt);
+    end;
+    lblSessionStart.Caption := s;
+  end;
 end;
 
 end.

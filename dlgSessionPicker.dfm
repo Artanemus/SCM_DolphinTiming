@@ -30,7 +30,6 @@ object SessionPicker: TSessionPicker
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitWidth = 501
     object dbtxtClubName: TDBText
       Left = 0
       Top = 7
@@ -58,7 +57,6 @@ object SessionPicker: TSessionPicker
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitWidth = 501
     object btnOk: TButton
       Left = 455
       Top = 6
@@ -98,7 +96,6 @@ object SessionPicker: TSessionPicker
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitWidth = 501
     object dbgridSession: TDBGrid
       Left = 0
       Top = 0

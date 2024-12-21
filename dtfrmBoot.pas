@@ -35,8 +35,8 @@ type
     procedure actnConnectUpdate(Sender: TObject);
     procedure actnDisconnectExecute(Sender: TObject);
     procedure actnDisconnectUpdate(Sender: TObject);
+    procedure actnDolphinTimingExecute(Sender: TObject);
     procedure actnDolphinTimingUpdate(Sender: TObject);
-    procedure btnDolphinTimingClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
@@ -50,12 +50,23 @@ type
     procedure SaveToSettings; // JSON Program Settings
     function GetSCMVerInfo(): string;
 
+  const
+    { SCM_DolphinTiming specific windows message ....}
+     SCM_CALL_DOLPHIN_TIMING = WM_USER + 998;
+
   public
     { Public declarations }
+
+  protected
+    procedure MSG_execDolphinTiming(var Msg: TMessage); message SCM_CALL_DOLPHIN_TIMING;
+
+
   end;
 
 var
   dtBoot: TdtBoot;
+
+
 
 implementation
 
@@ -157,23 +168,7 @@ begin
   end;
 end;
 
-procedure TdtBoot.actnDolphinTimingUpdate(Sender: TObject);
-begin
-  if Assigned(SCM) then
-  begin
-    if SCM.scmConnection.Connected and not actnDolphinTiming.Enabled then
-      actnDolphinTiming.Enabled := true;
-    if not SCM.scmConnection.Connected and actnDolphinTiming.Enabled then
-      actnDolphinTiming.Enabled := false;
-  end
-  else // D E F A U L T  I N I T  . Data module not created.
-  begin
-    if actnDolphinTiming.Enabled then
-      actnDolphinTiming.Enabled := false;
-  end;
-end;
-
-procedure TdtBoot.btnDolphinTimingClick(Sender: TObject);
+procedure TdtBoot.actnDolphinTimingExecute(Sender: TObject);
 var
 dlg: TdtExec;
 begin
@@ -188,7 +183,10 @@ begin
       DTData.Connection := SCM.scmConnection;
       DTData.ActivateData; // ... and cue-to most recent session.
       dlg := TdtExec.Create(Self);
-      dlg.Prepare(SCM.scmConnection, DTData.ActiveSessionID); // init Dolphin Timing.
+      { Init connection.}
+      dlg.Prepare(SCM.scmConnection);
+      { Flag - prompt user to select session. }
+      dlg.FlagSelectSession := true;
       Visible := false; // hide boot form.
       dlg.ShowModal(); // Execute - Dolphin Timing
       dlg.Free;
@@ -198,8 +196,24 @@ begin
     FreeAndNil(DTData);
 
     Visible := true;
-    ExecuteAction(actnDisconnect);
+    actnDisconnectExecute(Self);  // or ... ExecuteAction(actnDisconnect);
     Close();  // terminate application ....
+  end;
+end;
+
+procedure TdtBoot.actnDolphinTimingUpdate(Sender: TObject);
+begin
+  if Assigned(SCM) then
+  begin
+    if SCM.scmConnection.Connected and not actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := true;
+    if not SCM.scmConnection.Connected and actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := false;
+  end
+  else // D E F A U L T  I N I T  . Data module not created.
+  begin
+    if actnDolphinTiming.Enabled then
+      actnDolphinTiming.Enabled := false;
   end;
 end;
 
@@ -224,12 +238,11 @@ begin
     SCM := TSCM.Create(Self);
   if SCM.scmConnection.Connected then
     SCM.scmConnection.Connected := false;
-
   // READ APPLICATION   C O N F I G U R A T I O N   PARAMS.
   // JSON connection settings. Windows location :
   // %SYSTEMDRIVE\%%USER%\%USERNAME%\AppData\Roaming\Artanemus\SwimClubMeet\Member
   LoadSettings;
-
+  // status message - unconnected: blank - connected: status/information.
   Status_ConnectionDescription;
 end;
 
@@ -247,27 +260,37 @@ begin
 
   if not Assigned(SCM) then
     exit;
-  // C O N N E C T E D  .
-  if (SCM.scmConnection.Connected) then
-  begin
-    SCM.ActivateTable;
-    if (SCM.IsActive = true) then
-      PostMessage(Handle, SCM_INITIALISE, 0, 0);
-  end;
+
 
   if not SCM.scmConnection.Connected then
   begin
-    // Attempt to connect failed.
+    // Attempt to connect FAILED.
     StatusMsg.Caption :=
       'A connection couldn''t be made. (Check you input values.)';
   end
   else
-  // Status : SwimClub name + APP and DB version.
-  Status_ConnectionDescription;
-  // CALL IT DIRECTLY ....
+  begin
+    // C O N N E C T E D  .
+    // Status : SwimClub name + APP and DB version.
+    Status_ConnectionDescription;
+    { SCM is a clone of the SwimClubMeet datamodule - dmSCM.pas
+      Only a small selection of tables in SCM are needed for this application.
+      Designed so that DolphinTiming can be inserted easily into the
+      SwimClubMeet core application with the least amount of code.  }
+    SCM.ActivateTable;
+    { It's safer to let the thread's 'terminate' routine
+      complete it's job. Then run the main form ... dtfrmExec.pas.
+      This is why POST MESSAGE is used here ...  }
+    if (SCM.IsActive = true) then
+        PostMessage(Handle, SCM_CALL_DOLPHIN_TIMING, 0, 0);
+  end;
+
+  { Mandatory for both connected and unconnected. Execute action 'update'
+    routines to initialize button states, etc. }
   actnDisconnectUpdate(Self);
   actnConnectUpdate(Self);
   actnDolphinTimingUpdate(Self);
+
 end;
 
 procedure TdtBoot.FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -319,6 +342,12 @@ begin
   end;
   Settings.LoadFromFile();
   LoadFromSettings();
+end;
+
+procedure TdtBoot.MSG_execDolphinTiming(var Msg: TMessage);
+begin
+  { Alternative method to run main form - dtfrmExec.pas }
+   actnDolphinTimingExecute(Self);
 end;
 
 procedure TdtBoot.SaveToSettings;

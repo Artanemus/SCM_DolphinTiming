@@ -190,11 +190,11 @@ object dtExec: TdtExec
         Transparent = True
         Visible = False
       end
-      object lblSessionDate: TLabel
-        Left = 3
-        Top = 552
-        Width = 134
-        Height = 67
+      object lblSessionStart: TLabel
+        Left = 0
+        Top = 512
+        Width = 143
+        Height = 107
         Alignment = taCenter
         AutoSize = False
         Caption = 'SESSION'#13#10'DD/MM/YYYY'
@@ -205,7 +205,6 @@ object dtExec: TdtExec
         Font.Style = []
         ParentFont = False
         Transparent = True
-        Visible = False
         WordWrap = True
       end
     end
@@ -718,11 +717,12 @@ object dtExec: TdtExec
         Top = 32
         Width = 58
         Height = 50
-        Caption = 'PICK'
         DisabledImages = DTData.vimglistDTEvent
+        ImageIndex = 9
+        ImageName = 'arrow_circle_down_FILL'
         Images = DTData.vimglistDTEvent
         TabOrder = 3
-        OnClick = btnPrevEventClick
+        OnClick = btnPickEventClick
       end
     end
     object pnlDT: TPanel
@@ -1241,8 +1241,9 @@ object dtExec: TdtExec
         Top = 32
         Width = 58
         Height = 50
-        Caption = 'PICK'
         DisabledImages = DTData.vimglistDTEvent
+        ImageIndex = 9
+        ImageName = 'arrow_circle_down_FILL'
         Images = DTData.vimglistDTEvent
         TabOrder = 4
         OnClick = btnPrevEventClick
@@ -1347,6 +1348,11 @@ object dtExec: TdtExec
           item
             Items = <
               item
+                Action = actnSelectSwimClub
+                ImageIndex = 2
+                ImageName = 'document_search'
+              end
+              item
                 Action = actnSelectSession
                 Caption = '&Select SwimClubMeet Session...'
                 ImageIndex = 2
@@ -1447,6 +1453,13 @@ object dtExec: TdtExec
     Left = 64
     Top = 224
     StyleName = 'Platform Default'
+    object actnSelectSwimClub: TAction
+      Category = 'File'
+      Caption = 'Select Swimming Club...'
+      Enabled = False
+      ImageIndex = 2
+      ImageName = 'document_search'
+    end
     object actnSelectSession: TAction
       Category = 'File'
       Caption = 'Select SwimClubMeet Session...'
