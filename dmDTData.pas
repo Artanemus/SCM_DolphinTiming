@@ -104,6 +104,7 @@ type
     qrySessionListClosedDT: TSQLTimeStampField;
     qrySessionListSwimClubID: TIntegerField;
     qrySessionListSessionStatusID: TIntegerField;
+    vimglistTreeView: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure qryEventAfterScroll(DataSet: TDataSet);
@@ -124,6 +125,7 @@ type
 
     procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
+
     function LocateSession(ASessionID: integer): boolean;
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;

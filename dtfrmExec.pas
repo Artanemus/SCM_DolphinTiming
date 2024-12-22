@@ -445,18 +445,39 @@ end;
 procedure TdtExec.btnPickEventClick(Sender: TObject);
 var
 dlg: TTreeViewSCM;
-ev, ht: integer;
+sess, ev, ht: integer;
+mr: TModalResult;
+found: boolean;
 begin
-  // open SCM TreeView.
+  // Open the SCM TreeView.
   dlg := TTreeViewSCM.Create(Self);
-  {
-  dlg.SessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
-  dlg.EventID := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
-  dlg.HeatID := DTData.dsHeat.DataSet.FieldByName('HeatID').AsInteger;
-  }
-  dlg.ShowModal;
-    // get select event and heat number .....
-  dlg.Free
+
+  sess := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
+  ev := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
+  ht := DTData.dsHeat.DataSet.FieldByName('HeatID').AsInteger;
+  dlg.Prepare(SCM.scmConnection, sess, ev, ht);
+  mr := dlg.ShowModal;
+
+    // CUE-TO selected TreeView item ...
+  if IsPositiveResult(mr) then
+  begin
+    DTData.dsEvent.DataSet.DisableControls;
+    DTData.dsHeat.DataSet.DisableControls;
+    if (dlg.SelectedEventID <> 0) then
+    begin
+      found := DTData.LocateEvent(dlg.SelectedEventID);
+      if found and (dlg.SelectedHeatID <> 0) then
+      begin
+        DTData.LocateHeat(dlg.SelectedHeatID);
+      end;
+    end;
+    DTData.dsEvent.DataSet.EnableControls;
+    DTData.dsHeat.DataSet.EnableControls;
+    // Update UI controls ...
+    PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+  end;
+  dlg.Free;
+
 end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);

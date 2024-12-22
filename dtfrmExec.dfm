@@ -718,8 +718,8 @@ object dtExec: TdtExec
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
-        ImageIndex = 9
-        ImageName = 'arrow_circle_down_FILL'
+        ImageIndex = 10
+        ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 3
         OnClick = btnPickEventClick
@@ -1242,8 +1242,8 @@ object dtExec: TdtExec
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
-        ImageIndex = 9
-        ImageName = 'arrow_circle_down_FILL'
+        ImageIndex = 10
+        ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 4
         OnClick = btnPrevEventClick
@@ -1349,6 +1349,7 @@ object dtExec: TdtExec
             Items = <
               item
                 Action = actnSelectSwimClub
+                Caption = 'Sele&ct Swimming Club...'
                 ImageIndex = 2
                 ImageName = 'document_search'
               end

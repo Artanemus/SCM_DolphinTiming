@@ -11,8 +11,12 @@ object TreeViewSCM: TTreeViewSCM
   Font.Height = -16
   Font.Name = 'Segoe UI'
   Font.Style = []
+  KeyPreview = True
   Position = poOwnerFormCenter
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
   TextHeight = 21
   object TreeViewSCM: TTreeView
     Left = 0
@@ -22,11 +26,11 @@ object TreeViewSCM: TTreeViewSCM
     Align = alClient
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -21
+    Font.Height = -19
     Font.Name = 'Segoe UI'
     Font.Style = []
     HideSelection = False
-    Images = DTData.vimglistDTEvent
+    Images = DTData.vimglistTreeView
     Indent = 30
     ParentFont = False
     ReadOnly = True
@@ -54,28 +58,119 @@ object TreeViewSCM: TTreeViewSCM
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitTop = 547
     object btnClose: TButton
-      Left = 189
-      Top = 16
+      Left = 392
+      Top = 6
       Width = 100
       Height = 34
-      Caption = 'Close'
+      Caption = 'OK'
       TabOrder = 0
+      OnClick = btnCloseClick
+    end
+    object btnCancel: TButton
+      Left = 286
+      Top = 6
+      Width = 100
+      Height = 34
+      Caption = 'Cancel'
+      TabOrder = 1
+      OnClick = btnCancelClick
     end
   end
   object qryEvent: TFDQuery
+    ActiveStoredUsage = [auDesignTime]
+    Connection = SCM.scmConnection
+    UpdateOptions.AssignedValues = [uvEDelete, uvEInsert, uvEUpdate]
+    UpdateOptions.EnableDelete = False
+    UpdateOptions.EnableInsert = False
+    UpdateOptions.EnableUpdate = False
+    SQL.Strings = (
+      'DECLARE @SessionID int;'
+      'SET @SessionID = :SESSIONID;'
+      ''
+      'SELECT [EventID]'
+      '    , SUBSTRING(CONCAT ('
+      '            [EventNum]'
+      '            , '#39' '#39
+      '            , [Distance].[Caption]'
+      '            , '#39' '#39
+      '            , [Stroke].[Caption]'
+      '            , '#39' '#39
+      '            , [Event].[Caption]'
+      '            ), 1, 50) AS [EventCaption]'
+      '    , [EventNum]'
+      '    --, [Event].[Caption]'
+      '    , [SessionID]'
+      '    --, [RallyOpenDT]'
+      '    , [Event].[StrokeID]'
+      '    --, [RallyCloseDT]'
+      '    , [Event].[DistanceID]'
+      '    --, [OpenDT]'
+      '    , [EventStatusID]'
+      '--, [CloseDT]'
+      '--, [ScheduleDT]'
+      '    , [Distance].[EventTypeID]'
+      ''
+      'FROM [SwimClubMeet].[dbo].[Event]'
+      'INNER JOIN [SwimClubMeet].[dbo].[Stroke]'
+      '    ON [Event].[StrokeID] = [Stroke].[StrokeID]'
+      'INNER JOIN [SwimClubMeet].[dbo].[Distance]'
+      '    ON [Event].[DistanceID] = [Distance].[DistanceID]'
+      'WHERE SessionID = @SessionID'
+      'ORDER BY [EventNum];')
     Left = 136
     Top = 248
+    ParamData = <
+      item
+        Name = 'SESSIONID'
+        DataType = ftInteger
+        ParamType = ptInput
+        Value = 1
+      end>
   end
   object qryHeat: TFDQuery
+    ActiveStoredUsage = [auDesignTime]
+    IndexFieldNames = 'EventID'
+    MasterSource = dsEvent
+    MasterFields = 'EventID'
+    DetailFields = 'EventID'
+    Connection = SCM.scmConnection
+    UpdateOptions.AssignedValues = [uvEDelete, uvEInsert, uvEUpdate]
+    UpdateOptions.EnableDelete = False
+    UpdateOptions.EnableInsert = False
+    UpdateOptions.EnableUpdate = False
+    UpdateOptions.UpdateTableName = 'SwimClubMeet.dbo.HeatIndividual'
+    SQL.Strings = (
+      'SELECT [HeatID]'
+      '    , [HeatNum]'
+      '    , CONCAT ('
+      '        [HeatType].[Caption]'
+      '        , [HeatNum]'
+      '        ) AS [HeatCaption]'
+      '    --, [HeatIndividual].[Caption]'
+      '    , [EventID]'
+      '    --, [ScheduleDT]'
+      '    --, [RallyOpenDT]'
+      '    , [HeatIndividual].[HeatTypeID]'
+      '    --, [RallyCloseDT]'
+      '    , [HeatStatusID]'
+      '--, [OpenDT]'
+      '--, [CloseDT]'
+      'FROM [SwimClubMeet].[dbo].[HeatIndividual]'
+      'INNER JOIN [SwimClubMeet].[dbo].[HeatType]'
+      '    ON [HeatIndividual].[HeatTypeID] = [HeatType].[HeatTypeID]'
+      'ORDER BY [HeatNum] ASC')
     Left = 136
     Top = 320
   end
   object dsEvent: TDataSource
+    DataSet = qryEvent
     Left = 224
     Top = 248
   end
   object dsHeat: TDataSource
+    DataSet = qryHeat
     Left = 224
     Top = 320
   end
