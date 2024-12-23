@@ -105,6 +105,7 @@ type
     qrySessionListSwimClubID: TIntegerField;
     qrySessionListSessionStatusID: TIntegerField;
     vimglistTreeView: TVirtualImageList;
+    vimglistStateImages: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
     procedure qryEventAfterScroll(DataSet: TDataSet);

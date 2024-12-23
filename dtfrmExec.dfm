@@ -1,9 +1,10 @@
 object dtExec: TdtExec
   Left = 0
   Top = 0
+  BorderStyle = bsSingle
   Caption = 'SwimClubMeet - Dolphin Timing.'
-  ClientHeight = 697
-  ClientWidth = 1268
+  ClientHeight = 743
+  ClientWidth = 1330
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,7 +20,7 @@ object dtExec: TdtExec
   object actnMenuBar: TActionMainMenuBar
     Left = 0
     Top = 0
-    Width = 1268
+    Width = 1330
     Height = 25
     UseSystemFont = False
     ActionManager = actnManager
@@ -39,8 +40,8 @@ object dtExec: TdtExec
   object rpnlBody: TRelativePanel
     Left = 0
     Top = 25
-    Width = 1268
-    Height = 672
+    Width = 1330
+    Height = 718
     ControlCollection = <
       item
         Control = pnlTool1
@@ -83,26 +84,23 @@ object dtExec: TdtExec
       end>
     Align = alClient
     BevelOuter = bvNone
-    Padding.Left = 10
-    Padding.Top = 10
-    Padding.Right = 10
-    Padding.Bottom = 10
     TabOrder = 1
+    ExplicitHeight = 787
     DesignSize = (
-      1268
-      672)
+      1330
+      718)
     object pnlTool1: TPanel
       AlignWithMargins = True
-      Left = 13
-      Top = 13
+      Left = 3
+      Top = 3
       Width = 144
-      Height = 646
+      Height = 712
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 0
       object vimgHeatNum: TVirtualImage
         Left = 24
-        Top = 112
+        Top = 154
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -113,7 +111,7 @@ object dtExec: TdtExec
       end
       object vimgHeatStatus: TVirtualImage
         Left = 80
-        Top = 112
+        Top = 154
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -124,7 +122,7 @@ object dtExec: TdtExec
       end
       object vimgRelayBug: TVirtualImage
         Left = 24
-        Top = 56
+        Top = 98
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -135,7 +133,7 @@ object dtExec: TdtExec
       end
       object vimgStrokeBug: TVirtualImage
         Left = 80
-        Top = 56
+        Top = 98
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -146,7 +144,7 @@ object dtExec: TdtExec
       end
       object lblMeters: TLabel
         Left = 9
-        Top = 62
+        Top = 104
         Width = 71
         Height = 37
         Alignment = taRightJustify
@@ -160,7 +158,7 @@ object dtExec: TdtExec
       end
       object lblHeatNum: TLabel
         Left = 24
-        Top = 112
+        Top = 154
         Width = 50
         Height = 45
         Alignment = taCenter
@@ -176,7 +174,7 @@ object dtExec: TdtExec
       end
       object lblMetersRelay: TLabel
         Left = 34
-        Top = 19
+        Top = 61
         Width = 96
         Height = 37
         Alignment = taRightJustify
@@ -191,10 +189,10 @@ object dtExec: TdtExec
         Visible = False
       end
       object lblSessionStart: TLabel
-        Left = 0
-        Top = 512
+        Left = 1
+        Top = 644
         Width = 143
-        Height = 107
+        Height = 59
         Alignment = taCenter
         AutoSize = False
         Caption = 'SESSION'#13#10'DD/MM/YYYY'
@@ -210,10 +208,10 @@ object dtExec: TdtExec
     end
     object pnlSCM: TPanel
       AlignWithMargins = True
-      Left = 163
-      Top = 13
-      Width = 462
-      Height = 646
+      Left = 153
+      Top = 3
+      Width = 525
+      Height = 712
       BevelOuter = bvNone
       Color = 5988209
       ParentBackground = False
@@ -222,10 +220,10 @@ object dtExec: TdtExec
         Left = 0
         Top = 0
         Width = 450
-        Height = 29
+        Height = 64
         Alignment = taCenter
         AutoSize = False
-        Caption = '50M Freestyle - Boys under 10y'
+        Caption = 'EVENT 1 : 50M Freestyle'#13#10'Boys under 10y'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -19
@@ -233,38 +231,39 @@ object dtExec: TdtExec
         Font.Style = []
         ParentFont = False
         Layout = tlCenter
+        WordWrap = True
       end
       object btnNextEvent: TButton
-        Left = -1
-        Top = 567
-        Width = 450
+        Left = 0
+        Top = 655
+        Width = 498
         Height = 50
         Caption = 'NEXT'
         TabOrder = 0
         OnClick = btnNextEventClick
       end
       object btnPrevEvent: TButton
-        Left = -1
-        Top = 32
-        Width = 386
+        Left = 0
+        Top = 70
+        Width = 434
         Height = 50
         Caption = 'PREVIOUS'
         TabOrder = 1
         OnClick = btnPrevEventClick
       end
       object scmGrid: TDBAdvGrid
-        Left = -1
-        Top = 88
-        Width = 450
-        Height = 473
+        Left = 0
+        Top = 126
+        Width = 498
+        Height = 523
         Cursor = crDefault
         BevelInner = bvNone
         BevelKind = bkFlat
         BevelOuter = bvNone
         Color = 6445643
-        ColCount = 6
+        ColCount = 7
         Ctl3D = True
-        DefaultRowHeight = 34
+        DefaultRowHeight = 46
         DrawingStyle = gdsClassic
         FixedColor = 3880234
         RowCount = 5
@@ -458,32 +457,6 @@ object dtExec: TdtExec
             CheckFalse = 'N'
             CheckTrue = 'Y'
             Color = 6445643
-            FieldName = 'RaceTime'
-            Font.Charset = DEFAULT_CHARSET
-            Font.Color = clWindow
-            Font.Height = -16
-            Font.Name = 'Segoe UI'
-            Font.Style = []
-            HeaderFont.Charset = DEFAULT_CHARSET
-            HeaderFont.Color = clWindow
-            HeaderFont.Height = -16
-            HeaderFont.Name = 'Segoe UI'
-            HeaderFont.Style = []
-            PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
-            PrintFont.Charset = DEFAULT_CHARSET
-            PrintFont.Color = clWindowText
-            PrintFont.Height = -12
-            PrintFont.Name = 'Segoe UI'
-            PrintFont.Style = []
-            Width = 90
-          end
-          item
-            Borders = []
-            BorderPen.Color = clSilver
-            ButtonHeight = 18
-            CheckFalse = 'N'
-            CheckTrue = 'Y'
-            Color = 6445643
             FieldName = 'TimeToBeat'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindow
@@ -502,7 +475,7 @@ object dtExec: TdtExec
             PrintFont.Height = -12
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
-            Width = 90
+            Width = 0
           end
           item
             Borders = []
@@ -518,6 +491,63 @@ object dtExec: TdtExec
             Font.Name = 'Segoe UI'
             Font.Style = []
             Header = 'PB'
+            HeaderFont.Charset = DEFAULT_CHARSET
+            HeaderFont.Color = clWindow
+            HeaderFont.Height = -16
+            HeaderFont.Name = 'Segoe UI'
+            HeaderFont.Style = []
+            PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+            PrintFont.Charset = DEFAULT_CHARSET
+            PrintFont.Color = clWindowText
+            PrintFont.Height = -12
+            PrintFont.Name = 'Segoe UI'
+            PrintFont.Style = []
+            Width = 0
+          end
+          item
+            Borders = []
+            BorderPen.Color = clSilver
+            ButtonHeight = 18
+            CheckFalse = 'N'
+            CheckTrue = 'Y'
+            Color = 6445643
+            FieldName = 'MemberID'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindow
+            Font.Height = -16
+            Font.Name = 'Segoe UI'
+            Font.Style = []
+            Header = 'Entrant'
+            HeaderFont.Charset = DEFAULT_CHARSET
+            HeaderFont.Color = clWindow
+            HeaderFont.Height = -16
+            HeaderFont.Name = 'Segoe UI'
+            HeaderFont.Style = []
+            HeaderAlignment = taCenter
+            HTMLTemplate = 
+              '<P align="center"><FONT face="Arial">  <B> <#FName></B><BR> TTB:' +
+              ' <#TimeToBeat>      PB: <#PersonalBest></FONT></P> '
+            PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+            PrintFont.Charset = DEFAULT_CHARSET
+            PrintFont.Color = clWindowText
+            PrintFont.Height = -16
+            PrintFont.Name = 'Segoe UI'
+            PrintFont.Style = []
+            Width = 300
+          end
+          item
+            Borders = []
+            BorderPen.Color = clSilver
+            ButtonHeight = 18
+            CheckFalse = 'N'
+            CheckTrue = 'Y'
+            Color = 6445643
+            FieldName = 'RaceTime'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindow
+            Font.Height = -16
+            Font.Name = 'Segoe UI Semibold'
+            Font.Style = []
             HeaderFont.Charset = DEFAULT_CHARSET
             HeaderFont.Color = clWindow
             HeaderFont.Height = -16
@@ -701,20 +731,21 @@ object dtExec: TdtExec
         ColWidths = (
           20
           44
-          90
-          90
+          0
+          0
+          300
           90
           34)
         RowHeights = (
           34
-          34
-          34
-          34
-          34)
+          46
+          46
+          46
+          46)
       end
       object btnPickEvent: TButton
-        Left = 391
-        Top = 32
+        Left = 440
+        Top = 70
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
@@ -727,18 +758,18 @@ object dtExec: TdtExec
     end
     object pnlDT: TPanel
       AlignWithMargins = True
-      Left = 631
-      Top = 13
-      Width = 466
-      Height = 646
+      Left = 684
+      Top = 3
+      Width = 482
+      Height = 712
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 2
       object dbtxtDTFileName: TDBText
-        Left = 6
-        Top = -1
-        Width = 441
-        Height = 27
+        Left = 16
+        Top = 1
+        Width = 449
+        Height = 41
         DataField = 'FileName'
         DataSource = DTData.dsDT
         Font.Charset = DEFAULT_CHARSET
@@ -749,8 +780,8 @@ object dtExec: TdtExec
         ParentFont = False
       end
       object btnPrevDTFile: TButton
-        Left = 0
-        Top = 32
+        Left = 15
+        Top = 71
         Width = 385
         Height = 49
         Caption = 'PREVIOUS'
@@ -758,8 +789,8 @@ object dtExec: TdtExec
         OnClick = btnPrevDTFileClick
       end
       object btnNextDTFile: TButton
-        Left = 1
-        Top = 566
+        Left = 16
+        Top = 655
         Width = 449
         Height = 50
         Caption = 'NEXT'
@@ -767,10 +798,10 @@ object dtExec: TdtExec
         OnClick = btnNextDTFileClick
       end
       object dtGrid: TDBAdvGrid
-        Left = 1
-        Top = 87
+        Left = 16
+        Top = 126
         Width = 449
-        Height = 473
+        Height = 523
         Cursor = crDefault
         BevelInner = bvNone
         BevelKind = bkFlat
@@ -1224,8 +1255,8 @@ object dtExec: TdtExec
           34)
       end
       object pBar: TProgressBar
-        Left = 0
-        Top = 622
+        Left = 15
+        Top = 55
         Width = 449
         Height = 9
         Position = 50
@@ -1237,8 +1268,8 @@ object dtExec: TdtExec
         StyleElements = []
       end
       object btnPickDTFile: TButton
-        Left = 391
-        Top = 32
+        Left = 406
+        Top = 70
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
@@ -1251,15 +1282,16 @@ object dtExec: TdtExec
     end
     object pnlTool2: TPanel
       AlignWithMargins = True
-      Left = 1103
-      Top = 13
+      Left = 1172
+      Top = 3
       Width = 144
-      Height = 646
+      Height = 712
       Anchors = []
       BevelOuter = bvNone
       Color = clDimgray
       ParentBackground = False
       TabOrder = 3
+      Visible = False
       StyleElements = [seFont, seBorder]
       object stackpnlTool2: TStackPanel
         Left = 0
@@ -1452,7 +1484,7 @@ object dtExec: TdtExec
       end>
     Images = DTData.vimglistMenu
     Left = 64
-    Top = 224
+    Top = 264
     StyleName = 'Platform Default'
     object actnSelectSwimClub: TAction
       Category = 'File'
@@ -1557,7 +1589,7 @@ object dtExec: TdtExec
     Options = []
     Title = 'Create a Dolphin Timing '#39'event setup'#39' csv file.'
     Left = 64
-    Top = 336
+    Top = 376
   end
   object PickDTFolderDlg: TFileOpenDialog
     DefaultFolder = 'c:\Dolphin\Meets'
@@ -1567,6 +1599,6 @@ object dtExec: TdtExec
     Options = [fdoPickFolders]
     Title = 'Select the Dolphin Timing folder.'
     Left = 64
-    Top = 280
+    Top = 320
   end
 end

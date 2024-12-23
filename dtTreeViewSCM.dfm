@@ -18,7 +18,7 @@ object TreeViewSCM: TTreeViewSCM
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   TextHeight = 21
-  object TreeViewSCM: TTreeView
+  object TreeView: TTreeView
     Left = 0
     Top = 0
     Width = 492
@@ -35,10 +35,12 @@ object TreeViewSCM: TTreeViewSCM
     ParentFont = False
     ReadOnly = True
     RowSelect = True
+    StateImages = DTData.vimglistStateImages
     TabOrder = 0
+    OnDblClick = TreeViewDblClick
     Items.NodeData = {
-      070300000009540054007200650065004E006F00640065002D00000000000000
-      00000000FFFFFFFFFFFFFFFF0000000000000000000300000001074500760065
+      070300000009540054007200650065004E006F00640065002D00000002000000
+      0000000004000000FFFFFFFF0000000000000000000300000001074500760065
       006E0074002000310000002B000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
       FFFFFF000000000000000000010648006500610074002000310000002B000000
       0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000010648
@@ -58,7 +60,6 @@ object TreeViewSCM: TTreeViewSCM
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 547
     object btnClose: TButton
       Left = 392
       Top = 6
@@ -91,8 +92,9 @@ object TreeViewSCM: TTreeViewSCM
       ''
       'SELECT [EventID]'
       '    , SUBSTRING(CONCAT ('
-      '            [EventNum]'
-      '            , '#39' '#39
+      '            '#39'Event '#39
+      '            , [EventNum]'
+      '            , '#39'  '#39
       '            , [Distance].[Caption]'
       '            , '#39' '#39
       '            , [Stroke].[Caption]'
@@ -146,6 +148,7 @@ object TreeViewSCM: TTreeViewSCM
       '    , [HeatNum]'
       '    , CONCAT ('
       '        [HeatType].[Caption]'
+      '        , '#39' '#39
       '        , [HeatNum]'
       '        ) AS [HeatCaption]'
       '    --, [HeatIndividual].[Caption]'

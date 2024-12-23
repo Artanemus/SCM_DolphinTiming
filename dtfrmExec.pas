@@ -466,9 +466,12 @@ begin
     if (dlg.SelectedEventID <> 0) then
     begin
       found := DTData.LocateEvent(dlg.SelectedEventID);
-      if found and (dlg.SelectedHeatID <> 0) then
+      if found then
       begin
-        DTData.LocateHeat(dlg.SelectedHeatID);
+        DTData.dsHeat.DataSet.Close;
+        DTData.dsHeat.DataSet.Open;
+        if (dlg.SelectedHeatID <> 0) then
+          DTData.LocateHeat(dlg.SelectedHeatID);
       end;
     end;
     DTData.dsEvent.DataSet.EnableControls;
@@ -498,20 +501,24 @@ begin
   end
   else
   begin
+    if (DTData.dsEvent.DataSet.FieldByName('EventNum').AsInteger = 1) and
+      (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = 1) then
+    exit;
+
     { After reaching the first record a second click of btnPrevEvent is needed to
       recieve a Bof. Checking for heatnum = 1 removes this UI nonsence.}
-  if DTData.dsHeat.DataSet.BOF or
-    (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = 1) then
-  begin
-      DTData.dsEvent.DataSet.prior;
-      DTData.dsHeat.DataSet.Last;
-    end
-    else
+    if DTData.dsHeat.DataSet.BOF or
+      (DTData.dsHeat.DataSet.FieldByName('HeatNum').AsInteger = 1) then
     begin
-      DTData.dsHeat.DataSet.prior;
+        DTData.dsEvent.DataSet.prior;
+        DTData.dsHeat.DataSet.Last;
+      end
+      else
+      begin
+        DTData.dsHeat.DataSet.prior;
+      end;
     end;
-  end;
-  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+    PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
@@ -787,30 +794,33 @@ var
 i: integer;
 s, s2: string;
 begin
+  lblEventDetails.Caption := '';
+  if DTData.qryEvent.IsEmpty then exit;
+
   i := DTData.qryEvent.FieldByName('EventNum').AsInteger;
-  if i = 0 then
-    lblEventDetails.Caption := ''
-  else
-    begin
-      // build the event detail string...  Distance Stroke (OPT: Caption)
-      s := DTData.qryDistance.FieldByName('Caption').AsString;
-      s := s + ' ' + DTData.qryStroke.FieldByName('Caption').AsString;
-      // event description - entered in core app's grid extension mode.
-      s2 := DTData.qryEvent.FieldByName('Caption').AsString;
-      if (length(s2) > 0) then
-      begin
-        if (length(s2) > 17) then
-          s2 := s2.Substring(0, 14) + '...';
-        s := s +  ' - ' +  s2;
-      end;
-      // heat number...
-      i:=DTData.qryHeat.FieldByName('HeatNum').AsInteger;
-      s := s + ' - Heat: ' + IntToStr(i);
-      if Length(s) > 0 then
-      begin
-        lblEventDetails.Caption := s;
-      end;
-    end;
+  if (i = 0) then exit;
+
+  s := 'Event ' + IntToStr(i) + ' : ';
+  // build the event detail string...  Distance Stroke (OPT: Caption)
+  s := s + DTData.qryDistance.FieldByName('Caption').AsString;
+  s := s + ' ' + DTData.qryStroke.FieldByName('Caption').AsString;
+  // heat number...
+  i:=DTData.qryHeat.FieldByName('HeatNum').AsInteger;
+  if (i > 0) then
+    s := s + ' - Heat : ' + IntToStr(i);
+  // event description - entered in core app's grid extension mode.
+  s2 := DTData.qryEvent.FieldByName('Caption').AsString;
+  if (length(s2) > 0) then
+  begin
+    if (length(s2) > 128) then
+      s2 := s2.Substring(0, 124) + '...';
+    s := s + sLineBreak +  s2;
+  end;
+  // assignment
+  if Length(s) > 0 then
+  begin
+    lblEventDetails.Caption := s;
+  end;
 end;
 
 procedure TdtExec.UpdateSessionStartLabel;

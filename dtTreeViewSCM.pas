@@ -18,45 +18,46 @@ type
     FValue: Integer;  // EventNum or HeatNum - rootNode or SubNode
   public
     constructor Create(AID: integer; AValue: Integer);
-    property Value: Integer read FValue write FValue;
     property ID: Integer read FID write FID;
+    property Value: Integer read FValue write FValue;
   end;
 
 
 type
   TTreeViewSCM = class(TForm)
-    TreeViewSCM: TTreeView;
-    pnlFooter: TPanel;
+    btnCancel: TButton;
     btnClose: TButton;
-    qryEvent: TFDQuery;
-    qryHeat: TFDQuery;
     dsEvent: TDataSource;
     dsHeat: TDataSource;
-    btnCancel: TButton;
+    pnlFooter: TPanel;
+    qryEvent: TFDQuery;
+    qryHeat: TFDQuery;
+    TreeView: TTreeView;
     procedure btnCancelClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShow(Sender: TObject);
+    procedure TreeViewDblClick(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
-    FSessionID: integer;
-    IdentList: TList<TIdentData>;
     FSelectedEventID: integer;
     FSelectedHeatID: integer;
-    procedure PopulateTree;
-    procedure LocateTreeItem(EventNum, HeatNum: integer);
+    FSessionID: integer;
+    procedure FreeTreeViewData;
     procedure LocateEventID(AEventID: integer);
     procedure LocateHeatID(AHeatID: integer);
+    procedure LocateTreeItem(EventNum, HeatNum: integer);
+    procedure PopulateTree;
   public
     { Public declarations }
     procedure Prepare(AConnectionID: TFDConnection; ASessionID, AEventID, AHeatID: integer);
+    property Connection: TFDConnection read FConnection write FConnection;
     property SelectedEventID: integer read FSelectedEventID write FSelectedEventID;
     property SelectedHeatID: integer read FSelectedHeatID write FSelectedHeatID;
     property SessionID: integer read FSessionID write FSessionID;
-    property Connection: TFDConnection read FConnection write FConnection;
   end;
 
 var
@@ -87,7 +88,7 @@ obj : TIdentData;
 begin
   FSelectedEventID := 0;
   FSelectedHeatID := 0;
-  node := TreeViewSCM.Selected;
+  node := TreeView.Selected;
   if (node <> nil) then
   begin
     { ROOT NODE }
@@ -130,14 +131,20 @@ begin
   ModalResult := mrOk;
 end;
 
-procedure TTreeViewSCM.FormDestroy(Sender: TObject);
+procedure TTreeViewSCM.FreeTreeViewData;
+var
+ident: TIdentData;
+Node: TTreeNode;
 begin
-  while IdentList.Count > 0 do
+  for Node in TreeView.Items do
   begin
-    TIdentData(IdentList[0]).Free;
-    IdentList.Delete(0);
+    ident := Node.Data;
+    if Assigned(ident) then
+    begin
+      ident.Free;
+      Node.Data := nil;
+    end;
   end;
-  IdentList.Free; // free TIdentData objects ...
 end;
 
 { TTreeViewSCM }
@@ -146,8 +153,13 @@ begin
   // Empty the TreeView.
   FConnection := nil;
   SessionID := 0;
-  TreeViewSCM.Items.Clear;
-  IdentList := TList<TIdentData>.Create; // A list of ptrs to TIdentData objects.
+  TreeView.Items.Clear; // remove all design-time layout items.
+end;
+
+procedure TTreeViewSCM.FormDestroy(Sender: TObject);
+begin
+  FreeTreeViewData;
+  TreeView.Items.Clear;
 end;
 
 procedure TTreeViewSCM.FormKeyDown(Sender: TObject; var Key: Word; Shift:
@@ -162,49 +174,31 @@ begin
 end;
 
 procedure TTreeViewSCM.FormShow(Sender: TObject);
-var
-Event, Heat: integer;
 begin
-  if Assigned(fConnection) then
-  begin
-    qryEvent.Connection := FConnection;
-    qryEvent.ParamByName('SESSIONID').AsInteger := FSessionID;
-    qryEvent.Prepare;
-    qryEvent.Open;
-    if qryEvent.Active then
-    begin
-      qryHeat.Connection :=FConnection;
-      qryHeat.Open; // Master : Detail relationship ...
-    end;
-
-    PopulateTree;
-    Event := qryEvent.ParamByName('EventID').AsInteger;
-    Heat := qryHeat.ParamByName('HeatID').AsInteger;
-    LocateTreeItem(Event, Heat);
-  end;
-
-  TreeViewSCM.FullExpand
-
+//  TreeView.FullExpand;
 end;
 
 procedure TTreeViewSCM.LocateEventID(AEventID: integer);
 var
-  Node: TTreeNode;
+  Node, ChildNode: TTreeNode;
   obj : TIdentData;
 begin
-  Node := TreeViewSCM.Items.GetFirstNode;
+  Node := TreeView.Items.GetFirstNode;
   while Node <> nil do
   begin
     obj := Node.Data;
     if (obj <> nil) and (obj.FID = AEventID) then
     begin
-      Node := Node.GetFirstChild;
-      // Expand the parent node if it's collapsed.
-      if not Node.Parent.Expanded then
-        Node.Parent.Expanded := True;
-      // Focus on first heat in event.
-      TreeViewSCM.Selected := Node;
-      Node.Focused := true;
+      ChildNode := Node.GetFirstChild;
+      if (ChildNode <> nil) then
+      begin
+        // Expand the parent node if it's collapsed.
+        if not ChildNode.Parent.Expanded then
+          ChildNode.Parent.Expanded := True;
+        // Focus on first heat in event.
+        TreeView.Selected := ChildNode;
+        ChildNode.Focused := true;
+      end;
       break;
     end;
     Node := Node.GetNextSibling;
@@ -216,7 +210,7 @@ var
   Node, ChildNode: TTreeNode;
   obj : TIdentData;
 begin
-  Node := TreeViewSCM.Items.GetFirstNode;
+  Node := TreeView.Items.GetFirstNode;
   while Node <> nil do
   begin
     ChildNode := Node.GetFirstChild;
@@ -228,7 +222,7 @@ begin
         // Expand the parent node if it's collapsed
         if not Node.Expanded then
           Node.Expanded := True;
-        TreeViewSCM.Selected := ChildNode;
+        TreeView.Selected := ChildNode;
         ChildNode.Focused := true;
         break;
       end;
@@ -245,7 +239,7 @@ var
   obj : TIdentData;
 begin
   Found := False;
-  Node := TreeViewSCM.Items.GetFirstNode;
+  Node := TreeView.Items.GetFirstNode;
   while Node <> nil do
   begin
     obj := Node.Data;
@@ -268,7 +262,7 @@ begin
         // Expand the parent node if it's collapsed
         if not Node.Parent.Expanded then
           Node.Parent.Expanded := True;
-        TreeViewSCM.Selected := Node;
+        TreeView.Selected := Node;
         Node.Focused := true;
         break;
       end;
@@ -284,12 +278,10 @@ var
   i, j, id: integer;
   ident: TIdentData;
 begin
-
   { p o p u l a t e   t h e   T r e e V i e w . . .   }
 
-  TreeViewSCM.Items.Clear; // Clear the tree view
-
   // R O O T   N O D E S    -   E V E N T S   . . .
+  qryEvent.First;
   while not qryEvent.Eof do
   begin
     s := qryEvent.FieldByName('EventCaption').AsString;
@@ -298,8 +290,8 @@ begin
     id := qryEvent.FieldByName('EventID').AsInteger;
     { CREATE NODE }
     ident := TIdentData.Create(id, j); // object to hold event and even number.
-    IdentList.Add(ident); // add object to local list.
-    Node := TreeViewSCM.Items.AddObject(nil, s, ident); // assign data ptr.
+//    IdentList.Add(ident); // add object to local list.
+    Node := TreeView.Items.AddObject(nil, s, ident); // assign data ptr.
 
     if (qryEvent.FieldByName('EventTypeID').AsInteger = 1) then
     begin
@@ -333,6 +325,14 @@ begin
       end;
     end;
 
+    if (qryEvent.FieldByName('EventStatusID').AsInteger = 2) then
+      Node.StateIndex := 5   // ticked box - all heats are closed
+    else
+      Node.StateIndex := 4;  // un-ticked box.
+
+    Node.SelectedIndex := Node.ImageIndex;
+    Node.ExpandedImageIndex := -1;
+
     // ------------------------------------------------------------
     // C H I L D   N O D E S   -   H E A T S  ...
     qryHeat.First;
@@ -342,9 +342,11 @@ begin
       s := qryHeat.FieldByName('HeatCaption').AsString;
       i := qryHeat.FieldByName('HeatNum').AsInteger;
       j := qryHeat.FieldByName('HeatStatusID').AsInteger;
+      id := qryHeat.FieldByName('HeatID').AsInteger;
 
       { CREATE SUBNODE }
-      subnode := TreeViewSCM.Items.AddChild(Node, s);
+      ident := TIdentData.Create(id, i); // object to hold event and even number.
+      subnode := TreeView.Items.AddChildObject(Node, s, ident);
 
       // ICON ORDERED heat numbers ...
       if (i > 9) then
@@ -356,14 +358,19 @@ begin
       // ICON Heat status : Open, Raced, Closed.
       case j of
         1:
-          subnode.StateIndex := 11;
+          subnode.StateIndex := 1;
         2:
-          subnode.StateIndex := 12;
+          subnode.StateIndex := 2;
         3:
-          subnode.StateIndex := 13;
+          subnode.StateIndex := 3;
       end;
+
+      subNode.SelectedIndex := subnode.ImageIndex;
+
+      qryHeat.Next;
     end;
     // ------------------------------------------------------------
+    qryEvent.Next;
   end;
 
 end;
@@ -371,11 +378,11 @@ end;
 procedure TTreeViewSCM.Prepare(AConnectionID: TFDConnection;
   ASessionID, AEventID, AHeatID: integer);
 var
-Event, Heat: integer;
 node: TTreeNode;
 begin
-  if Assigned(fConnection) then
+  if Assigned(AConnectionID) then
   begin
+    FConnection := AConnectionID;
     qryEvent.Connection := FConnection;
     qryEvent.ParamByName('SESSIONID').AsInteger := ASessionID;
     qryEvent.Prepare;
@@ -394,11 +401,16 @@ begin
       LocateEventID(AEventID)
     else
     begin
-      node := TreeViewSCM.Items.GetFirstNode;
+      node := TreeView.Items.GetFirstNode;
       if (node <> nil) then
-        TreeViewSCM.Select(Node);
+        TreeView.Select(Node);
     end;
   end;
+end;
+
+procedure TTreeViewSCM.TreeViewDblClick(Sender: TObject);
+begin
+  btnClose.Click;
 end;
 
 end.

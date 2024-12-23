@@ -174,6 +174,10 @@ dlg: TdtExec;
 begin
   if Assigned(SCM) and SCM.IsActive and SCM.scmConnection.Connected then
   begin
+
+    // H I D E   B O O T   F O R M .
+    Visible := false;
+
     // C R E A T E   T H E   D T  D A T A M O D U L E .
     if NOT Assigned(DTData) then
       DTData := TDTData.Create(Self);
@@ -194,10 +198,10 @@ begin
 
     // F R E E   D T   D A T A M O D U L E .
     FreeAndNil(DTData);
-
-    Visible := true;
-    actnDisconnectExecute(Self);  // or ... ExecuteAction(actnDisconnect);
-    Close();  // terminate application ....
+    // de-activate SCM. Kill animation. Save Settings, etc...
+    actnDisconnectExecute(Self);
+    // Terminate application ....
+    Close();
   end;
 end;
 
