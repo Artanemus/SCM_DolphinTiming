@@ -108,8 +108,6 @@ type
     vimglistStateImages: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
-    procedure qryEventAfterScroll(DataSet: TDataSet);
-    procedure qryHeatAfterScroll(DataSet: TDataSet);
   private
     { Private declarations }
     FConnection: TFDConnection;
@@ -248,8 +246,6 @@ begin
   result := v;
 
 end;
-
-
 
 function TDTData.LocateEvent(AEventID: integer): boolean;
 var
@@ -517,20 +513,6 @@ begin
   msgHandle := 0;
 end;
 
-procedure TDTData.qryEventAfterScroll(DataSet: TDataSet);
-begin
-  // send message to update dtfrmExec ...
-  if (msgHandle <> 0) then
-    PostMessage(msgHandle, SCM_EVENTSCROLL, 0, 0);
-end;
-
-procedure TDTData.qryHeatAfterScroll(DataSet: TDataSet);
-begin
-  // send message to update dtfrmExec ...
-  if (msgHandle <> 0) then
-    PostMessage(msgHandle, SCM_HEATSCROLL, 0, 0);
-end;
-
 procedure TDTData.WriteToBinary(AFilePath:string);
 var
 s: string;
@@ -558,7 +540,6 @@ begin
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
   tblDTLane.LoadFromFile(s + 'DTLane.fsBinary');
 end;
-
 
 procedure TDTData.SetActiveSessionID(const Value: integer);
 begin

@@ -18,7 +18,7 @@ object TreeViewSCM: TTreeViewSCM
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   TextHeight = 21
-  object TreeView: TTreeView
+  object TV: TTreeView
     Left = 0
     Top = 0
     Width = 492
@@ -37,7 +37,7 @@ object TreeViewSCM: TTreeViewSCM
     RowSelect = True
     StateImages = DTData.vimglistStateImages
     TabOrder = 0
-    OnDblClick = TreeViewDblClick
+    OnDblClick = TVDblClick
     Items.NodeData = {
       070300000009540054007200650065004E006F00640065002D00000002000000
       0000000004000000FFFFFFFF0000000000000000000300000001074500760065
@@ -60,20 +60,25 @@ object TreeViewSCM: TTreeViewSCM
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
+    DesignSize = (
+      492
+      57)
     object btnClose: TButton
       Left = 392
-      Top = 6
+      Top = 11
       Width = 100
       Height = 34
+      Anchors = [akTop, akRight]
       Caption = 'OK'
       TabOrder = 0
       OnClick = btnCloseClick
     end
     object btnCancel: TButton
       Left = 286
-      Top = 6
+      Top = 11
       Width = 100
       Height = 34
+      Anchors = [akTop, akRight]
       Caption = 'Cancel'
       TabOrder = 1
       OnClick = btnCancelClick

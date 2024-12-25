@@ -32,14 +32,14 @@ type
     pnlFooter: TPanel;
     qryEvent: TFDQuery;
     qryHeat: TFDQuery;
-    TreeView: TTreeView;
+    TV: TTreeView;
     procedure btnCancelClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShow(Sender: TObject);
-    procedure TreeViewDblClick(Sender: TObject);
+    procedure TVDblClick(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
@@ -88,7 +88,7 @@ obj : TIdentData;
 begin
   FSelectedEventID := 0;
   FSelectedHeatID := 0;
-  node := TreeView.Selected;
+  node := TV.Selected;
   if (node <> nil) then
   begin
     { ROOT NODE }
@@ -136,7 +136,7 @@ var
 ident: TIdentData;
 Node: TTreeNode;
 begin
-  for Node in TreeView.Items do
+  for Node in TV.Items do
   begin
     ident := Node.Data;
     if Assigned(ident) then
@@ -152,14 +152,14 @@ procedure TTreeViewSCM.FormCreate(Sender: TObject);
 begin
   // Empty the TreeView.
   FConnection := nil;
-  SessionID := 0;
-  TreeView.Items.Clear; // remove all design-time layout items.
+  FSessionID := 0;
+  TV.Items.Clear; // remove all design-time layout items.
 end;
 
 procedure TTreeViewSCM.FormDestroy(Sender: TObject);
 begin
   FreeTreeViewData;
-  TreeView.Items.Clear;
+  TV.Items.Clear;
 end;
 
 procedure TTreeViewSCM.FormKeyDown(Sender: TObject; var Key: Word; Shift:
@@ -183,7 +183,7 @@ var
   Node, ChildNode: TTreeNode;
   obj : TIdentData;
 begin
-  Node := TreeView.Items.GetFirstNode;
+  Node := TV.Items.GetFirstNode;
   while Node <> nil do
   begin
     obj := Node.Data;
@@ -196,7 +196,7 @@ begin
         if not ChildNode.Parent.Expanded then
           ChildNode.Parent.Expanded := True;
         // Focus on first heat in event.
-        TreeView.Selected := ChildNode;
+        TV.Selected := ChildNode;
         ChildNode.Focused := true;
       end;
       break;
@@ -210,7 +210,7 @@ var
   Node, ChildNode: TTreeNode;
   obj : TIdentData;
 begin
-  Node := TreeView.Items.GetFirstNode;
+  Node := TV.Items.GetFirstNode;
   while Node <> nil do
   begin
     ChildNode := Node.GetFirstChild;
@@ -222,7 +222,7 @@ begin
         // Expand the parent node if it's collapsed
         if not Node.Expanded then
           Node.Expanded := True;
-        TreeView.Selected := ChildNode;
+        TV.Selected := ChildNode;
         ChildNode.Focused := true;
         break;
       end;
@@ -239,7 +239,7 @@ var
   obj : TIdentData;
 begin
   Found := False;
-  Node := TreeView.Items.GetFirstNode;
+  Node := TV.Items.GetFirstNode;
   while Node <> nil do
   begin
     obj := Node.Data;
@@ -262,7 +262,7 @@ begin
         // Expand the parent node if it's collapsed
         if not Node.Parent.Expanded then
           Node.Parent.Expanded := True;
-        TreeView.Selected := Node;
+        TV.Selected := Node;
         Node.Focused := true;
         break;
       end;
@@ -291,7 +291,7 @@ begin
     { CREATE NODE }
     ident := TIdentData.Create(id, j); // object to hold event and even number.
 //    IdentList.Add(ident); // add object to local list.
-    Node := TreeView.Items.AddObject(nil, s, ident); // assign data ptr.
+    Node := TV.Items.AddObject(nil, s, ident); // assign data ptr.
 
     if (qryEvent.FieldByName('EventTypeID').AsInteger = 1) then
     begin
@@ -346,7 +346,7 @@ begin
 
       { CREATE SUBNODE }
       ident := TIdentData.Create(id, i); // object to hold event and even number.
-      subnode := TreeView.Items.AddChildObject(Node, s, ident);
+      subnode := TV.Items.AddChildObject(Node, s, ident);
 
       // ICON ORDERED heat numbers ...
       if (i > 9) then
@@ -401,14 +401,14 @@ begin
       LocateEventID(AEventID)
     else
     begin
-      node := TreeView.Items.GetFirstNode;
+      node := TV.Items.GetFirstNode;
       if (node <> nil) then
-        TreeView.Select(Node);
+        TV.Select(Node);
     end;
   end;
 end;
 
-procedure TTreeViewSCM.TreeViewDblClick(Sender: TObject);
+procedure TTreeViewSCM.TVDblClick(Sender: TObject);
 begin
   btnClose.Click;
 end;

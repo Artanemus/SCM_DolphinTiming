@@ -2,11 +2,8 @@ unit dtUtils;
 
 interface
 
-uses dmDTData, vcl.ComCtrls, Math, System.Types;
-
-//var
-// idHeat, idLane, idNoodle: integer;
-//  LList: TStringDynArray;
+uses dmDTData, vcl.ComCtrls, Math, System.Types, System.IOUtils,
+  SysUtils, Windows, StrUtils, System.Classes;
 
 type
   PTime = ^TTime;
@@ -37,24 +34,20 @@ procedure ExtractFileNameFieldsDO3(const InputStr: string;
   var Event: integer;
   var GUID: string);
 
-procedure ExtractFileNameFieldsDO4(const InputStr:
-  string; var Session: integer;
+procedure ExtractFileNameFieldsDO4(const InputStr: string;
+  var Session: integer;
   var Event: integer;
   var Heat: integer;
   var Gender:
   string; var
   RaceID: string);
 
-//procedure ProcessDO4Files(const ADirectory: string; pBar: TProgressBar);
+procedure PrepareDTData();
+procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
+procedure AppendDTData(const AFileName:string);
 
-//procedure ProcessDO3Files(const ADirectory: string; pBar: TProgressBar);
-
-Procedure ProcessDTFiles(const ADirectory: string; pBar: TProgressBar);
-procedure LoadSession(aSessionID: integer; const ADirectory: string; pBar: TProgressBar);
 // function HasSession(aSessionID: integer);
-function GetFileType(const ADirectory: string): integer;
-// procedure SaveDTSession();
-// procedure LoadDTSession();
+function GetDTFileType(const ADirectory: string): integer;
 
 // ---------------------------------------------------
 
@@ -70,18 +63,16 @@ Example:
 ...
 }
 
-//procedure GetDT(fn: string);
-//procedure GetDTHeat(fn: string; DTID: integer);
-//procedure GetDTLane(sl: TStringList; DTHeatID: integer);
-
-var
-  dtFileType: integer;
-
 implementation
 
-uses
-  SysUtils, Windows, System.IOUtils,
-  StrUtils, System.Classes;
+var
+  DolphinTimingFileType: integer;
+
+
+procedure AppendDTData(const AFileName:string);
+Begin
+  // todo
+End;
 
 procedure GetDTLane(sl: TStringList; DTHeatID: integer);
 var
@@ -189,8 +180,8 @@ begin
   fCreationDT := TFile.GetCreationTime(fn);
   // Filename used can show session, event. (After correct DT setup).
   // fGUID is unique string(do3)/number(do4) given to each file by DT.
-  if DTFileType = 1 then
-    ExtractFileNameFieldsDO4(fn, fSessionNum, fEventNum, fHeatNum, fGender,
+  if DolphinTimingFileType = 1 then
+    ExtractFileNameFieldsDO4(fn2, fSessionNum, fEventNum, fHeatNum, fGender,
       fGUID)
   else
     ExtractFileNameFieldsDO3(fn2, fSessionNum, fEventNum, fGUID);
@@ -204,7 +195,7 @@ begin
   DTData.tblDT.fieldbyName('FileName').AsString := fn2; // include file ext.
   DTData.tblDT.fieldbyName('fSession').AsInteger := fSessionNum;
   DTData.tblDT.fieldbyName('fEvent').AsInteger := fEventNum;
-  if DTFileType = 1 then
+  if DolphinTimingFileType = 1 then
   begin
     DTData.tblDT.fieldbyName('fHeat').AsInteger:= fHeatNum; // DO4 only.
     DTData.tblDT.fieldbyName('fGender').AsString := fGender; // DO4 only.
@@ -396,12 +387,12 @@ begin
   // Copy uses one-based array indexing.
   // A = boys, B = girls, X = mixed gender...
   Gender := RightStr(Fields[2], 1);
-  if (Gender <> 'A') or (Gender <> 'B') then
-    Gender := 'X';
+  if (Gender <> 'A') and (Gender <> 'B') then Gender := 'X';
   s := Copy(Fields[2], 1, Length(Fields[2]) - 1);
   Heat := StrToIntDef(s, 0);
   // The fourthfield has a '.' delimiter for the string and the '.do4' part
-  RaceID := Copy(Fields[3], 1, Pos('.', Fields[2]) - 1);
+  RaceID := Copy(Fields[3], 1, Pos('.', Fields[3]) - 1);
+  // Alternatively :: RaceID := SplitString(Fields[3], '.')[0];
 end;
 
 function ExtractSessionField(const InputStr: string): integer;
@@ -428,7 +419,7 @@ var
   I, ID: integer;
 begin
   fileMask := '*.DO4';
-  dtFileType := 1;
+  DolphinTimingFileType := 1;
   if Assigned(pBar) then pBar.Position := 0;
   { Select the search option }
   // do not do recursive extract into subfolders
@@ -467,7 +458,7 @@ var
   I, ID: integer;
 begin
   fileMask := '*.DO3';
-  dtFileType := 0;
+  DolphinTimingFileType := 0;
 
   if Assigned(pBar) then pBar.Position := 0;
   { Select the search option }
@@ -501,7 +492,7 @@ begin
 
 end;
 
-Procedure ProcessDTFiles(const ADirectory: string; pBar: TProgressBar);
+procedure PrepareDTData();
 begin
   // clear all data records ....
   DTData.tblDT.EmptyDataSet;
@@ -509,16 +500,23 @@ begin
   DTData.tblDTLane.EmptyDataSet;
   DTData.tblDTNoodle.EmptyDataSet;
 
+  // Detach from Master Detail ...
+  DTData.tblDTHeat.MasterSource := nil;
+  DTData.tblDTLane.MasterSource := nil;
+  DTData.tblDTNoodle.MasterSource := nil;
+
+  // re-establish Master Detail ...
+  DTData.tblDTHeat.MasterSource := DTData.dsDT;
+  DTData.tblDTLane.MasterSource := DTData.dsDTHeat;
+  DTData.tblDTNoodle.MasterSource := DTData.dsDTLane;
+end;
+
+Procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
+begin
   DTData.tblDT.DisableControls;
   DTData.tblDTHeat.DisableControls;
   DTData.tblDTLane.DisableControls;
   DTData.tblDTNoodle.DisableControls;
-
-  // Detach from Master Detail ...
-  // For recordcount and ID number assignment.
-  DTData.tblDTHeat.MasterSource := nil;
-  DTData.tblDTLane.MasterSource := nil;
-  DTData.tblDTNoodle.MasterSource := nil;
 
   if Assigned(pBar) then pBar.Position := 0;
 
@@ -527,11 +525,6 @@ begin
 
   DTData.tblDT.First;
 
-  // re-establish Master Detail ...
-  DTData.tblDTHeat.MasterSource := DTData.dsDT;
-  DTData.tblDTLane.MasterSource := DTData.dsDTHeat;
-  DTData.tblDTNoodle.MasterSource := DTData.dsDTLane;
-
   DTData.tblDT.EnableControls;
   DTData.tblDTHeat.EnableControls;
   DTData.tblDTLane.EnableControls;
@@ -539,56 +532,7 @@ begin
 
   end;
 
-procedure LoadSession(aSessionID: integer; const ADirectory: string; pBar: TProgressBar);
-var
-  ft: integer;
-begin
-  // clear all data records ....
-  DTData.tblDT.EmptyDataSet;
-  DTData.tblDTHeat.EmptyDataSet;
-  DTData.tblDTLane.EmptyDataSet;
-  DTData.tblDTNoodle.EmptyDataSet;
-
-  DTData.tblDT.DisableControls;
-  DTData.tblDTHeat.DisableControls;
-  DTData.tblDTLane.DisableControls;
-  DTData.tblDTNoodle.DisableControls;
-
-  // Detach from Master Detail ...
-  // For recordcount and ID number assignment.
-  DTData.tblDTHeat.MasterSource := nil;
-  DTData.tblDTLane.MasterSource := nil;
-  DTData.tblDTNoodle.MasterSource := nil;
-
-  if Assigned(pBar) then pBar.Position := 0;
-  ft := GetFileType(ADirectory);
-  if (ft > -1) then
-  begin
-    if (ft = 0) then
-      ProcessDO3Files(ADirectory, pBar, aSessionID) // assigns filetype 0
-    else if (ft = 1) then
-      ProcessDO4Files(ADirectory, pBar, aSessionID); // assigns filetype 1
-  end
-  else
-  begin
-    MessageBox(0, PChar('Only one DT filetype allowed per folder!'),
-      PChar('Get filetype of directory...'), MB_ICONERROR or MB_OK);
-  end;
-
-  DTData.tblDT.First;
-
-  // re-establish Master Detail ...
-  DTData.tblDTHeat.MasterSource := DTData.dsDT;
-  DTData.tblDTLane.MasterSource := DTData.dsDTHeat;
-  DTData.tblDTNoodle.MasterSource := DTData.dsDTLane;
-
-  DTData.tblDT.EnableControls;
-  DTData.tblDTHeat.EnableControls;
-  DTData.tblDTLane.EnableControls;
-  DTData.tblDTNoodle.EnableControls;
-end;
-
-function GetFileType(const ADirectory: string): integer;
+function GetDTFileType(const ADirectory: string): integer;
 var
   LList: TStringDynArray;
   LSearchOption: TSearchOption;
@@ -617,11 +561,15 @@ begin
     { Catch the possible exceptions }
     MessageBox(0, PChar('Incorrect path or search mask'),
       PChar('Get file type of directory...'), MB_ICONERROR or MB_OK);
+    exit;
   end;
   if foundDO3 and not foundDO4 then
     result := 0
   else if foundDO4 and not foundDO3 then
-    result := 1;
+    result := 1
+  else if foundDO4 and foundDO3 then
+    result := 2;
+
 end;
 
 

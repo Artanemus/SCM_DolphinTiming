@@ -27,7 +27,6 @@ object DTData: TDTData
   end
   object qryEvent: TFDQuery
     Active = True
-    AfterScroll = qryEventAfterScroll
     IndexFieldNames = 'SessionID'
     MasterSource = dsSession
     MasterFields = 'SessionID'
@@ -58,7 +57,6 @@ object DTData: TDTData
   end
   object qryHeat: TFDQuery
     Active = True
-    AfterScroll = qryHeatAfterScroll
     IndexFieldNames = 'EventID'
     MasterSource = dsEvent
     MasterFields = 'EventID'
@@ -94,6 +92,7 @@ object DTData: TDTData
     Connection = SCM.scmConnection
     FormatOptions.AssignedValues = [fvFmtDisplayTime]
     FormatOptions.FmtDisplayTime = 'nn:ss.zzz'
+    UpdateOptions.AssignedValues = [uvEDelete, uvEInsert]
     SQL.Strings = (
       'SELECT [EntrantID]'
       '      ,[Entrant].[MemberID]'

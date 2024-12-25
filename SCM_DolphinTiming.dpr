@@ -20,7 +20,8 @@ uses
   dtDlgOptions in 'dtDlgOptions.pas' {dlgOptions},
   dtReConstruct in 'dtReConstruct.pas',
   Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas',
-  dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM};
+  dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM},
+  dtTreeViewDT in 'dtTreeViewDT.pas' {TreeViewDT};
 
 {$R *.res}
 

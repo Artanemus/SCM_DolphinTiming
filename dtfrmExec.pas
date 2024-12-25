@@ -27,7 +27,8 @@ uses
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
-  Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls;
+  Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
+  System.Types, System.IOUtils;
 
 type
   TdtExec = class(TForm)
@@ -48,7 +49,6 @@ type
     PickDTFolderDlg: TFileOpenDialog;
     sbtnSync: TSpeedButton;
     scmGrid: TDBAdvGrid;
-    spbtnAutoConnect: TSpeedButton;
     spbtnPost: TSpeedButton;
     vimgHeatNum: TVirtualImage;
     vimgHeatStatus: TVirtualImage;
@@ -72,7 +72,7 @@ type
     stackpnlTool2: TStackPanel;
     ShapeSpacer: TShape;
     actnAbout: TAction;
-    actnSync: TAction;
+    actnSyncDT: TAction;
     actnConnect: TAction;
     actnPost: TAction;
     lblMetersRelay: TLabel;
@@ -90,7 +90,7 @@ type
     procedure actnReConstructDO4Update(Sender: TObject);
     procedure actnSelectSessionExecute(Sender: TObject);
     procedure actnSetDTMeetsFolderExecute(Sender: TObject);
-    procedure actnSyncExecute(Sender: TObject);
+    procedure actnSyncDTExecute(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
     procedure btnPickEventClick(Sender: TObject);
@@ -100,22 +100,16 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure sbtnSyncClick(Sender: TObject);
+    procedure scmGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
+        string);
 
   private
     { Private declarations }
     FConnection: TFDConnection;
     fDolphinMeetsFolder: string;
-    { When flag is set...
-        Non-Aware UI controls are re-calculated and re-painted.
-        Non-Data-Aware labels are re-assigned and re-displayed.
-      A switch to disable UI updates when doing complex table changes.
-      Default value : FALSE
-    }
-    fFlagUIUpdate: boolean;
+
     { On FormShow - prompt user to select session.
-      Default value : FALSE
-    }
+      Default value : FALSE     }
     fFlagSelectSession: boolean;
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
@@ -131,8 +125,6 @@ type
     SCM_SELECTSESSION = WM_USER + 999;
 
   protected
-    procedure MSG_AfterEventScroll(var Msg: TMessage); message SCM_EVENTSCROLL;
-    procedure MSG_AfterHeatScroll(var Msg: TMessage); message SCM_HEATSCROLL;
     procedure MSG_UpdateUI(var Msg: TMessage); message SCM_UPDATEUI;
     procedure MSG_SelectSession(var Msg: TMessage); message SCM_SELECTSESSION;
 
@@ -154,7 +146,11 @@ uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
-    'This uses the data in the current session to build Dolphin Timing %s files.%sFiles are saved to the EventCSV folder specified in preferences.%sDo you want to perform the reconstruct?';
+    'This uses the data in the current session to build Dolphin Timing %s files.' +
+    sLineBreak +
+    'Files are saved to the reconstruct folder specified in preferences.' +
+    sLineBreak +
+    'Do you want to perform the reconstruct?';
   MSG_RECONSTRUCT_COMPLETE = 'Re-construct and export of %s files is complete.';
   CAPTION_RECONSTRUCT = '%s files ...';
   DO4_FILE_EXTENSION = 'DO4';
@@ -165,10 +161,22 @@ procedure TdtExec.actnExportDTCSVExecute(Sender: TObject);
 var
   fn: TFileName;
   i: integer;
+  dt: TDatetime;
+  s: string;
+  fs: TFormatSettings;
 begin
   FileSaveDlgCSV.DefaultFolder := Settings.DolphinEventFolder;
   i := DTData.qrySession.FieldByName('SessionID').AsInteger;
-  fn := 'SCM_DTEvent_session' + IntToStr(i) + '.csv';
+try
+  dt := DTData.qrySession.FieldByName('SessionStart').AsDateTime;
+  fs := TFormatSettings.Create;
+  fs.DateSeparator := '_';
+  s := '-' + DatetoStr(dt, fs);
+except
+  on E: Exception do
+    s := '';
+end;
+  fn := 'SCM_DT_event_session_' + IntToStr(i) + s + '.csv';
   FileSaveDlgCSV.FileName := fn;
   if FileSaveDlgCSV.Execute then
   begin
@@ -198,7 +206,7 @@ begin
   if DirectoryExists(fDolphinMeetsFolder) then
   begin
     pBar.Visible := true;
-    ProcessDTFiles(fDolphinMeetsFolder, pBar);
+//    ProcessDTFiles(fDolphinMeetsFolder, pBar);
     pBar.Visible := false;
     DTData.dsDT.DataSet.First;
     // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
@@ -393,11 +401,35 @@ begin
   // SavePreferencesToJSON.
 end;
 
-procedure TdtExec.actnSyncExecute(Sender: TObject);
+procedure TdtExec.actnSyncDTExecute(Sender: TObject);
+var
+currSessionID: integer;
+
 begin
-  LoadSession(DTData.ActiveSessionID, Settings.DolphinMeetsFolder, pBar);
-  DTData.LocateEvent(0);
-  DTData.LocateHeat(0);
+  // SYNC SCM session to DT session ...
+  // SYNC DT session to SCM session ...
+  currSessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
+
+  DTData.tblDT.DisableControls;
+  DTData.tblDTHeat.DisableControls;
+  DTData.tblDTLane.DisableControls;
+  DTData.tblDTNoodle.DisableControls;
+
+  DTData.tblDT.Filter := 'fSession = ' + IntToStr(currSessionID);
+  if not DTData.tblDT.Filtered then DTData.tblDT.Filtered := true;
+
+  DTData.tblDTHeat.Close;
+  DTData.tblDTLane.Close;
+  DTData.tblDTNoodle.Close;
+  DTData.tblDTHeat.Open;
+  DTData.tblDTLane.Open;
+  DTData.tblDTNoodle.Open;
+
+  DTData.tblDT.EnableControls;
+  DTData.tblDTHeat.EnableControls;
+  DTData.tblDTLane.EnableControls;
+  DTData.tblDTNoodle.EnableControls;
+
 end;
 
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
@@ -522,6 +554,8 @@ begin
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
+var
+  dtFT: integer;
 begin
   // A Class that uses JSON to read and write application configuration .
   // Created on bootup by dtfrmBoot.
@@ -543,10 +577,9 @@ begin
   Screen.MenuFont.Name := 'Segoe UI Semibold';
   Screen.MenuFont.Size := 12;
   actnManager.Style := PlatformVclStylesStyle;
-
-  fFlagUIUpdate := false;
+  // local fields init.
   fFlagSelectSession := false;
-  // UI initialization
+  // UI initialization.
   lblSessionStart.Caption := '';
   lblEventDetails.Caption := '';
   lblMetersRelay.Caption := '';
@@ -556,6 +589,18 @@ begin
   vimgHeatStatus.ImageIndex := -1;
   vimgRelayBug.ImageIndex := -1;
   vimgStrokeBug.ImageIndex := -1;
+
+  // Test DT directory exists...
+  if DirectoryExists(Settings.DolphinMeetsFolder) then
+  begin
+      dtFT := dtutils.GetDTFileType(Settings.DolphinMeetsFolder);
+      if (dtFT <> -1) then
+      begin
+        PrepareDTData;
+        PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+        actnSyncDTExecute(Self);
+      end;
+  end;
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
@@ -607,16 +652,6 @@ begin
   end;
   Settings.LoadFromFile();
   LoadFromSettings();
-end;
-
-procedure TdtExec.MSG_AfterEventScroll(var Msg: TMessage);
-begin
-  fFlagUIUpdate := false;
-end;
-
-procedure TdtExec.MSG_AfterHeatScroll(var Msg: TMessage);
-begin
-  fFlagUIUpdate := false;
 end;
 
 procedure TdtExec.MSG_SelectSession(var Msg: TMessage);
@@ -711,8 +746,7 @@ begin
   if DTData.qrysession.Active then
   begin
     mr := MessageBox(0,
-      PChar(Format(MSG_CONFIRM_RECONSTRUCT, [fileExtension, sLineBreak,
-        sLineBreak])),
+      PChar(Format(MSG_CONFIRM_RECONSTRUCT, [fileExtension])),
       PChar(Format(CAPTION_RECONSTRUCT, [fileExtension])), MB_ICONQUESTION or
       MB_YESNO);
     if isPositiveResult(mr) then
@@ -748,21 +782,27 @@ begin
   Settings.SaveToFile();
 end;
 
-procedure TdtExec.sbtnSyncClick(Sender: TObject);
+procedure TdtExec.scmGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
+  Value: string);
 begin
-  // sync DT DO data with the current session - event - heat
-  {
-    1. get sessionID
-    2. check session current in memory db tables else load
-    3. get event + Heat
-    4. locate event ... locate heat ...  chech grid ui state
-    5. draw doodles if needed.
-  }
-  // - fSessionID;
-  LoadSession(DTData.ActiveSessionID, Settings.DolphinMeetsFolder, pBar);
-  DTData.LocateEvent(0);
-  DTData.LocateHeat(0);
-
+  { Quick 'hack' to clear the HTML text in the Entrant cells for lanes that
+    don't have a swimmer assigned.}
+  // Must be entrant column. Ignore header row.
+  if (ACol = 4) and (ARow > 0) then
+  begin
+    { The hack works like this...
+    A lane with no entrant will have a empty member's name surrounded by
+    the HTML bold tag.
+    NOTE: the 'empty' <#FName> results in a single space being
+      inserted between the 'tag'
+    }
+    if Value.Contains('<B> </B>') then // The 'hack'.
+      Value := ' ';
+    { The event doesn't have any heats...
+      ...but it will have a single empty row 1.
+    }
+    if scmGrid.DataSource.DataSet.IsEmpty then Value := ' ';
+  end;
 end;
 
 

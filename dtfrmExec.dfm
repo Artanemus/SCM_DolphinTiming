@@ -85,7 +85,6 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 787
     DesignSize = (
       1330
       718)
@@ -281,6 +280,7 @@ object dtExec: TdtExec
         TabOrder = 2
         StyleElements = [seFont, seBorder]
         HoverRowCells = [hcNormal, hcSelected]
+        OnGetDisplText = scmGridGetDisplText
         ActiveCellFont.Charset = DEFAULT_CHARSET
         ActiveCellFont.Color = 4474440
         ActiveCellFont.Height = -16
@@ -525,8 +525,8 @@ object dtExec: TdtExec
             HeaderFont.Style = []
             HeaderAlignment = taCenter
             HTMLTemplate = 
-              '<P align="center"><FONT face="Arial">  <B> <#FName></B><BR> TTB:' +
-              ' <#TimeToBeat>      PB: <#PersonalBest></FONT></P> '
+              '<P align="center"><FONT face="Arial">  <B><#FName></B><BR> TTB: ' +
+              '<#TimeToBeat>      PB: <#PersonalBest></FONT></P> '
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
@@ -1292,7 +1292,6 @@ object dtExec: TdtExec
       ParentBackground = False
       TabOrder = 3
       Visible = False
-      StyleElements = [seFont, seBorder]
       object stackpnlTool2: TStackPanel
         Left = 0
         Top = 0
@@ -1302,12 +1301,11 @@ object dtExec: TdtExec
         ControlCollection = <
           item
             Control = sbtnSync
-          end
-          item
-            Control = spbtnAutoConnect
+            HorizontalPositioning = sphpLeft
           end
           item
             Control = spbtnPost
+            HorizontalPositioning = sphpLeft
           end
           item
             Control = ShapeSpacer
@@ -1322,31 +1320,25 @@ object dtExec: TdtExec
         Spacing = 4
         TabOrder = 0
         object sbtnSync: TSpeedButton
-          Left = 9
+          Left = 1
           Top = 1
-          Width = 126
+          Width = 128
           Height = 41
-          Action = actnSync
+          Action = actnSyncDT
           Images = DTData.vimglistMenu
         end
-        object spbtnAutoConnect: TSpeedButton
-          Left = 0
-          Top = 46
-          Width = 145
-          Height = 41
-          Action = actnConnect
-        end
         object spbtnPost: TSpeedButton
-          Left = 16
-          Top = 91
-          Width = 112
+          Left = 1
+          Top = 46
+          Width = 104
           Height = 41
           Action = actnPost
+          Images = DTData.vimglistMenu
         end
         object ShapeSpacer: TShape
           AlignWithMargins = True
           Left = 11
-          Top = 142
+          Top = 97
           Width = 121
           Height = 4
           Margins.Top = 6
@@ -1355,7 +1347,7 @@ object dtExec: TdtExec
         end
         object btnRefresh: TButton
           Left = 19
-          Top = 156
+          Top = 111
           Width = 106
           Height = 41
           Caption = 'Refresh'
@@ -1363,7 +1355,7 @@ object dtExec: TdtExec
         end
         object btnClose: TButton
           Left = 19
-          Top = 201
+          Top = 156
           Width = 106
           Height = 41
           Caption = 'Close'
@@ -1442,8 +1434,7 @@ object dtExec: TdtExec
           item
             Items = <
               item
-                Action = actnSync
-                Caption = '&Sync'
+                Action = actnSyncDT
                 ImageIndex = 4
                 ImageName = 'Sync'
               end
@@ -1528,11 +1519,13 @@ object dtExec: TdtExec
     object actnImportDO4: TAction
       Category = 'Import'
       Caption = 'Import DO4 files ...'
+      Enabled = False
       OnExecute = actnImportDO4Execute
     end
     object actnImportDO3: TAction
       Category = 'Import'
       Caption = 'Import DO3 files ...'
+      Enabled = False
     end
     object actnSaveSession: TAction
       Category = 'File'
@@ -1552,12 +1545,12 @@ object dtExec: TdtExec
       ImageIndex = 8
       ImageName = 'Help'
     end
-    object actnSync: TAction
+    object actnSyncDT: TAction
       Category = 'Edit'
-      Caption = 'Sync'
+      Caption = 'Sync DT'
       ImageIndex = 4
       ImageName = 'Sync'
-      OnExecute = actnSyncExecute
+      OnExecute = actnSyncDTExecute
     end
     object actnConnect: TAction
       Category = 'Edit'
