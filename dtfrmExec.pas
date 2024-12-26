@@ -28,7 +28,7 @@ uses
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
-  System.Types, System.IOUtils;
+  System.Types, System.IOUtils, dtUtils;
 
 type
   TdtExec = class(TForm)
@@ -137,12 +137,13 @@ type
 
 var
   dtExec: TdtExec;
+  dtUtils: TdtUtils;
 
 implementation
 
 {$R *.dfm}
 
-uses dtUtils, UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM;
+uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -555,7 +556,7 @@ end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
 var
-  dtFT: integer;
+  dtFT: dtFileType;
 begin
   // A Class that uses JSON to read and write application configuration .
   // Created on bootup by dtfrmBoot.
@@ -594,11 +595,14 @@ begin
   if DirectoryExists(Settings.DolphinMeetsFolder) then
   begin
       dtFT := dtutils.GetDTFileType(Settings.DolphinMeetsFolder);
-      if (dtFT <> -1) then
+      if (dtFT <> dtUnknown) then
       begin
-        PrepareDTData;
-        PopulateDTData(Settings.DolphinMeetsFolder, pBar);
-        actnSyncDTExecute(Self);
+        dtUtils.PrepareDTData;
+        dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+
+        //actnSyncDTExecute(Self);
+        dtData.dsDT.Dataset.Filtered := false;
+        dtData.dsDT.Dataset.First;
       end;
   end;
 end;

@@ -770,6 +770,7 @@ object dtExec: TdtExec
         Top = 1
         Width = 449
         Height = 41
+        Alignment = taCenter
         DataField = 'FileName'
         DataSource = DTData.dsDT
         Font.Charset = DEFAULT_CHARSET
@@ -1435,6 +1436,7 @@ object dtExec: TdtExec
             Items = <
               item
                 Action = actnSyncDT
+                Caption = '&Sync DT'
                 ImageIndex = 4
                 ImageName = 'Sync'
               end

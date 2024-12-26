@@ -140,6 +140,9 @@ type
 
   end;
 
+type
+  dtFileType = (dtUnknown, dtDO4, dtDO3, dtALL);
+
 var
   DTData: TDTData;
 

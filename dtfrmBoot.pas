@@ -66,8 +66,6 @@ type
 var
   dtBoot: TdtBoot;
 
-
-
 implementation
 
 {$R *.dfm}

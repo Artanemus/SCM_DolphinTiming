@@ -60,16 +60,35 @@ implementation
 
 {$R *.dfm}
 
+uses dmDTData;
+
 { TTVDTData }
 
 constructor TTVDTData.Create(AFileName: string);
 var
 Gender, RaceID: string;
+dtUtilsrec: TdtUtils;
+dtFT: dtFileType;
+fn: string;
 begin
-    FFileName := AFileName;
-    // if DO4 type ....
-    ExtractFileNameFieldsDO4(FFileName, FSessionID, FEventID, FHeatID,
-    Gender, RaceID);
+  FSessionID := 0;
+  FEventID := 0;
+  FHeatID := 0;
+    FFileName := AFileName; // fully qualified - including path...
+    if (Length(FFileName) > 0) and FileExists(FFilename) then
+    begin
+      fn:= ExtractFileName(FFileName);
+      dtFT := dtUtilsrec.GetDTFileTypeOfFile(fn);
+      case dtFT of
+        dtDO4:
+          // if DO4 type .... ignore Gender, RaceID
+          dtUtilsrec.ExtractFileNameFieldsDO4(fn, FSessionID, FEventID, FHeatID,
+          Gender, RaceID);
+        dtDO3:
+          // if DO3 type .... HeatID no given in DO3 ... ignore Gender, RaceID
+          dtUtilsrec.ExtractFileNameFieldsDO3(fn, FSessionID, FEventID, RaceID);
+      end;
+    end;
 end;
 
 { TTreeViewDT }
