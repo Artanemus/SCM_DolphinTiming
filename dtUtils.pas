@@ -3,7 +3,7 @@ unit dtUtils;
 interface
 
 uses dmDTData, vcl.ComCtrls, Math, System.Types, System.IOUtils,
-  SysUtils, Windows, StrUtils, System.Classes;
+  SysUtils, Windows, StrUtils, System.Classes, SCMDefines;
 
 type TdtUtils = record
     private
@@ -40,10 +40,12 @@ type TdtUtils = record
       function StrToCustomTime(const TimeStr: string): TTime;
       function ExtractSessionField(const InputStr: string): integer;
 
-      procedure GetDTLane(sl: TStringList; DTHeatID: integer);
+      procedure GetDTSession(fn: string; DolphinTimingFileType: dtFileType);
+      procedure GetDTEvent(fn: string; SessionID: integer);
+      procedure GetDTHeat(fn: string; EventID: integer);
+      procedure GetDTINDIV(sl: TStringList; DTHeatID: integer);
+      procedure GetDTTEAM(sl: TStringList; DTHeatID: integer);
       function GetFileCreationTime(const FileName: string): TDateTime;
-      procedure GetDTHeat(fn: string; DTID: integer);
-      procedure GetDT(fn: string; DolphinTimingFileType: dtFileType);
 
       procedure ProcessDO4Files(const ADirectory: string;
         pBar: TProgressBar;
@@ -58,6 +60,7 @@ type TdtUtils = record
       procedure PrepareDTData();
       procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
       procedure AppendDTData(const AFileName:string);
+      // procedure CalculateDeviation(INDIV_TEAM_ID: integer; AEventType: scmEventType);
       function GetDTFileType(const ADirectory: string): dtFileType;
       function GetDTFileTypeOfFile(const AFileName: string): dtFileType;
 
@@ -88,67 +91,128 @@ Begin
   // todo
 End;
 
-procedure TdtUtils.GetDTLane(sl: TStringList; DTHeatID: integer);
+procedure TdtUtils.GetDTINDIV(sl: TStringList; DTHeatID: integer);
 var
   id, I, j, lane: integer;
-  TimeFieldName, UseFieldName, SplitFieldName: string;
+  TimeFieldName, TimeModeFieldName,  TimeModeFieldNameErr, SplitFieldName: string;
 begin
   // A record for each lane.
   // Ignore first (header) and last line (checkSum).
   for I := 1 to (sl.Count - 2) do
   begin
-    id := DTData.tblDTLane.RecordCount + 1;
-    DTData.tblDTLane.Append;
+    id := DTData.tblDTINDV.RecordCount + 1;
+    DTData.tblDTINDV.Append;
 
     ExtractLane(sl[I], lane);
     ExtractTimeKeepers(sl[I], TimeKeepers, 1);
     ExtractSplits(sl[I], Splits, 4);
 
-    DTData.tblDTLane.fieldbyName('DTLaneID').AsInteger := id; // master - detail.
-    DTData.tblDTLane.fieldbyName('DTHeatID').AsInteger := DTHeatID;
-      // master - detail.
-    DTData.tblDTLane.fieldbyName('Lane').AsInteger := lane;
+    DTData.tblDTINDV.fieldbyName('INDVID').AsInteger := id; // primary key
+    DTData.tblDTINDV.fieldbyName('HeatID').AsInteger := DTHeatID; // master.detail.
+    DTData.tblDTINDV.fieldbyName('Lane').AsInteger := lane;
 
     for j := 0 to High(TimeKeepers) do
     begin
       // Generate field names
       TimeFieldName := Format('Time%d', [j + 1]);
-      UseFieldName := Format('UseTime%d', [j + 1]);
+      TimeModeFieldName := Format('Time%d', [j + 1]) + 'Mode';
+      TimeModeFieldName := Format('Time%d', [j + 1]) + 'Err';
       // Set race-time and use flag based on TimeKeepers value
       if TimeKeepers[j] > 0 then
       begin
-        DTData.tblDTLane.FieldByName(TimeFieldName).AsDateTime := TDateTime(TimeKeepers[j]);
-        DTData.tblDTLane.FieldByName(UseFieldName).AsBoolean := True;
+        DTData.tblDTINDV.FieldByName(TimeFieldName).AsDateTime := TDateTime(TimeKeepers[j]);
+        DTData.tblDTINDV.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoEnabled);
+        DTData.tblDTINDV.FieldByName(TimeModeFieldNameErr).Clear;
       end
       else
       begin
-        DTData.tblDTLane.FieldByName(TimeFieldName).Clear;
-        DTData.tblDTLane.FieldByName(UseFieldName).AsBoolean := False;
+        DTData.tblDTINDV.FieldByName(TimeFieldName).Clear;
+        DTData.tblDTINDV.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoDisabled);
+        DTData.tblDTINDV.FieldByName(TimeModeFieldNameErr).AsInteger := Ord(tmeEmpty);
       end;
     end;
 
-    DTData.tblDTLane.fieldbyName('imgPatch').AsInteger := 0;
-    DTData.tblDTLane.fieldbyName('AutoTime').AsBoolean := true;
+    // Calculate deviation for each timekeeper?
+
+    DTData.tblDTINDV.fieldbyName('imgPatch').AsInteger := 0;
+    DTData.tblDTINDV.fieldbyName('AutoTime').AsBoolean := true;
 
     for j := 0 to High(Splits) do
     begin
       // Generate field names
       SplitFieldName := Format('Split%d', [j + 1]);
       if Splits[j] > 0 then
-        DTData.tblDTLane.fieldbyName(SplitFieldName).AsDateTime := TDateTime(Splits[j])
+        DTData.tblDTINDV.fieldbyName(SplitFieldName).AsDateTime := TDateTime(Splits[j])
        else
-        DTData.tblDTLane.FieldByName(SplitFieldName).Clear;
+        DTData.tblDTINDV.FieldByName(SplitFieldName).Clear;
     end;
 
-    DTData.tblDTLane.Post;
+    DTData.tblDTINDV.Post;
   end;
 
 end;
 
-procedure TdtUtils.GetDTHeat(fn: string; DTID: integer);
+procedure TdtUtils.GetDTTEAM(sl: TStringList; DTHeatID: integer);
+begin
+{TODO -oBSA -cGeneral : ActionItem}
+end;
+
+procedure TdtUtils.GetDTEvent(fn: string; SessionID: integer);
 var
   sl: TStringList;
-  Session, Event, Heat, id: integer;
+  SessionNum, EventNum, HeatNum, id, AGenderID: integer;
+  GenderStr, checksum, s, s2: string;
+begin
+  // read header and lane information (Racetimes x3).
+  sl := TStringList.Create();
+  sl.LoadFromFile(fn);
+  if not sl.IsEmpty then
+  begin
+    // first line represents SessionNum, EventNum, HeatNum, GenderStr (A,B,X)
+    // delimeter is ';'
+    ExtractHeader(sl[0], SessionNum, EventNum, HeatNum, GenderStr);
+    // checksum is the last line
+    checksum := sl[sl.Count - 1];
+    // calculate the IDENTIFIER.
+    id := DTData.tblDTEvent.RecordCount + 1;
+    // NEW RECORD.
+    DTData.tblDTEvent.Append;
+    DTData.tblDTEvent.fieldbyName('EventID').AsInteger := id; // PK
+    DTData.tblDTEvent.fieldbyName('SessionID').AsInteger := SessionID; // master - detail.
+    // HEADER - first line of text - common
+    DTData.tblDTEvent.fieldbyName('EventNum').AsInteger := EventNum;
+    DTData.tblDTEvent.fieldbyName('GenderStr').AsString := GenderStr;
+    if (GenderStr = 'A') then
+      begin
+      DTData.tblDTEvent.fieldbyName('GenderID').AsInteger := 1;
+      s2 := 'Boys';
+      end
+    else if (GenderStr = 'B') then
+    begin
+      DTData.tblDTEvent.fieldbyName('GenderID').AsInteger := 2;
+      s2 := 'Girls';
+    end
+    else
+    begin
+      DTData.tblDTEvent.fieldbyName('GenderID').Clear;
+      s2 := 'Mixed genders.';
+    end;
+    s := 'SessionID: ' + IntToStr(SessionNum) + ' Event Number: ' + IntToStr(EventNum) +
+      ' - ' + s2;
+
+    DTData.tblDTEvent.fieldbyName('Caption').AsString := s;
+
+    DTData.tblDTEvent.Post;
+    // LANES + TIMEKEEPERS 1-3 + SPLITS (upto 10).
+    GetDTHeat(fn, id);
+  end;
+  sl.free;
+end;
+
+procedure TdtUtils.GetDTHeat(fn: string; EventID: integer);
+var
+  sl: TStringList;
+  SessionNum, EventNum, HeatNum, id: integer;
   Gender, checksum: string;
 begin
   // read header and lane information (Racetimes x3).
@@ -156,68 +220,75 @@ begin
   sl.LoadFromFile(fn);
   if not sl.IsEmpty then
   begin
-    // first line represents session, event, heat, gender (A,B,X)
+    // first line represents SessionNum, EventNum, HeatNum, gender (A,B,X)
     // delimeter is ';'
-    ExtractHeader(sl[0], Session, Event, Heat, Gender);
+    ExtractHeader(sl[0], SessionNum, EventNum, HeatNum, Gender);
     // checksum is the last line
     checksum := sl[sl.Count - 1];
     // calculate the IDENTIFIER.
     id := DTData.tblDTHeat.RecordCount + 1;
     // NEW RECORD.
     DTData.tblDTHeat.Append;
-    DTData.tblDTHeat.fieldbyName('DTHeatID').AsInteger := id; // master - detail.
-    DTData.tblDTHeat.fieldbyName('DTID').AsInteger := DTID; // master - detail.
+    DTData.tblDTHeat.fieldbyName('HeatID').AsInteger := id; // PK
+    DTData.tblDTHeat.fieldbyName('EventID').AsInteger := EventID; // master - detail.
     // HEADER - first line of text - common
-    DTData.tblDTHeat.fieldbyName('Session').AsInteger := Session;
-    DTData.tblDTHeat.fieldbyName('Event').AsInteger := Event;
-    DTData.tblDTHeat.fieldbyName('Heat').AsInteger := Heat;
-    DTData.tblDTHeat.fieldbyName('Gender').AsString := Gender;
+    DTData.tblDTHeat.fieldbyName('HeatNum').AsInteger := HeatNum;
+    DTData.tblDTHeat.fieldbyName('Caption').AsString := 'Heat Number: ' + IntToStr(HeatNum);
     // CHECKSUM - last line of text - common
     DTData.tblDTHeat.fieldbyName('CheckSum').AsString := checksum;
     DTData.tblDTHeat.Post;
     // LANES + TIMEKEEPERS 1-3 + SPLITS (upto 10).
-    GetDTLane(sl, id);
+    // if scmEventType = etINDV
+    GetDTINDIV(sl, id);
+    // else
+    // GetDTTEAM(sl, id);
   end;
   sl.free;
 end;
 
-procedure TdtUtils.GetDT(fn: string; DolphinTimingFileType: dtFileType);
+procedure TdtUtils.GetDTSession(fn: string; DolphinTimingFileType: dtFileType);
 var
-  id, fSessionNum, FEventNum, FHeatNum: integer;
-  fGUID, FGender: string;
-  fn2: string;
+  id, SessionNum, EventNum, HeatNum: integer;
+  AGUID, Gender: string;
+  s, fn2, aPath: string;
   fCreationDT: TDateTime;
+  fs: TFormatSettings;
 begin
-  id := DTData.tblDT.RecordCount + 1;
+  id := DTData.tblDTSession.RecordCount + 1;
   fn2 := ExtractFileName(fn); // includes file extension
+  aPath := ExtractFilePath(fn);
   // Get the creation time of the specified file
   fCreationDT := TFile.GetCreationTime(fn);
   // Filename used can show session, event. (After correct DT setup).
-  // fGUID is unique string(do3)/number(do4) given to each file by DT.
+  // AGUID is unique string(do3)/number(do4) given to each file by DT.
   if DolphinTimingFileType = dtDO4 then
-    ExtractFileNameFieldsDO4(fn2, fSessionNum, fEventNum, fHeatNum, fGender,
-      fGUID)
+    ExtractFileNameFieldsDO4(fn2, SessionNum, EventNum, HeatNum, Gender,
+      AGUID)
   else
-    ExtractFileNameFieldsDO3(fn2, fSessionNum, fEventNum, fGUID);
+    ExtractFileNameFieldsDO3(fn2, SessionNum, EventNum, AGUID);
 
   // write out DTData.tblDT record
   // CREATE NEW RECORD - one for each lane.
-  DTData.tblDT.Append;
-  DTData.tblDT.FieldByName('DTID').ASInteger := id;
+  DTData.tblDTSession.Append;
+  DTData.tblDTSession.FieldByName('DTID').ASInteger := id;
   // FILENAME = INFORMATION (prefix f)  common
-  DTData.tblDT.fieldbyName('CreatedDT').AsDateTime := fCreationDT;
-  DTData.tblDT.fieldbyName('FileName').AsString := fn2; // include file ext.
-  DTData.tblDT.fieldbyName('fSession').AsInteger := fSessionNum;
-  DTData.tblDT.fieldbyName('fEvent').AsInteger := fEventNum;
-  if DolphinTimingFileType = dtDO4 then
-  begin
-    DTData.tblDT.fieldbyName('fHeat').AsInteger:= fHeatNum; // DO4 only.
-    DTData.tblDT.fieldbyName('fGender').AsString := fGender; // DO4 only.
-  end;
+  DTData.tblDTSession.fieldbyName('CreatedDT').AsDateTime := Now;
+  DTData.tblDTSession.fieldbyName('FileName').AsString := fn2; // include file ext.
+  DTData.tblDTSession.fieldbyName('Path').AsString := aPath; // include file ext.
+  DTData.tblDTSession.fieldbyName('SessionID').AsInteger := SessionNum;
+  DTData.tblDTSession.fieldbyName('SessionStart').AsDateTime := fCreationDT;
 
-  DTData.tblDT.fieldbyName('fGUID').AsString := fGUID;
+  fs := TFormatSettings.Create;
+  fs.DateSeparator := '_';
+  s := 'SessionID: ' + IntToStr(SessionNum) + ' Date: ' + DatetoStr(fCreationDT, fs);
+
+  DTData.tblDTSession.fieldbyName('Caption').AsString := s;
+  DTData.tblDTSession.fieldbyName('GUIDstr').AsString := AGUID;
+  if DolphinTimingFileType = dtDO4 then
+    DTData.tblDTSession.fieldbyName('GUID').AsInteger:= StrToIntDef(AGUID, 0);
+
   // FINALIZE - POST NEW RECORD.
-  DTData.tblDT.Post;
+  DTData.tblDTSession.Post;
   GetDTHeat(fn, id);
 end;
 
@@ -533,29 +604,29 @@ end;
 procedure TdtUtils.PrepareDTData();
 begin
   // clear all data records ....
-  DTData.tblDT.EmptyDataSet;
+  DTData.tblDTSession.EmptyDataSet;
   DTData.tblDTHeat.EmptyDataSet;
-  DTData.tblDTLane.EmptyDataSet;
+  DTData.tblDTINDV.EmptyDataSet;
   DTData.tblDTNoodle.EmptyDataSet;
 
   // Detach from Master Detail ...
   DTData.tblDTHeat.MasterSource := nil;
-  DTData.tblDTLane.MasterSource := nil;
+  DTData.tblDTINDV.MasterSource := nil;
   DTData.tblDTNoodle.MasterSource := nil;
 
   // re-establish Master Detail ...
-  DTData.tblDTHeat.MasterSource := DTData.dsDT;
-  DTData.tblDTLane.MasterSource := DTData.dsDTHeat;
-  DTData.tblDTNoodle.MasterSource := DTData.dsDTLane;
+  DTData.tblDTHeat.MasterSource := DTData.dsDTSession;
+  DTData.tblDTINDV.MasterSource := DTData.dsDTHeat;
+  DTData.tblDTNoodle.MasterSource := DTData.dsDTINDV;
 end;
 
 Procedure TdtUtils.PopulateDTData(const ADirectory: string; pBar: TProgressBar);
 var
 dtFT: dtFileType;
 begin
-  DTData.tblDT.DisableControls;
+  DTData.tblDTSession.DisableControls;
   DTData.tblDTHeat.DisableControls;
-  DTData.tblDTLane.DisableControls;
+  DTData.tblDTINDV.DisableControls;
   DTData.tblDTNoodle.DisableControls;
 
   if Assigned(pBar) then pBar.Position := 0;
@@ -575,10 +646,10 @@ begin
     end;
   end;
 
-  DTData.tblDT.First;
-  DTData.tblDT.EnableControls;
+  DTData.tblDTSession.First;
+  DTData.tblDTSession.EnableControls;
   DTData.tblDTHeat.EnableControls;
-  DTData.tblDTLane.EnableControls;
+  DTData.tblDTINDV.EnableControls;
   DTData.tblDTNoodle.EnableControls;
 
   end;

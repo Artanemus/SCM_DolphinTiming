@@ -209,7 +209,7 @@ begin
     pBar.Visible := true;
 //    ProcessDTFiles(fDolphinMeetsFolder, pBar);
     pBar.Visible := false;
-    DTData.dsDT.DataSet.First;
+    DTData.dsDTSession.DataSet.First;
     // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
   end
   else
@@ -411,34 +411,36 @@ begin
   // SYNC DT session to SCM session ...
   currSessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
 
-  DTData.tblDT.DisableControls;
+  DTData.tblDTSession.DisableControls;
+  DTData.tblDTEvent.DisableControls;
   DTData.tblDTHeat.DisableControls;
-  DTData.tblDTLane.DisableControls;
+  DTData.tblDTINDV.DisableControls;
+  DTData.tblDTTEAM.DisableControls;
   DTData.tblDTNoodle.DisableControls;
 
-  DTData.tblDT.Filter := 'fSession = ' + IntToStr(currSessionID);
-  if not DTData.tblDT.Filtered then DTData.tblDT.Filtered := true;
+  DTData.tblDTSession.Filter := 'fSession = ' + IntToStr(currSessionID);
+  if not DTData.tblDTSession.Filtered then DTData.tblDTSession.Filtered := true;
 
-  DTData.tblDTHeat.Close;
-  DTData.tblDTLane.Close;
-  DTData.tblDTNoodle.Close;
-  DTData.tblDTHeat.Open;
-  DTData.tblDTLane.Open;
-  DTData.tblDTNoodle.Open;
+  DTData.tblDTEvent.Refresh;
+  DTData.tblDTHeat.Refresh;
+  DTData.tblDTINDV.Refresh;
+  DTData.tblDTTEAM.Refresh;
+  DTData.tblDTNoodle.Refresh;
 
-  DTData.tblDT.EnableControls;
+  DTData.tblDTSession.EnableControls;
+  DTData.tblDTEvent.EnableControls;
   DTData.tblDTHeat.EnableControls;
-  DTData.tblDTLane.EnableControls;
+  DTData.tblDTINDV.EnableControls;
+  DTData.tblDTTEAM.EnableControls;
   DTData.tblDTNoodle.EnableControls;
 
 end;
 
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
 begin
-    if not DTData.dsDT.DataSet.EOF then
+    if not DTData.dsDTEvent.DataSet.EOF then
     begin
-      DTData.dsDT.DataSet.next;
-      // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+      DTData.dsDTEvent.DataSet.next;
     end;
 end;
 
@@ -518,10 +520,9 @@ end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
 begin
-  if not DTData.dsdt.DataSet.Bof then
+  if not DTData.dsdtEvent.DataSet.Bof then
   begin
-      DTData.dsdt.DataSet.prior;
-//      lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
+      DTData.dsdtEvent.DataSet.prior;
   end;
 end;
 
@@ -601,8 +602,8 @@ begin
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
 
         //actnSyncDTExecute(Self);
-        dtData.dsDT.Dataset.Filtered := false;
-        dtData.dsDT.Dataset.First;
+        dtData.dsDTSession.Dataset.Filtered := false;
+        dtData.dsDTSession.Dataset.First;
       end;
   end;
 end;

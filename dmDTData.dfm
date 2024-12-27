@@ -1,7 +1,7 @@
 object DTData: TDTData
   OnCreate = DataModuleCreate
   OnDestroy = DataModuleDestroy
-  Height = 909
+  Height = 1031
   Width = 811
   object qrySession: TFDQuery
     Active = True
@@ -10694,8 +10694,8 @@ object DTData: TDTData
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
     StoreDefs = True
-    Left = 264
-    Top = 824
+    Left = 584
+    Top = 792
     Content = {
       414442531000000085030000FF00010001FF02FF03040016000000740062006C
       00440054004E006F006F0064006C006500050016000000740062006C00440054
@@ -10835,7 +10835,7 @@ object DTData: TDTData
     Left = 176
     Top = 408
   end
-  object tblDT: TFDMemTable
+  object tblDTSession: TFDMemTable
     Active = True
     FieldDefs = <
       item
@@ -10885,7 +10885,7 @@ object DTData: TDTData
     UpdateOptions.KeyFields = 'DTID'
     StoreDefs = True
     Left = 72
-    Top = 632
+    Top = 592
     Content = {
       414442531000000046030000FF00010001FF02FF0304000A000000740062006C
       004400540005000A000000740062006C00440054000600000000000700000800
@@ -10935,38 +10935,38 @@ object DTData: TDTData
       730074001800520065006C006100740069006F006E004C006900730074001C00
       55007000640061007400650073004A006F00750072006E0061006C000E004300
       680061006E00670065007300}
-    object tblDTDTID: TIntegerField
+    object tblDTSessionDTID: TIntegerField
       FieldName = 'DTID'
       Origin = 'DTID'
       ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
     end
-    object tblDTCreatedDT: TDateTimeField
+    object tblDTSessionCreatedDT: TDateTimeField
       FieldName = 'CreatedDT'
       Origin = 'CreatedDT'
     end
-    object tblDTFileName: TStringField
+    object tblDTSessionFileName: TStringField
       FieldName = 'FileName'
       Origin = 'FileName'
       Size = 512
     end
-    object tblDTfSession: TIntegerField
+    object tblDTSessionfSession: TIntegerField
       FieldName = 'fSession'
       Origin = 'fSession'
     end
-    object tblDTfEvent: TIntegerField
+    object tblDTSessionfEvent: TIntegerField
       FieldName = 'fEvent'
       Origin = 'fEvent'
     end
-    object tblDTfHeat: TIntegerField
+    object tblDTSessionfHeat: TIntegerField
       FieldName = 'fHeat'
       Origin = 'fHeat'
     end
-    object tblDTfGender: TStringField
+    object tblDTSessionfGender: TStringField
       FieldName = 'fGender'
       Origin = 'fGender'
       Size = 1
     end
-    object tblDTfGUID: TStringField
+    object tblDTSessionfGUID: TStringField
       FieldName = 'fGUID'
       Origin = 'fGUID'
       Size = 8
@@ -11031,7 +11031,7 @@ object DTData: TDTData
       end>
     IndexDefs = <>
     IndexFieldNames = 'DTID'
-    MasterSource = dsDT
+    MasterSource = dsDTSession
     MasterFields = 'DTID'
     DetailFields = 'DTID'
     FetchOptions.AssignedValues = [evMode]
@@ -11044,7 +11044,7 @@ object DTData: TDTData
     UpdateOptions.AutoCommitUpdates = True
     StoreDefs = True
     Left = 152
-    Top = 696
+    Top = 728
     Content = {
       414442531000000044050000FF00010001FF02FF03040012000000740062006C
       00440054004800650061007400050012000000740062006C0044005400480065
@@ -11164,16 +11164,16 @@ object DTData: TDTData
       Size = 16
     end
   end
-  object dsDT: TDataSource
-    DataSet = tblDT
-    Left = 120
-    Top = 632
+  object dsDTSession: TDataSource
+    DataSet = tblDTSession
+    Left = 152
+    Top = 592
   end
   object FDStanStorageXMLLink1: TFDStanStorageXMLLink
     Left = 528
     Top = 584
   end
-  object tblDTLane: TFDMemTable
+  object tblDTINDV: TFDMemTable
     Active = True
     FieldDefs = <
       item
@@ -11279,7 +11279,7 @@ object DTData: TDTData
     UpdateOptions.AutoCommitUpdates = True
     StoreDefs = True
     Left = 208
-    Top = 760
+    Top = 792
     Content = {
       414442531000000005080000FF00010001FF02FF03040012000000740062006C
       00440054004C0061006E006500050012000000740062006C00440054004C0061
@@ -11365,91 +11365,91 @@ object DTData: TDTData
       006900730074001800520065006C006100740069006F006E004C006900730074
       001C0055007000640061007400650073004A006F00750072006E0061006C000E
       004300680061006E00670065007300}
-    object tblDTLaneDTLaneID: TIntegerField
+    object tblDTINDVIDTLaneID: TIntegerField
       FieldName = 'DTLaneID'
       Origin = 'DTLaneID'
     end
-    object tblDTLaneDTHeatID: TIntegerField
+    object tblDTINDVIDTHeatID: TIntegerField
       FieldName = 'DTHeatID'
       Origin = 'DTHeatID'
     end
-    object tblDTLaneLane: TIntegerField
+    object tblDTINDVLane: TIntegerField
       FieldName = 'Lane'
       Origin = 'Lane'
     end
-    object tblDTLaneAutoTime: TBooleanField
+    object tblDTINDVAutoTime: TBooleanField
       FieldName = 'AutoTime'
       Origin = 'AutoTime'
     end
-    object tblDTLaneUseTime1: TBooleanField
+    object tblDTINDVUseTime1: TBooleanField
       FieldName = 'UseTime1'
       Origin = 'UseTime1'
     end
-    object tblDTLaneUseTime2: TBooleanField
+    object tblDTINDVUseTime2: TBooleanField
       FieldName = 'UseTime2'
       Origin = 'UseTime2'
     end
-    object tblDTLaneUseTime3: TBooleanField
+    object tblDTINDVUseTime3: TBooleanField
       FieldName = 'UseTime3'
       Origin = 'UseTime3'
     end
-    object tblDTLaneCalcTime: TTimeField
+    object tblDTINDVCalcTime: TTimeField
       FieldName = 'CalcTime'
       Origin = 'CalcTime'
     end
-    object tblDTLaneimgPatch: TIntegerField
+    object tblDTINDVimgPatch: TIntegerField
       FieldName = 'imgPatch'
       Origin = 'imgPatch'
     end
-    object tblDTLaneTime1: TTimeField
+    object tblDTINDVTime1: TTimeField
       FieldName = 'Time1'
       Origin = 'Time1'
     end
-    object tblDTLaneTime2: TTimeField
+    object tblDTINDVTime2: TTimeField
       FieldName = 'Time2'
       Origin = 'Time2'
     end
-    object tblDTLaneTime3: TTimeField
+    object tblDTINDVTime3: TTimeField
       FieldName = 'Time3'
       Origin = 'Time3'
     end
-    object tblDTLaneSplit1: TTimeField
+    object tblDTINDVSplit1: TTimeField
       FieldName = 'Split1'
       Origin = 'Split1'
     end
-    object tblDTLaneSplit2: TTimeField
+    object tblDTINDVSplit2: TTimeField
       FieldName = 'Split2'
       Origin = 'Split2'
     end
-    object tblDTLaneSplit3: TTimeField
+    object tblDTINDVSplit3: TTimeField
       FieldName = 'Split3'
       Origin = 'Split3'
     end
-    object tblDTLaneSplit4: TTimeField
+    object tblDTINDVSplit4: TTimeField
       FieldName = 'Split4'
       Origin = 'Split4'
     end
-    object tblDTLaneSplit5: TTimeField
+    object tblDTINDVSplit5: TTimeField
       FieldName = 'Split5'
       Origin = 'Split5'
     end
-    object tblDTLaneSplit6: TTimeField
+    object tblDTINDVSplit6: TTimeField
       FieldName = 'Split6'
       Origin = 'Split6'
     end
-    object tblDTLaneSplit7: TTimeField
+    object tblDTINDVSplit7: TTimeField
       FieldName = 'Split7'
       Origin = 'Split7'
     end
-    object tblDTLaneSplit8: TTimeField
+    object tblDTINDVSplit8: TTimeField
       FieldName = 'Split8'
       Origin = 'Split8'
     end
-    object tblDTLaneSplit9: TTimeField
+    object tblDTINDVSplit9: TTimeField
       FieldName = 'Split9'
       Origin = 'Split9'
     end
-    object tblDTLaneSplit10: TTimeField
+    object tblDTINDVSplit10: TTimeField
       FieldName = 'Split10'
       Origin = 'Split10'
     end
@@ -11457,12 +11457,12 @@ object DTData: TDTData
   object dsDTHeat: TDataSource
     DataSet = tblDTHeat
     Left = 208
-    Top = 696
+    Top = 728
   end
-  object dsDTLane: TDataSource
-    DataSet = tblDTLane
-    Left = 264
-    Top = 760
+  object dsDTINDV: TDataSource
+    DataSet = tblDTINDV
+    Left = 280
+    Top = 792
   end
   object qrySwimClub: TFDQuery
     Active = True
@@ -11794,5 +11794,309 @@ object DTData: TDTData
     Height = 24
     Left = 288
     Top = 472
+  end
+  object tblDTEvent: TFDMemTable
+    MasterSource = dsDTSession
+    MasterFields = 'fSession'
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    Left = 96
+    Top = 656
+  end
+  object dsDTEvent: TDataSource
+    DataSet = tblDTEvent
+    Left = 160
+    Top = 656
+  end
+  object tblDTTEAM: TFDMemTable
+    Active = True
+    FieldDefs = <
+      item
+        Name = 'DTLaneID'
+        DataType = ftInteger
+      end
+      item
+        Name = 'DTHeatID'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Lane'
+        DataType = ftInteger
+      end
+      item
+        Name = 'AutoTime'
+        DataType = ftBoolean
+      end
+      item
+        Name = 'UseTime1'
+        DataType = ftBoolean
+      end
+      item
+        Name = 'UseTime2'
+        DataType = ftBoolean
+      end
+      item
+        Name = 'UseTime3'
+        DataType = ftBoolean
+      end
+      item
+        Name = 'CalcTime'
+        DataType = ftTime
+      end
+      item
+        Name = 'imgPatch'
+        DataType = ftInteger
+      end
+      item
+        Name = 'Time1'
+        DataType = ftTime
+      end
+      item
+        Name = 'Time2'
+        DataType = ftTime
+      end
+      item
+        Name = 'Time3'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split1'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split2'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split3'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split4'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split5'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split6'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split7'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split8'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split9'
+        DataType = ftTime
+      end
+      item
+        Name = 'Split10'
+        DataType = ftTime
+      end>
+    IndexDefs = <>
+    IndexFieldNames = 'DTHeatID'
+    MasterSource = dsDTHeat
+    MasterFields = 'DTHeatID'
+    DetailFields = 'DTHeatID'
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvPersistent, rvSilentMode]
+    ResourceOptions.Persistent = True
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    StoreDefs = True
+    Left = 400
+    Top = 792
+    Content = {
+      414442531000000005080000FF00010001FF02FF03040012000000740062006C
+      00440054004C0061006E006500050012000000740062006C00440054004C0061
+      006E006500060000000000070000080032000000090000FF0AFF0B0400100000
+      00440054004C0061006E00650049004400050010000000440054004C0061006E
+      006500490044000C00010000000E000D000F0001100001110001120001130001
+      140001150010000000440054004C0061006E00650049004400FEFF0B04001000
+      0000440054004800650061007400490044000500100000004400540048006500
+      61007400490044000C00020000000E000D000F00011000011100011200011300
+      0114000115001000000044005400480065006100740049004400FEFF0B040008
+      0000004C0061006E0065000500080000004C0061006E0065000C00030000000E
+      000D000F00011000011100011200011300011400011500080000004C0061006E
+      006500FEFF0B0400100000004100750074006F00540069006D00650005001000
+      00004100750074006F00540069006D0065000C00040000000E0016000F000110
+      00011100011200011300011400011500100000004100750074006F0054006900
+      6D006500FEFF0B040010000000550073006500540069006D0065003100050010
+      000000550073006500540069006D00650031000C00050000000E0016000F0001
+      100001110001120001130001140001150010000000550073006500540069006D
+      0065003100FEFF0B040010000000550073006500540069006D00650032000500
+      10000000550073006500540069006D00650032000C00060000000E0016000F00
+      0110000111000112000113000114000115001000000055007300650054006900
+      6D0065003200FEFF0B040010000000550073006500540069006D006500330005
+      0010000000550073006500540069006D00650033000C00070000000E0016000F
+      0001100001110001120001130001140001150010000000550073006500540069
+      006D0065003300FEFF0B040010000000430061006C006300540069006D006500
+      050010000000430061006C006300540069006D0065000C00080000000E001700
+      0F0001100001110001120001130001140001150010000000430061006C006300
+      540069006D006500FEFF0B04001000000069006D006700500061007400630068
+      0005001000000069006D006700500061007400630068000C00090000000E000D
+      000F000110000111000112000113000114000115001000000069006D00670050
+      006100740063006800FEFF0B04000A000000540069006D006500310005000A00
+      0000540069006D00650031000C000A0000000E0017000F000110000111000112
+      000113000114000115000A000000540069006D0065003100FEFF0B04000A0000
+      00540069006D006500320005000A000000540069006D00650032000C000B0000
+      000E0017000F000110000111000112000113000114000115000A000000540069
+      006D0065003200FEFF0B04000A000000540069006D006500330005000A000000
+      540069006D00650033000C000C0000000E0017000F0001100001110001120001
+      13000114000115000A000000540069006D0065003300FEFF0B04000C00000053
+      0070006C0069007400310005000C000000530070006C006900740031000C000D
+      0000000E0017000F000110000111000112000113000114000115000C00000053
+      0070006C00690074003100FEFF0B04000C000000530070006C00690074003200
+      05000C000000530070006C006900740032000C000E0000000E0017000F000110
+      000111000112000113000114000115000C000000530070006C00690074003200
+      FEFF0B04000C000000530070006C0069007400330005000C000000530070006C
+      006900740033000C000F0000000E0017000F0001100001110001120001130001
+      14000115000C000000530070006C00690074003300FEFF0B04000C0000005300
+      70006C0069007400340005000C000000530070006C006900740034000C001000
+      00000E0017000F000110000111000112000113000114000115000C0000005300
+      70006C00690074003400FEFF0B04000C000000530070006C0069007400350005
+      000C000000530070006C006900740035000C00110000000E0017000F00011000
+      0111000112000113000114000115000C000000530070006C00690074003500FE
+      FF0B04000C000000530070006C0069007400360005000C000000530070006C00
+      6900740036000C00120000000E0017000F000110000111000112000113000114
+      000115000C000000530070006C00690074003600FEFF0B04000C000000530070
+      006C0069007400370005000C000000530070006C006900740037000C00130000
+      000E0017000F000110000111000112000113000114000115000C000000530070
+      006C00690074003700FEFF0B04000C000000530070006C006900740038000500
+      0C000000530070006C006900740038000C00140000000E0017000F0001100001
+      11000112000113000114000115000C000000530070006C00690074003800FEFF
+      0B04000C000000530070006C0069007400390005000C000000530070006C0069
+      00740039000C00150000000E0017000F00011000011100011200011300011400
+      0115000C000000530070006C00690074003900FEFF0B04000E00000053007000
+      6C00690074003100300005000E000000530070006C0069007400310030000C00
+      160000000E0017000F000110000111000112000113000114000115000E000000
+      530070006C006900740031003000FEFEFF18FEFF19FEFF1AFEFEFEFF1BFEFF1C
+      FF1DFEFEFE0E004D0061006E0061006700650072001E00550070006400610074
+      00650073005200650067006900730074007200790012005400610062006C0065
+      004C006900730074000A005400610062006C00650008004E0061006D00650014
+      0053006F0075007200630065004E0061006D0065000A00540061006200490044
+      00240045006E0066006F0072006300650043006F006E00730074007200610069
+      006E00740073001E004D0069006E0069006D0075006D00430061007000610063
+      00690074007900180043006800650063006B004E006F0074004E0075006C006C
+      00140043006F006C0075006D006E004C006900730074000C0043006F006C0075
+      006D006E00100053006F007500720063006500490044000E006400740049006E
+      0074003300320010004400610074006100540079007000650014005300650061
+      00720063006800610062006C006500120041006C006C006F0077004E0075006C
+      006C000800420061007300650014004F0041006C006C006F0077004E0075006C
+      006C0012004F0049006E0055007000640061007400650010004F0049006E0057
+      0068006500720065001A004F0072006900670069006E0043006F006C004E0061
+      006D00650012006400740042006F006F006C00650061006E000C006400740054
+      0069006D0065001C0043006F006E00730074007200610069006E0074004C0069
+      0073007400100056006900650077004C006900730074000E0052006F0077004C
+      006900730074001800520065006C006100740069006F006E004C006900730074
+      001C0055007000640061007400650073004A006F00750072006E0061006C000E
+      004300680061006E00670065007300}
+    object IntegerField1: TIntegerField
+      FieldName = 'DTLaneID'
+      Origin = 'DTLaneID'
+    end
+    object IntegerField2: TIntegerField
+      FieldName = 'DTHeatID'
+      Origin = 'DTHeatID'
+    end
+    object IntegerField3: TIntegerField
+      FieldName = 'Lane'
+      Origin = 'Lane'
+    end
+    object BooleanField1: TBooleanField
+      FieldName = 'AutoTime'
+      Origin = 'AutoTime'
+    end
+    object BooleanField2: TBooleanField
+      FieldName = 'UseTime1'
+      Origin = 'UseTime1'
+    end
+    object BooleanField3: TBooleanField
+      FieldName = 'UseTime2'
+      Origin = 'UseTime2'
+    end
+    object BooleanField4: TBooleanField
+      FieldName = 'UseTime3'
+      Origin = 'UseTime3'
+    end
+    object TimeField1: TTimeField
+      FieldName = 'CalcTime'
+      Origin = 'CalcTime'
+    end
+    object IntegerField4: TIntegerField
+      FieldName = 'imgPatch'
+      Origin = 'imgPatch'
+    end
+    object TimeField2: TTimeField
+      FieldName = 'Time1'
+      Origin = 'Time1'
+    end
+    object TimeField3: TTimeField
+      FieldName = 'Time2'
+      Origin = 'Time2'
+    end
+    object TimeField4: TTimeField
+      FieldName = 'Time3'
+      Origin = 'Time3'
+    end
+    object TimeField5: TTimeField
+      FieldName = 'Split1'
+      Origin = 'Split1'
+    end
+    object TimeField6: TTimeField
+      FieldName = 'Split2'
+      Origin = 'Split2'
+    end
+    object TimeField7: TTimeField
+      FieldName = 'Split3'
+      Origin = 'Split3'
+    end
+    object TimeField8: TTimeField
+      FieldName = 'Split4'
+      Origin = 'Split4'
+    end
+    object TimeField9: TTimeField
+      FieldName = 'Split5'
+      Origin = 'Split5'
+    end
+    object TimeField10: TTimeField
+      FieldName = 'Split6'
+      Origin = 'Split6'
+    end
+    object TimeField11: TTimeField
+      FieldName = 'Split7'
+      Origin = 'Split7'
+    end
+    object TimeField12: TTimeField
+      FieldName = 'Split8'
+      Origin = 'Split8'
+    end
+    object TimeField13: TTimeField
+      FieldName = 'Split9'
+      Origin = 'Split9'
+    end
+    object TimeField14: TTimeField
+      FieldName = 'Split10'
+      Origin = 'Split10'
+    end
+  end
+  object dsDTTEAM: TDataSource
+    DataSet = tblDTTEAM
+    Left = 472
+    Top = 792
   end
 end

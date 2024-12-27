@@ -11,7 +11,7 @@ uses
   System.ImageList, Vcl.ImgList, Vcl.VirtualImageList, Vcl.BaseImageCollection,
   Vcl.ImageCollection, SCMDefines, Windows, Winapi.Messages, vcl.Forms,
   FireDAC.Phys.SQLiteVDataSet, Datasnap.DBClient, FireDAC.Stan.StorageXML,
-  FireDAC.Stan.StorageBin, FireDAC.Stan.Storage;
+  FireDAC.Stan.StorageBin, FireDAC.Stan.Storage, Datasnap.Provider;
 
 type
   TDTData = class(TDataModule)
@@ -34,25 +34,25 @@ type
     qryDistance: TFDQuery;
     qryStroke: TFDQuery;
     vimglistDTGrid: TVirtualImageList;
-    tblDT: TFDMemTable;
+    tblDTSession: TFDMemTable;
     tblDTHeat: TFDMemTable;
-    dsDT: TDataSource;
+    dsDTSession: TDataSource;
     FDStanStorageXMLLink1: TFDStanStorageXMLLink;
-    tblDTLane: TFDMemTable;
+    tblDTINDV: TFDMemTable;
     dsDTHeat: TDataSource;
-    dsDTLane: TDataSource;
+    dsDTINDV: TDataSource;
     qrySwimClub: TFDQuery;
     dsSwimClub: TDataSource;
     qrySessionList: TFDQuery;
     dsSessionList: TDataSource;
-    tblDTDTID: TIntegerField;
-    tblDTCreatedDT: TDateTimeField;
-    tblDTFileName: TStringField;
-    tblDTfSession: TIntegerField;
-    tblDTfEvent: TIntegerField;
-    tblDTfHeat: TIntegerField;
-    tblDTfGender: TStringField;
-    tblDTfGUID: TStringField;
+    tblDTSessionDTID: TIntegerField;
+    tblDTSessionCreatedDT: TDateTimeField;
+    tblDTSessionFileName: TStringField;
+    tblDTSessionfSession: TIntegerField;
+    tblDTSessionfEvent: TIntegerField;
+    tblDTSessionfHeat: TIntegerField;
+    tblDTSessionfGender: TStringField;
+    tblDTSessionfGUID: TStringField;
     tblDTHeatDTHeatID: TIntegerField;
     tblDTHeatDTID: TIntegerField;
     tblDTHeatSession: TIntegerField;
@@ -66,28 +66,28 @@ type
     tblDTHeatDeviation2: TTimeField;
     tblDTHeatDeviation3: TTimeField;
     tblDTHeatCheckSum: TStringField;
-    tblDTLaneDTLaneID: TIntegerField;
-    tblDTLaneDTHeatID: TIntegerField;
-    tblDTLaneLane: TIntegerField;
-    tblDTLaneAutoTime: TBooleanField;
-    tblDTLaneUseTime1: TBooleanField;
-    tblDTLaneUseTime2: TBooleanField;
-    tblDTLaneUseTime3: TBooleanField;
-    tblDTLaneCalcTime: TTimeField;
-    tblDTLaneimgPatch: TIntegerField;
-    tblDTLaneTime1: TTimeField;
-    tblDTLaneTime2: TTimeField;
-    tblDTLaneTime3: TTimeField;
-    tblDTLaneSplit1: TTimeField;
-    tblDTLaneSplit2: TTimeField;
-    tblDTLaneSplit3: TTimeField;
-    tblDTLaneSplit4: TTimeField;
-    tblDTLaneSplit5: TTimeField;
-    tblDTLaneSplit6: TTimeField;
-    tblDTLaneSplit7: TTimeField;
-    tblDTLaneSplit8: TTimeField;
-    tblDTLaneSplit9: TTimeField;
-    tblDTLaneSplit10: TTimeField;
+    tblDTINDVIDTLaneID: TIntegerField;
+    tblDTINDVIDTHeatID: TIntegerField;
+    tblDTINDVLane: TIntegerField;
+    tblDTINDVAutoTime: TBooleanField;
+    tblDTINDVUseTime1: TBooleanField;
+    tblDTINDVUseTime2: TBooleanField;
+    tblDTINDVUseTime3: TBooleanField;
+    tblDTINDVCalcTime: TTimeField;
+    tblDTINDVimgPatch: TIntegerField;
+    tblDTINDVTime1: TTimeField;
+    tblDTINDVTime2: TTimeField;
+    tblDTINDVTime3: TTimeField;
+    tblDTINDVSplit1: TTimeField;
+    tblDTINDVSplit2: TTimeField;
+    tblDTINDVSplit3: TTimeField;
+    tblDTINDVSplit4: TTimeField;
+    tblDTINDVSplit5: TTimeField;
+    tblDTINDVSplit6: TTimeField;
+    tblDTINDVSplit7: TTimeField;
+    tblDTINDVSplit8: TTimeField;
+    tblDTINDVSplit9: TTimeField;
+    tblDTINDVSplit10: TTimeField;
     tblDTNoodleDTNoodleID: TIntegerField;
     tblDTNoodleDTLaneID: TIntegerField;
     tblDTNoodleEventID: TIntegerField;
@@ -106,6 +106,32 @@ type
     qrySessionListSessionStatusID: TIntegerField;
     vimglistTreeView: TVirtualImageList;
     vimglistStateImages: TVirtualImageList;
+    tblDTEvent: TFDMemTable;
+    dsDTEvent: TDataSource;
+    tblDTTEAM: TFDMemTable;
+    IntegerField1: TIntegerField;
+    IntegerField2: TIntegerField;
+    IntegerField3: TIntegerField;
+    BooleanField1: TBooleanField;
+    BooleanField2: TBooleanField;
+    BooleanField3: TBooleanField;
+    BooleanField4: TBooleanField;
+    TimeField1: TTimeField;
+    IntegerField4: TIntegerField;
+    TimeField2: TTimeField;
+    TimeField3: TTimeField;
+    TimeField4: TTimeField;
+    TimeField5: TTimeField;
+    TimeField6: TTimeField;
+    TimeField7: TTimeField;
+    TimeField8: TTimeField;
+    TimeField9: TTimeField;
+    TimeField10: TTimeField;
+    TimeField11: TTimeField;
+    TimeField12: TTimeField;
+    TimeField13: TTimeField;
+    TimeField14: TTimeField;
+    dsDTTEAM: TDataSource;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
   private
@@ -142,6 +168,10 @@ type
 
 type
   dtFileType = (dtUnknown, dtDO4, dtDO3, dtALL);
+  // 5 x modes m-enabled, m-disabled, a-enabled, a-disabled, unknown (err or nil).
+  dtTimeMode = (tmUnknow, tmManualDisabled, tmMaualenabled, tmAutoDisabled,
+    tmAutoEnabled);
+  dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
 
 var
   DTData: TDTData;
@@ -327,24 +357,36 @@ begin
   BuildDTData;
 
   // ASSERT Master - Detail
-  tblDTHeat.MasterSource := dsDT;
-  tblDTHeat.MasterFields := 'DTID';
-  tblDTHeat.DetailFields := 'DTID';
-  tblDTHeat.IndexFieldNames := 'DTID';
+  // Master - Detail
+  tblDTEvent.MasterSource := dsDTSession;
+  tblDTEvent.MasterFields := 'SessionID';
+  tblDTEvent.DetailFields := 'SessionID';
+  tblDTEvent.IndexFieldNames := 'SessionID';
 
-  tblDTLane.MasterSource := dsDTHeat;
-  tblDTLane.MasterFields := 'DTHeatID';
-  tblDTLane.DetailFields := 'DTHeatID';
-  tblDTLane.IndexFieldNames := 'DTHeatID';
+  tblDTHeat.MasterSource := dsDTEvent;
+  tblDTHeat.MasterFields := 'EventID';
+  tblDTHeat.DetailFields := 'EventID';
+  tblDTHeat.IndexFieldNames := 'EventID';
 
-  tblDTNoodle.MasterSource := dsDTLane;
-  tblDTNoodle.MasterFields := 'DTLaneID';
-  tblDTNoodle.DetailFields := 'DTLaneID';
-  tblDTNoodle.IndexFieldNames := 'DTLaneID';
+  tblDTINDV.MasterSource := dsDTHeat;
+  tblDTINDV.MasterFields := 'HeatID';
+  tblDTINDV.DetailFields := 'HeatID';
+  tblDTINDV.IndexFieldNames := 'HeatID';
 
-  tblDT.Active := true;
+  tblDTTEAM.MasterSource := dsDTHeat;
+  tblDTTEAM.MasterFields := 'HeatID';
+  tblDTTEAM.DetailFields := 'HeatID';
+  tblDTTEAM.IndexFieldNames := 'HeatID';
+
+  tblDTNoodle.MasterSource := dsDTHeat;
+  tblDTNoodle.MasterFields := 'DTHeatID';
+  tblDTNoodle.DetailFields := 'DTHeatID';
+  tblDTNoodle.IndexFieldNames := 'DTHeatID';
+
+  tblDTSession.Active := true;
   tblDTHeat.Active := true;
-  tblDTLane.Active := true;
+  tblDTINDV.Active := true;
+  tblDTTEAM.Active := true;
   tblDTNoodle.Active := true;
 
   if Assigned(fConnection) and fConnection.Connected then
@@ -400,112 +442,175 @@ end;
 procedure TDTData.BuildDTData;
 begin
   fDTDataIsActive := false;
-  tblDT.Active := false;
+  tblDTSession.Active := false;
   tblDTHeat.Active := false;
-  tblDTLane.Active := false;
+  tblDTINDV.Active := false;
+  tblDTTEAM.Active := false;
   tblDTNoodle.Active := false;
 
-  tblDT.FieldDefs.Clear;
-  // Create the CORE MEM TABLE schema... tblDT.
+  // Create Dolphin Timing DATA TABLES SCHEMA.
   // ---------------------------------------------
-  tblDT.FieldDefs.Add('DTID', ftInteger);
-  tblDT.FieldDefs.Add('CreatedDT', ftDateTime);
-  tblDT.FieldDefs.Add('FileName', ftString, 512);
-  tblDT.FieldDefs.Add('fSession', ftInteger);
-  tblDT.FieldDefs.Add('fEvent', ftInteger);
-  tblDT.FieldDefs.Add('fHeat', ftInteger); // DO4.
-  tblDT.FieldDefs.Add('fGender', ftString, 1); // DO4 A=boys, B=girls, X=any.
-  tblDT.FieldDefs.Add('fGUID', ftString, 8); // DO4 can be converted to int.
-  tblDT.CreateDataSet;
-
+  tblDTSession.FieldDefs.Clear;
+  tblDTSession.FieldDefs.Add('SessionID', ftInteger);
+  tblDTSession.FieldDefs.Add('CreatedDT', ftDateTime);
+  tblDTSession.FieldDefs.Add('Path', ftString, 512);
+  tblDTSession.FieldDefs.Add('FileName', ftString, 512);
+  tblDTSession.FieldDefs.Add('SessionStart', ftDateTime); // file creation date
+  tblDTSession.FieldDefs.Add('Caption', ftString, 64);
+  tblDTSession.FieldDefs.Add('GUIDstr', ftString, 8);
+  tblDTSession.FieldDefs.Add('GUID', ftInteger); // DO4 can be converted to int.
+  tblDTSession.CreateDataSet;
   // save schema ...
-  tblDT.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTData.xml', sfAuto);
+  tblDTSession.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataSession.xml', sfAuto);
+
+  tblDTEvent.FieldDefs.Clear;
+  tblDTEvent.FieldDefs.Add('EventID', ftInteger);
+  tblDTEvent.FieldDefs.Add('SessionID', ftInteger);
+  tblDTEvent.FieldDefs.Add('CreatedDT', ftDateTime);
+  tblDTEvent.FieldDefs.Add('EventNum', ftInteger);
+  tblDTEvent.FieldDefs.Add('Caption', ftString, 64);
+  tblDTEvent.FieldDefs.Add('GenderID', ftString, 1); // 1 MALE, 2 FEMALE or EMPTY
+  tblDTEvent.FieldDefs.Add('GenderStr', ftString, 1); // DO4 A=boys, B=girls, X=any.
+  tblDTEvent.CreateDataSet;
+  // save schema ...
+  tblDTEvent.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataEvent.xml', sfAuto);
 
   tblDTHeat.FieldDefs.Clear;
   // Create the HEAT MEM TABLE schema... tblDTHeat.
   // ---------------------------------------------
-  tblDTHeat.FieldDefs.Add('DTHeatID', ftInteger);
-  tblDTHeat.FieldDefs.Add('DTID', ftInteger); // Master- Detail
-  // Dolphin Timing file header - line one.
-  tblDTHeat.FieldDefs.Add('Session', ftInteger); // header param 1.
-  tblDTHeat.FieldDefs.Add('Event', ftInteger); // header param 2.
-  tblDTHeat.FieldDefs.Add('Heat', ftInteger); // header param 3.
-  tblDTHeat.FieldDefs.Add('Gender', ftString, 1); // header param 4. A=boys, B=girls, X=any.
-  // Date to assist in auto - syncing
+  tblDTHeat.FieldDefs.Add('HeatID', ftInteger);
+  tblDTHeat.FieldDefs.Add('EventID', ftInteger); // Master- Detail
+  tblDTHeat.FieldDefs.Add('HeatNum', ftInteger);
+  tblDTHeat.FieldDefs.Add('Caption', ftString, 64);
+  // Calculated Data to assist in auto - syncing.
   tblDTHeat.FieldDefs.Add('totTime1', ftTime); // sum of racetimes lanes 1-10.
   tblDTHeat.FieldDefs.Add('totTime2', ftTime); // sum of racetimes lanes 1-10.
   tblDTHeat.FieldDefs.Add('totTime3', ftTime); // sum of racetimes lanes 1-10.
-  tblDTHeat.FieldDefs.Add('Deviation1', ftTime);
-  tblDTHeat.FieldDefs.Add('Deviation2', ftTime);
-  tblDTHeat.FieldDefs.Add('Deviation3', ftTime);
-  tblDTHeat.FieldDefs.Add('CheckSum', ftString, 16); // footer.
-  tblDTHeat.CreateDataSet;
+  tblDTINDV.FieldDefs.Add('CheckSum', ftString, 16); // footer.
 
+  tblDTHeat.CreateDataSet;
   // save schema ...
   tblDTHeat.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataHeat.xml');
 
-  tblDTLane.FieldDefs.Clear;
+  tblDTINDV.FieldDefs.Clear;
+  // Create the LANE MEM TABLE schema... tblDTINDV.
+  // ---------------------------------------------
+  tblDTINDV.FieldDefs.Add('INDVID', ftInteger); // wit ... EntrantID.
+  tblDTINDV.FieldDefs.Add('HeatID', ftInteger); // Master- Detail
+  tblDTINDV.FieldDefs.Add('Lane', ftInteger); // Lane Number.
+  // Dolphin Timing Specific
+  tblDTINDV.FieldDefs.Add('Caption', ftString, 64); // Summary of status/mode
+  tblDTINDV.FieldDefs.Add('AutoTime', ftBoolean); // Auto-Calc best racetime.
+  tblDTINDV.FieldDefs.Add('CalcTime', ftTime); // Swimmers calculated racetime.
+  tblDTINDV.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
+  tblDTINDV.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
+  tblDTINDV.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
+  tblDTINDV.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
+  // tmtimeMode = tmManualDisabled, tmMaualenabled, tmAutoDisabled, tmAutoEnabled.
+  tblDTINDV.FieldDefs.Add('Time1Mode', ftInteger);
+  tblDTINDV.FieldDefs.Add('Time2Mode', ftInteger);
+  tblDTINDV.FieldDefs.Add('Time3Mode', ftInteger);
+  // tmtimeModeerr = tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty.
+  tblDTINDV.FieldDefs.Add('Time1Err', ftInteger);
+  tblDTINDV.FieldDefs.Add('Time2Err', ftInteger);
+  tblDTINDV.FieldDefs.Add('Time3Err', ftInteger);
+  tblDTINDV.FieldDefs.Add('Deviation1', ftTime); // deviation from average time1
+  tblDTINDV.FieldDefs.Add('Deviation2', ftTime); // deviation from average time2
+  tblDTINDV.FieldDefs.Add('Deviation3', ftTime); // deviation from average time3
+  tblDTINDV.FieldDefs.Add('Split1', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split2', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split3', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split4', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split5', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split6', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split7', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split8', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split9', ftTime); // DO4.
+  tblDTINDV.FieldDefs.Add('Split10', ftTime); // DO4.
+  tblDTINDV.CreateDataSet;
+  // save schema ...
+  tblDTINDV.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataINDV.xml');
+
+
+  tblDTTEAM.FieldDefs.Clear;
   // Create the LANE MEM TABLE schema... tblDTLane.
   // ---------------------------------------------
-  tblDTLane.FieldDefs.Add('DTLaneID', ftInteger);
-  tblDTLane.FieldDefs.Add('DTHeatID', ftInteger); // Master- Detail
-  tblDTLane.FieldDefs.Add('Lane', ftInteger); // Lane Number.
-  tblDTLane.FieldDefs.Add('AutoTime', ftBoolean); // Auto-Calc best racetime.
-  tblDTLane.FieldDefs.Add('UseTime1', ftBoolean); // Manual select time.
-  tblDTLane.FieldDefs.Add('UseTime2', ftBoolean); // Manual select time.
-  tblDTLane.FieldDefs.Add('UseTime3', ftBoolean); // Manual select time.
-  tblDTLane.FieldDefs.Add('CalcTime', ftTime); // Swimmers calculated racetime.
-  tblDTLane.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
-  tblDTLane.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
-  tblDTLane.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
-  tblDTLane.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
-  tblDTLane.FieldDefs.Add('Split1', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split2', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split3', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split4', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split5', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split6', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split7', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split8', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split9', ftTime); // DO4.
-  tblDTLane.FieldDefs.Add('Split10', ftTime); // DO4.
-  tblDTLane.CreateDataSet;
+  tblDTTEAM.FieldDefs.Add('TEAMID', ftInteger); // wit ... EntrantID.
+  tblDTTEAM.FieldDefs.Add('HeatID', ftInteger); // Master- Detail
+  tblDTTEAM.FieldDefs.Add('Lane', ftInteger); // Lane Number.
+  // Dolphin Timing Specific
+  tblDTTEAM.FieldDefs.Add('Caption', ftString, 64);  // Summary of status/mode
+  tblDTTEAM.FieldDefs.Add('AutoTime', ftBoolean); // Auto-Calc best racetime.
+  tblDTTEAM.FieldDefs.Add('CalcTime', ftTime); // Swimmers calculated racetime.
+  tblDTTEAM.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
+  tblDTTEAM.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
+  tblDTTEAM.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
+  tblDTTEAM.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
 
+  tblDTTEAM.FieldDefs.Add('Time1Mode', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Time2Mode', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Time3Mode', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Time1Err', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Time2Err', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Time3Err', ftInteger);
+  tblDTTEAM.FieldDefs.Add('Deviation1', ftTime);
+  tblDTTEAM.FieldDefs.Add('Deviation2', ftTime);
+  tblDTTEAM.FieldDefs.Add('Deviation3', ftTime);
+  tblDTTEAM.FieldDefs.Add('Split1', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split2', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split3', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split4', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split5', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split6', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split7', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split8', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split9', ftTime); // DO4.
+  tblDTTEAM.FieldDefs.Add('Split10', ftTime); // DO4.
+  tblDTTEAM.CreateDataSet;
   // save schema ...
-  tblDTLane.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataLane.xml');
-
+  tblDTTEAM.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataTEAM.xml');
 
   tblDTNoodle.FieldDefs.Clear;
   // Create the NOODLE MEM TABLE schema... tblDTNoodle.
   // ---------------------------------------------
-  tblDTNoodle.FieldDefs.Add('DTNoodleID', ftInteger);
-  tblDTNoodle.FieldDefs.Add('DTLaneID', ftInteger); // Master-Detail
-  tblDTNoodle.FieldDefs.Add('EventID', ftInteger); // dbo.SwimClubMeet.Event.EventID.
-  tblDTNoodle.FieldDefs.Add('EventType', ftInteger); // 1=INDV | 2=TEAM.
-  tblDTNoodle.FieldDefs.Add('HeatID', ftInteger); // dbo.SwimClubMeet.Heat.HeatID.
-  tblDTNoodle.FieldDefs.Add('EntrantID', ftInteger); // dbo.SwimClubMeet.Entrant.EntrantID.
-  tblDTNoodle.FieldDefs.Add('TeamID', ftInteger); // dbo.SwimClubMeet.Team.TeamID.
-  tblDTNoodle.FieldDefs.Add('LaneNumber', ftInteger); // dbo.SwimClubMeet. table - either INDV or TEAM.
+  tblDTNoodle.FieldDefs.Add('NoodleID', ftInteger);
+  tblDTNoodle.FieldDefs.Add('HeatID', ftInteger); // dtHeat Master-Detail.
+  tblDTNoodle.FieldDefs.Add('EventTypeID', ftInteger); // INDIV or TEAM
+  tblDTNoodle.FieldDefs.Add('SCM_INDIVID', ftInteger); // Master-Detail
+  tblDTNoodle.FieldDefs.Add('SCM_TEAMID', ftInteger); // Master-Detail
+  tblDTNoodle.FieldDefs.Add('SCM_Lane', ftInteger); //
+  tblDTNoodle.FieldDefs.Add('DT_INDIVID', ftInteger); // Master-Detail
+  tblDTNoodle.FieldDefs.Add('DT_TEAMID', ftInteger); // Master-Detail
+  tblDTNoodle.FieldDefs.Add('DT_Lane', ftInteger); //
   tblDTNoodle.CreateDataSet;
-
   // save schema ...
   tblDTNoodle.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataNoodle.xml');
 
   // Master - Detail
-  tblDTHeat.MasterSource := dsDT;
-  tblDTHeat.MasterFields := 'DTID';
-  tblDTHeat.DetailFields := 'DTID';
-  tblDTHeat.IndexFieldNames := 'DTID';
+  tblDTEvent.MasterSource := dsDTSession;
+  tblDTEvent.MasterFields := 'SessionID';
+  tblDTEvent.DetailFields := 'SessionID';
+  tblDTEvent.IndexFieldNames := 'SessionID';
 
-  tblDTLane.MasterSource := dsDTHeat;
-  tblDTLane.MasterFields := 'DTHeatID';
-  tblDTLane.DetailFields := 'DTHeatID';
-  tblDTLane.IndexFieldNames := 'DTHeatID';
+  tblDTHeat.MasterSource := dsDTEvent;
+  tblDTHeat.MasterFields := 'EventID';
+  tblDTHeat.DetailFields := 'EventID';
+  tblDTHeat.IndexFieldNames := 'EventID';
 
-  tblDTNoodle.MasterSource := dsDTLane;
-  tblDTNoodle.MasterFields := 'DTLaneID';
-  tblDTNoodle.DetailFields := 'DTLaneID';
-  tblDTNoodle.IndexFieldNames := 'DTLaneID';
+  tblDTINDV.MasterSource := dsDTHeat;
+  tblDTINDV.MasterFields := 'HeatID';
+  tblDTINDV.DetailFields := 'HeatID';
+  tblDTINDV.IndexFieldNames := 'HeatID';
+
+  tblDTTEAM.MasterSource := dsDTHeat;
+  tblDTTEAM.MasterFields := 'HeatID';
+  tblDTTEAM.DetailFields := 'HeatID';
+  tblDTTEAM.IndexFieldNames := 'HeatID';
+
+  tblDTNoodle.MasterSource := dsDTHeat;
+  tblDTNoodle.MasterFields := 'DTHeatID';
+  tblDTNoodle.DetailFields := 'DTHeatID';
+  tblDTNoodle.IndexFieldNames := 'DTHeatID';
 
 end;
 
@@ -525,9 +630,12 @@ begin
     s := IncludeTrailingPathDelimiter(AFilePath)
   else
     s := ''; // or handle this case if the path is mandatory
-  tblDT.SaveToFile(s + 'DTMaster.fsBinary', sfXML);
+  tblDTSession.SaveToFile(s + 'DTMaster.fsBinary', sfXML);
+  tblDTEvent.SaveToFile(s + 'DTEvent.fsBinary', sfXML);
   tblDTHeat.SaveToFile(s + 'DTHeat.fsBinary', sfXML);
-  tblDTLane.SaveToFile(s + 'DTLane.fsBinary', sfXML);
+  tblDTINDV.SaveToFile(s + 'DTLane.fsBinary', sfXML);
+  tblDTTEAM.SaveToFile(s + 'DTLane.fsBinary', sfXML);
+  tblDTNoodle.SaveToFile(s + 'DTNoodle.fsBinary', sfXML);
 end;
 
 procedure TDTData.ReadFromBinary(AFilePath:string);
@@ -539,9 +647,12 @@ begin
     s := IncludeTrailingPathDelimiter(AFilePath)
   else
     s := ''; // or handle this case if the path is mandatory
-  tblDT.LoadFromFile(s + 'DTMaster.fsBinary');
+  tblDTSession.LoadFromFile(s + 'DTMaster.fsBinary');
+  tblDTEvent.LoadFromFile(s + 'DTEvent.fsBinary');
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
-  tblDTLane.LoadFromFile(s + 'DTLane.fsBinary');
+  tblDTINDV.LoadFromFile(s + 'DTLane.fsBinary');
+  tblDTTEAM.LoadFromFile(s + 'DTLane.fsBinary');
+  tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
 procedure TDTData.SetActiveSessionID(const Value: integer);

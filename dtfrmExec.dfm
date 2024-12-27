@@ -272,6 +272,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -772,7 +773,7 @@ object dtExec: TdtExec
         Height = 41
         Alignment = taCenter
         DataField = 'FileName'
-        DataSource = DTData.dsDT
+        DataSource = DTData.dsDTSession
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -19
@@ -820,6 +821,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -1106,7 +1108,7 @@ object dtExec: TdtExec
             PrintFont.Style = []
             Width = 90
           end>
-        DataSource = DTData.dsDTLane
+        DataSource = DTData.dsDTINDV
         InvalidPicture.Data = {
           055449636F6E0000010001002020200000000000A81000001600000028000000
           2000000040000000010020000000000000100000000000000000000000000000
