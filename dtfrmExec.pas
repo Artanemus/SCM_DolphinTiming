@@ -595,12 +595,12 @@ begin
   // Test DT directory exists...
   if DirectoryExists(Settings.DolphinMeetsFolder) then
   begin
-      dtFT := dtutils.GetDTFileType(Settings.DolphinMeetsFolder);
+      dtFT := dtutils.GetDTFileTypeOfDirectory(Settings.DolphinMeetsFolder);
       if (dtFT <> dtUnknown) then
       begin
+        dtData.BuildDTData;
         dtUtils.PrepareDTData;
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
-
         //actnSyncDTExecute(Self);
         dtData.dsDTSession.Dataset.Filtered := false;
         dtData.dsDTSession.Dataset.First;

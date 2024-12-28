@@ -85,6 +85,7 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitWidth = 1954
     DesignSize = (
       1330
       718)
@@ -272,7 +273,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -821,7 +821,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
