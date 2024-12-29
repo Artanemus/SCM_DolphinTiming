@@ -30,6 +30,7 @@ type
     actnDisconnect: TAction;
     actnDolphinTiming: TAction;
     Timer1: TTimer;
+    btnBuildDTData: TButton;
     procedure FormDestroy(Sender: TObject);
     procedure actnConnectExecute(Sender: TObject);
     procedure actnConnectUpdate(Sender: TObject);
@@ -37,6 +38,7 @@ type
     procedure actnDisconnectUpdate(Sender: TObject);
     procedure actnDolphinTimingExecute(Sender: TObject);
     procedure actnDolphinTimingUpdate(Sender: TObject);
+    procedure btnBuildDTDataClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
@@ -217,6 +219,22 @@ begin
     if actnDolphinTiming.Enabled then
       actnDolphinTiming.Enabled := false;
   end;
+end;
+
+procedure TdtBoot.btnBuildDTDataClick(Sender: TObject);
+begin
+    // C R E A T E   T H E   D T  D A T A M O D U L E .
+    if NOT Assigned(DTData) then
+      DTData := TDTData.Create(Self);
+
+    if Assigned(DTData) then
+    begin
+      DTData.Connection := SCM.scmConnection;
+      dtData.BuildDTData;
+    end;
+
+    // F R E E   D T   D A T A M O D U L E .
+    FreeAndNil(DTData);
 end;
 
 procedure TdtBoot.FormCreate(Sender: TObject);

@@ -17942,9 +17942,19 @@ object dtBoot: TdtBoot
     TabOrder = 8
     Visible = False
   end
+  object btnBuildDTData: TButton
+    Left = 556
+    Top = 271
+    Width = 94
+    Height = 64
+    Caption = 'Build DT Data'
+    TabOrder = 9
+    WordWrap = True
+    OnClick = btnBuildDTDataClick
+  end
   object ActionList1: TActionList
-    Left = 296
-    Top = 288
+    Left = 672
+    Top = 128
     object actnConnect: TAction
       Caption = 'Connect'
       OnExecute = actnConnectExecute
@@ -17962,7 +17972,7 @@ object dtBoot: TdtBoot
     end
   end
   object Timer1: TTimer
-    Left = 592
-    Top = 272
+    Left = 672
+    Top = 192
   end
 end

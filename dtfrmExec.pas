@@ -381,7 +381,7 @@ begin
   if IsPositiveResult(mr) and (dlg.rtnSessionID > 0) then
   begin
     DTData.MSG_Handle := 0;
-    DTData.ActiveSessionID := dlg.rtnSessionID;
+    DTData.LocateSession(dlg.rtnSessionID);
     DTData.MSG_Handle := Self.Handle;
   end;
   dlg.Free;
@@ -404,35 +404,33 @@ end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
 var
-currSessionID: integer;
+currSessionID, currEventID: integer;
 
 begin
   // SYNC SCM session to DT session ...
   // SYNC DT session to SCM session ...
   currSessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
+  currEventID := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
 
-  DTData.tblDTSession.DisableControls;
-  DTData.tblDTEvent.DisableControls;
-  DTData.tblDTHeat.DisableControls;
-  DTData.tblDTINDV.DisableControls;
-  DTData.tblDTTEAM.DisableControls;
-  DTData.tblDTNoodle.DisableControls;
+//  DTData.tblDTSession.DisableControls;
+//  DTData.tblDTEvent.DisableControls;
+//  DTData.tblDTHeat.DisableControls;
+//  DTData.tblDTEntrant.DisableControls;
+//  DTData.tblDTNoodle.DisableControls;
 
-  DTData.tblDTSession.Filter := 'fSession = ' + IntToStr(currSessionID);
-  if not DTData.tblDTSession.Filtered then DTData.tblDTSession.Filtered := true;
+  DTData.dtLocateSessionNum(currSessionID);
+  DTData.dtLocateEventNum(currEventID);
 
-  DTData.tblDTEvent.Refresh;
-  DTData.tblDTHeat.Refresh;
-  DTData.tblDTINDV.Refresh;
-  DTData.tblDTTEAM.Refresh;
-  DTData.tblDTNoodle.Refresh;
-
-  DTData.tblDTSession.EnableControls;
-  DTData.tblDTEvent.EnableControls;
-  DTData.tblDTHeat.EnableControls;
-  DTData.tblDTINDV.EnableControls;
-  DTData.tblDTTEAM.EnableControls;
-  DTData.tblDTNoodle.EnableControls;
+//  DTData.tblDTEvent.Refresh;
+//  DTData.tblDTHeat.Refresh;
+//  DTData.tblDTEntrant.Refresh;
+//  DTData.tblDTNoodle.Refresh;
+//
+//  DTData.tblDTSession.EnableControls;
+//  DTData.tblDTEvent.EnableControls;
+//  DTData.tblDTHeat.EnableControls;
+//  DTData.tblDTEntrant.EnableControls;
+//  DTData.tblDTNoodle.EnableControls;
 
 end;
 
@@ -559,6 +557,7 @@ procedure TdtExec.FormCreate(Sender: TObject);
 var
   dtFT: dtFileType;
 begin
+
   // A Class that uses JSON to read and write application configuration .
   // Created on bootup by dtfrmBoot.
   LoadSettings;
@@ -598,12 +597,9 @@ begin
       dtFT := dtutils.GetDTFileTypeOfDirectory(Settings.DolphinMeetsFolder);
       if (dtFT <> dtUnknown) then
       begin
-        dtData.BuildDTData;
+
         dtUtils.PrepareDTData;
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
-        //actnSyncDTExecute(Self);
-        dtData.dsDTSession.Dataset.Filtered := false;
-        dtData.dsDTSession.Dataset.First;
       end;
   end;
 end;

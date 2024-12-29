@@ -85,7 +85,6 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitWidth = 1954
     DesignSize = (
       1330
       718)
@@ -1107,7 +1106,6 @@ object dtExec: TdtExec
             PrintFont.Style = []
             Width = 90
           end>
-        DataSource = DTData.dsDTINDV
         InvalidPicture.Data = {
           055449636F6E0000010001002020200000000000A81000001600000028000000
           2000000040000000010020000000000000100000000000000000000000000000

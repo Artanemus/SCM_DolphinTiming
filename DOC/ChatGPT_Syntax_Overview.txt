@@ -38,9 +38,6 @@ For further technical details, you can refer to the section on Dolphin result fi
 
 
 
-
-
-
 The `.DO3` and `.DO4` file formats used by the Dolphin Timing system are data files designed to interface with Hy-Tek Meet Manager software. They store timing results, including splits for events, and their file naming conventions and contents carry specific meaning.
 
 ### Breakdown of `.DO3` Files

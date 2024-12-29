@@ -40,62 +40,11 @@ type
     FDStanStorageXMLLink1: TFDStanStorageXMLLink;
     tblDTEntrant: TFDMemTable;
     dsDTHeat: TDataSource;
-    dsDTEnrant: TDataSource;
+    dsDTEntrant: TDataSource;
     qrySwimClub: TFDQuery;
     dsSwimClub: TDataSource;
     qrySessionList: TFDQuery;
     dsSessionList: TDataSource;
-    tblDTSessionDTID: TIntegerField;
-    tblDTSessionCreatedDT: TDateTimeField;
-    tblDTSessionFileName: TStringField;
-    tblDTSessionfSession: TIntegerField;
-    tblDTSessionfEvent: TIntegerField;
-    tblDTSessionfHeat: TIntegerField;
-    tblDTSessionfGender: TStringField;
-    tblDTSessionfGUID: TStringField;
-    tblDTHeatDTHeatID: TIntegerField;
-    tblDTHeatDTID: TIntegerField;
-    tblDTHeatSession: TIntegerField;
-    tblDTHeatEvent: TIntegerField;
-    tblDTHeatHeat: TIntegerField;
-    tblDTHeatGender: TStringField;
-    tblDTHeattotTime1: TTimeField;
-    tblDTHeattotTime2: TTimeField;
-    tblDTHeattotTime3: TTimeField;
-    tblDTHeatDeviation1: TTimeField;
-    tblDTHeatDeviation2: TTimeField;
-    tblDTHeatDeviation3: TTimeField;
-    tblDTHeatCheckSum: TStringField;
-    tblDTEntrantIDTLaneID: TIntegerField;
-    tblDTEntrantIDTHeatID: TIntegerField;
-    tblDTEntrantLane: TIntegerField;
-    tblDTEntrantAutoTime: TBooleanField;
-    tblDTEntrantUseTime1: TBooleanField;
-    tblDTEntrantUseTime2: TBooleanField;
-    tblDTEntrantUseTime3: TBooleanField;
-    tblDTEntrantCalcTime: TTimeField;
-    tblDTEntrantimgPatch: TIntegerField;
-    tblDTEntrantTime1: TTimeField;
-    tblDTEntrantTime2: TTimeField;
-    tblDTEntrantTime3: TTimeField;
-    tblDTEntrantSplit1: TTimeField;
-    tblDTEntrantSplit2: TTimeField;
-    tblDTEntrantSplit3: TTimeField;
-    tblDTEntrantSplit4: TTimeField;
-    tblDTEntrantSplit5: TTimeField;
-    tblDTEntrantSplit6: TTimeField;
-    tblDTEntrantSplit7: TTimeField;
-    tblDTEntrantSplit8: TTimeField;
-    tblDTEntrantSplit9: TTimeField;
-    tblDTEntrantSplit10: TTimeField;
-    tblDTNoodleDTNoodleID: TIntegerField;
-    tblDTNoodleDTLaneID: TIntegerField;
-    tblDTNoodleEventID: TIntegerField;
-    tblDTNoodleEventType: TIntegerField;
-    tblDTNoodleHeatID: TIntegerField;
-    tblDTNoodleEntrantID: TIntegerField;
-    tblDTNoodleTeamID: TIntegerField;
-    tblDTNoodleLaneNumber: TIntegerField;
     FDStanStorageBinLink1: TFDStanStorageBinLink;
     vimglistMenu: TVirtualImageList;
     qrySessionListSessionID: TFDAutoIncField;
@@ -116,7 +65,6 @@ type
     fDTDataIsActive: Boolean;
     msgHandle: HWND;  // TForm.dtfrmExec ...
     function GetActiveSessionID: integer;
-    procedure SetActiveSessionID(const Value: integer);
 
   public
     { Public declarations }
@@ -131,11 +79,13 @@ type
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
     function LocateNearestSession(aDate: TDateTime): integer;
+    function dtLocateEventNum(AEventNum: integer): boolean;
+    function dtLocateSessionNum(ASessionNum: integer): boolean;
 
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
     property IsActive: Boolean read fDTDataIsActive write fDTDataIsActive;
-    property ActiveSessionID: integer read GetActiveSessionID write SetActiveSessionID;
+    property ActiveSessionID: integer read GetActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
     property MSG_Handle: HWND read msgHandle write msgHandle;
 
@@ -227,6 +177,38 @@ end;
 procedure TDTData.DataModuleDestroy(Sender: TObject);
 begin
   // clean-up.
+end;
+
+function TDTData.dtLocateEventNum(AEventNum: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (AEventNum = 0) then exit;
+  SearchOptions := [];
+  if tbldtEvent.Active then
+  begin
+    tbldtEvent.DisableControls;
+    result := tbldtEvent.Locate('EventNum', AEventNum, SearchOptions);
+    tbldtEvent.EnableControls;
+  end;
+end;
+
+function TDTData.dtLocateSessionNum(ASessionNum: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (ASessionNum = 0) then exit;
+  SearchOptions := [];
+  if tbldtSession.Active then
+  begin
+    tbldtSession.DisableControls;
+    result := tbldtSession.Locate('SessionNum', ASessionNum, SearchOptions);
+    tbldtSession.EnableControls;
+  end;
 end;
 
 function TDTData.GetRoundABBREV(AEventID: integer): string;
@@ -325,12 +307,7 @@ begin
 end;
 
 procedure TDTData.ActivateData;
-var
-  currentSessionID: integer;
 begin
-
-  currentSessionID := 0;
-  BuildDTData;
 
   // ASSERT Master - Detail
   // Master - Detail
@@ -377,7 +354,6 @@ begin
     if qrySessionList.Active and not qrySessionList.IsEmpty then
     begin
       qrySessionList.First;
-      currentSessionID := qrySessionList.FieldByName('SessionID').AsInteger;
     end;
 
     // setup connection for master - detail
@@ -394,9 +370,8 @@ begin
 
     if qrySwimClub.Active and qrySession.Active then
     begin
-      // NO PARAMS: instead a filter is used.
-      // Zero ID is handled.
-      SetActiveSessionID(currentSessionID);
+      qrySession.Open;
+      qrySession.First;
       qryEvent.Open;
       qryDistance.Open;
       qryStroke.Open;
@@ -421,49 +396,90 @@ begin
   // Create Dolphin Timing DATA TABLES SCHEMA.
   // ---------------------------------------------
   tblDTSession.FieldDefs.Clear;
-  tblDTSession.FieldDefs.Add('SessionID', ftInteger); // PK.
-  tblDTSession.FieldDefs.Add('dtSessionID', ftInteger); // derived from filename
-  tblDTSession.FieldDefs.Add('dtEventNum', ftInteger); // derived from filename
-  tblDTSession.FieldDefs.Add('dtHeatNum', ftInteger); // derived from filename
-  tblDTSession.FieldDefs.Add('CreatedDT', ftDateTime);
-  tblDTSession.FieldDefs.Add('Path', ftString, 512);
-  tblDTSession.FieldDefs.Add('FileName', ftString, 512);
-  tblDTSession.FieldDefs.Add('SessionStart', ftDateTime); // file creation date
+  // Primary Key
+  tblDTSession.FieldDefs.Add('SessionID', ftInteger);
+  // 3xderived from filename
+  tblDTSession.FieldDefs.Add('dtSessionID', ftInteger);
+  tblDTSession.FieldDefs.Add('dtEventNum', ftInteger);
+  tblDTSession.FieldDefs.Add('dtHeatNum', ftInteger);
+  // Derived from filename
+  // Round – “A” for all, “P” for prelim or “F” for final.
+  tblDTSession.FieldDefs.Add('dtRoundStr', ftString, 1);
+
+  // Internal Session number found in line one 'Header' of a
+  // Dolphin Timing file. Alternative way to SYNC should the
+  // params given in the dtSessionID be useless.
+  tblDTSession.FieldDefs.Add('SessionNum', ftInteger);
+  // file creation date  - produced by Dolphin timing when file was saved.
+  tblDTSession.FieldDefs.Add('SessionStart', ftDateTime);
+  // TimeStamp - Now.
+  tblDTSession.FieldDefs.Add('CreatedOn', ftDateTime);
   tblDTSession.FieldDefs.Add('Caption', ftString, 64);
-  tblDTSession.FieldDefs.Add('HashStr', ftString, 8);
-  // DO4 Hashstr can be converted to RaceID.
-  tblDTSession.FieldDefs.Add('dtRaceID', ftInteger);
   tblDTSession.CreateDataSet;
+{$IFDEF DEBUG}
   // save schema ...
   tblDTSession.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataSession.xml', sfAuto);
+{$ENDIF}
 
   tblDTEvent.FieldDefs.Clear;
-  tblDTEvent.FieldDefs.Add('EventID', ftInteger); // PK.
+  // Primary Key.
+  tblDTEvent.FieldDefs.Add('EventID', ftInteger);
+  // FK. Master-detail  (tblDTSession)
   tblDTEvent.FieldDefs.Add('SessionID', ftInteger);
-  tblDTEvent.FieldDefs.Add('CreatedDT', ftDateTime);
+  // Derived from SplitString Field[1]
+  // SYNC with SCM EventNum.
   tblDTEvent.FieldDefs.Add('EventNum', ftInteger);
   tblDTEvent.FieldDefs.Add('Caption', ftString, 64);
   tblDTEvent.FieldDefs.Add('GenderStr', ftString, 1); // DO4 A=boys, B=girls, X=any.
   tblDTEvent.CreateDataSet;
+{$IFDEF DEBUG}
   // save schema ...
   tblDTEvent.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataEvent.xml', sfAuto);
+{$ENDIF}
 
   tblDTHeat.FieldDefs.Clear;
   // Create the HEAT MEM TABLE schema... tblDTHeat.
   // ---------------------------------------------
   tblDTHeat.FieldDefs.Add('HeatID', ftInteger); // PK.
   tblDTHeat.FieldDefs.Add('EventID', ftInteger); // Master- Detail
+  // This timestamp is the moment when the event is brought into the
+  // swimclubmeet dolphin timing application.
+  // It's used to assist in 'pooling time' of the DT Meet Bin
+  tblDTEvent.FieldDefs.Add('TimeStampDT', ftDateTime);
+  // heat number should match
+  // - SCM.dsHeat.Dataset.FieldByName('HeatNum)
+  // - DT Filename - SplitString Field[2] - only available in D04
+  // - Line one of FileName. Referenced as 'Header' - SplitString Field[2]
   tblDTHeat.FieldDefs.Add('HeatNum', ftInteger);
+  // Auto-created eg. 'Event 1 : #FILENAME#'
   tblDTHeat.FieldDefs.Add('Caption', ftString, 64);
-  // Calculated Data to assist in auto - syncing.
-  tblDTHeat.FieldDefs.Add('totTime1', ftTime); // sum of racetimes lanes 1-10.
-  tblDTHeat.FieldDefs.Add('totTime2', ftTime); // sum of racetimes lanes 1-10.
-  tblDTHeat.FieldDefs.Add('totTime3', ftTime); // sum of racetimes lanes 1-10.
-  tblDTEntrant.FieldDefs.Add('CheckSum', ftString, 16); // footer.
+  // Time stamp of file - created by Dolphin Timing system on write of file.
+  tblDTHeat.FieldDefs.Add('CreatedDT', ftDateTime);
+  // Path only - may be redundant?
+  // The system preferences stores the path direction to the DT Meet Bin.
+  tblDTHeat.FieldDefs.Add('Path', ftString, MAX_PATH);
+  // FileName includes file extension.    (.DO3, .DO4)
+  // determines dtFileType dtDO3, dtDO4.
+  tblDTHeat.FieldDefs.Add('FileName', ftString, 128);
+  // Last line of file - Referenced as 'Footer'
+  tblDTHeat.FieldDefs.Add('CheckSum', ftString, 16); // footer.
+  // Filename params sess, ev, ht don't match SCM session, event, heat
+  // Used to prompt user to rename DT FileName.
+  tblDTHeat.FieldDefs.Add('dtBadFN', ftBoolean);
+  // Derived from FileName.
+  // DO3 - SplitString Field[2] hash number (alpha-numerical).
+  // DO4 - SplitString Field[3] hash number (numerical - sequence).
+  tblDTHeat.FieldDefs.Add('HashStr', ftString, 8);
+  // Derived from FileName.
+  // DO4 Hashstr can be converted to RaceID.
+  tblDTHeat.FieldDefs.Add('dtRaceID', ftInteger);
+
 
   tblDTHeat.CreateDataSet;
+{$IFDEF DEBUG}
   // save schema ...
   tblDTHeat.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataHeat.xml');
+{$ENDIF}
 
   { NOTE :
     Dolphin Timing doesn't destinct INDV and TEAM.
@@ -473,7 +489,7 @@ begin
   tblDTEntrant.FieldDefs.Clear;
   // Create the LANE MEM TABLE schema... tblDTEntrant.
   // ---------------------------------------------
-  tblDTEntrant.FieldDefs.Add('INDVID', ftInteger); // PK.
+  tblDTEntrant.FieldDefs.Add('EntrantID', ftInteger); // PK.
   tblDTEntrant.FieldDefs.Add('HeatID', ftInteger); // Master- Detail
   tblDTEntrant.FieldDefs.Add('Lane', ftInteger); // Lane Number.
   // Dolphin Timing Specific
@@ -492,9 +508,11 @@ begin
   tblDTEntrant.FieldDefs.Add('Time1Err', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time2Err', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time3Err', ftInteger);
+  // calculated deviation for each timekeeper based on average
   tblDTEntrant.FieldDefs.Add('Deviation1', ftTime); // deviation from average time1
   tblDTEntrant.FieldDefs.Add('Deviation2', ftTime); // deviation from average time2
   tblDTEntrant.FieldDefs.Add('Deviation3', ftTime); // deviation from average time3
+  // Dolphin timing (dtfiletype dtDO4) stores MAX 10 splits.
   tblDTEntrant.FieldDefs.Add('Split1', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split2', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split3', ftTime); // DO4.
@@ -506,25 +524,36 @@ begin
   tblDTEntrant.FieldDefs.Add('Split9', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split10', ftTime); // DO4.
   tblDTEntrant.CreateDataSet;
+{$IFDEF DEBUG}
   // save schema ...
-  tblDTEntrant.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataINDV.xml');
-
+  tblDTEntrant.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataEntrant.xml');
+{$ENDIF}
 
   tblDTNoodle.FieldDefs.Clear;
   // Create the NOODLE MEM TABLE schema... tblDTNoodle.
   // ---------------------------------------------
+  // Primary Key
   tblDTNoodle.FieldDefs.Add('NoodleID', ftInteger);
-  tblDTNoodle.FieldDefs.Add('HeatID', ftInteger); // dtHeat Master-Detail.
-  tblDTNoodle.FieldDefs.Add('EventTypeID', ftInteger); // INDIV or TEAM
-  tblDTNoodle.FieldDefs.Add('SCM_INDIVID', ftInteger); // Master-Detail
-  tblDTNoodle.FieldDefs.Add('SCM_TEAMID', ftInteger); // Master-Detail
-  tblDTNoodle.FieldDefs.Add('SCM_Lane', ftInteger); //
-  tblDTNoodle.FieldDefs.Add('DT_INDIVID', ftInteger); // Master-Detail
-  tblDTNoodle.FieldDefs.Add('DT_TEAMID', ftInteger); // Master-Detail
-  tblDTNoodle.FieldDefs.Add('DT_Lane', ftInteger); //
+  // dtHeat Master-Detail.
+  tblDTNoodle.FieldDefs.Add('HeatID', ftInteger);
+  // dtEntrant - Route to lane/timekeepers/splits details
+  tblDTNoodle.FieldDefs.Add('EntrantID', ftInteger);
+  // dtEntrant.Lane - Quick lookup. Improve search times?
+  tblDTNoodle.FieldDefs.Add('Lane', ftInteger);
+  // LINK TO SwimClubMeet DATA
+  // An entrant may be INDV or TEAM event.
+  tblDTNoodle.FieldDefs.Add('SCM_EventTypeID', ftInteger);
+  // Route to individual entrant.
+  tblDTNoodle.FieldDefs.Add('SCM_INDVID', ftInteger);
+  // Route to team (relay-team) entrant.
+  tblDTNoodle.FieldDefs.Add('SCM_TEAMID', ftInteger);
+  // Quick lookup?
+  tblDTNoodle.FieldDefs.Add('SCM_Lane', ftInteger);
   tblDTNoodle.CreateDataSet;
+{$IFDEF DEBUG}
   // save schema ...
   tblDTNoodle.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataNoodle.xml');
+{$ENDIF}
 
   // Master - Detail
   tblDTEvent.MasterSource := dsDTSession;
@@ -588,29 +617,7 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
-procedure TDTData.SetActiveSessionID(const Value: integer);
-begin
-  {  // NOT using PARAMETERS ... strict Master - Detail build...
-      qrySession.DisableControls;
-      qrySession.Close;
-      qrysession.ParamByName('SESSIONID').AsInteger := ASessionID;
-      qrysession.Prepare;
-      qrysession.Open;
-      qrySession.EnableControls;
-  }
-  if (Value = 0) then
-  begin
-    qrySession.Filtered := false;
-    qrySession.First;
-  end
-  else
-  begin
-    qrySession.Filter := 'SessionID = ' + IntToStr(Value);
-    if not qrySession.Filtered then
-      qrySession.Filtered := true;
-  end;
 
-end;
 
 
 end.
