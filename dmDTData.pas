@@ -75,8 +75,11 @@ type
     procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
 
+    function LocateSessionNum(AdtSessionNum: integer): boolean;
     function LocateSession(ASessionID: integer): boolean;
+    function LocateEventNum(AdtEventNum: integer): boolean;
     function LocateEvent(AEventID: integer): boolean;
+    function LocateHeatNum(AdtHeatNum: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
     function LocateNearestSession(aDate: TDateTime): integer;
     function dtLocateEventNum(AEventNum: integer): boolean;
@@ -98,7 +101,7 @@ type
   dtTimeMode = (tmUnknow, tmManualDisabled, tmMaualenabled, tmAutoDisabled,
     tmAutoEnabled);
   dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
-
+  dtPrecedence = (dtPrecHeader, dtPrecFileName);
 var
   DTData: TDTData;
 
@@ -238,6 +241,18 @@ begin
 
 end;
 
+function TDTData.LocateEventNum(AdtEventNum: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (AdtEventNum = 0) then exit;
+  SearchOptions := [];
+  if dsEvent.DataSet.Active then
+      result := dsEvent.DataSet.Locate('dtEventNum', AdtEventNum, SearchOptions);
+end;
+
 function TDTData.LocateEvent(AEventID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
@@ -262,6 +277,18 @@ begin
       result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
 end;
 
+function TDTData.LocateHeatNum(AdtHeatNum: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (AdtHeatNum = 0) then exit;
+  SearchOptions := [];
+  if dsHeat.DataSet.Active then
+      result := dsHeat.DataSet.Locate('dtHeatNum', AdtHeatNum, SearchOptions);
+end;
+
 function TDTData.LocateNearestSession(aDate: TDateTime): integer;
 begin
   result := 0;
@@ -273,6 +300,19 @@ begin
   if not qryNearestSessionID.IsEmpty then
    result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
 end;
+
+function TDTData.LocateSessionNum(AdtSessionNum: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fDTDataIsActive then exit;
+  if (AdtSessionNum = 0) then exit;
+  SearchOptions := [];
+  if dsSession.DataSet.Active then
+      result := dsSession.DataSet.Locate('dtSessionNum', AdtSessionNum, SearchOptions);
+end;
+
 
 function TDTData.LocateSession(ASessionID: integer): boolean;
 var
@@ -398,18 +438,14 @@ begin
   tblDTSession.FieldDefs.Clear;
   // Primary Key
   tblDTSession.FieldDefs.Add('SessionID', ftInteger);
-  // 3xderived from filename
-  tblDTSession.FieldDefs.Add('dtSessionID', ftInteger);
-  tblDTSession.FieldDefs.Add('dtEventNum', ftInteger);
-  tblDTSession.FieldDefs.Add('dtHeatNum', ftInteger);
-  // Derived from filename
-  // Round – “A” for all, “P” for prelim or “F” for final.
-  tblDTSession.FieldDefs.Add('dtRoundStr', ftString, 1);
-
-  // Internal Session number found in line one 'Header' of a
-  // Dolphin Timing file. Alternative way to SYNC should the
-  // params given in the dtSessionID be useless.
+  // Derived from line one 'Header' within file.
   tblDTSession.FieldDefs.Add('SessionNum', ftInteger);
+  // Derived from filename : Last three digits of SCM qrySession.SessionID.
+  tblDTSession.FieldDefs.Add('fnSessionNum', ftInteger);
+  // Derived from filename : matches SCM qryEvent.EventNum.
+  tblDTSession.FieldDefs.Add('fnEventNum', ftInteger);
+  // Derived from filename : matches SCM qryHeat.HeatNum.
+  tblDTSession.FieldDefs.Add('fnHeatNum', ftInteger);
   // file creation date  - produced by Dolphin timing when file was saved.
   tblDTSession.FieldDefs.Add('SessionStart', ftDateTime);
   // TimeStamp - Now.
@@ -429,8 +465,13 @@ begin
   // Derived from SplitString Field[1]
   // SYNC with SCM EventNum.
   tblDTEvent.FieldDefs.Add('EventNum', ftInteger);
+  // Derived from filename : matches SCM qryEvent.EventNum.
+  tblDTEvent.FieldDefs.Add('fnEventNum', ftInteger);
   tblDTEvent.FieldDefs.Add('Caption', ftString, 64);
   tblDTEvent.FieldDefs.Add('GenderStr', ftString, 1); // DO4 A=boys, B=girls, X=any.
+  // Derived from filename
+  // Round – “A” for all, “P” for prelim or “F” for final.
+  tblDTEvent.FieldDefs.Add('fnRoundStr', ftString, 1);
   tblDTEvent.CreateDataSet;
 {$IFDEF DEBUG}
   // save schema ...
@@ -451,6 +492,8 @@ begin
   // - DT Filename - SplitString Field[2] - only available in D04
   // - Line one of FileName. Referenced as 'Header' - SplitString Field[2]
   tblDTHeat.FieldDefs.Add('HeatNum', ftInteger);
+  // the heat number as shown in the DT filename.
+  tblDTHeat.FieldDefs.Add('fnHeatNum', ftInteger);
   // Auto-created eg. 'Event 1 : #FILENAME#'
   tblDTHeat.FieldDefs.Add('Caption', ftString, 64);
   // Time stamp of file - created by Dolphin Timing system on write of file.
@@ -465,14 +508,14 @@ begin
   tblDTHeat.FieldDefs.Add('CheckSum', ftString, 16); // footer.
   // Filename params sess, ev, ht don't match SCM session, event, heat
   // Used to prompt user to rename DT FileName.
-  tblDTHeat.FieldDefs.Add('dtBadFN', ftBoolean);
+  tblDTHeat.FieldDefs.Add('fnBadFN', ftBoolean);
   // Derived from FileName.
   // DO3 - SplitString Field[2] hash number (alpha-numerical).
   // DO4 - SplitString Field[3] hash number (numerical - sequence).
   tblDTHeat.FieldDefs.Add('HashStr', ftString, 8);
   // Derived from FileName.
   // DO4 Hashstr can be converted to RaceID.
-  tblDTHeat.FieldDefs.Add('dtRaceID', ftInteger);
+  tblDTHeat.FieldDefs.Add('fnRaceID', ftInteger);
 
 
   tblDTHeat.CreateDataSet;
