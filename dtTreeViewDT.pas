@@ -66,9 +66,9 @@ uses dmDTData;
 
 constructor TTVDTData.Create(AFileName: string);
 var
-GenderStr, HashStr: string;
+//GenderStr, HashStr: string;
 dtUtilsrec: TdtUtils;
-dtFT: dtFileType;
+//dtFT: dtFileType;
 fn: string;
 begin
   FSessionID := 0;
@@ -78,9 +78,9 @@ begin
     if (Length(FFileName) > 0) and FileExists(FFilename) then
     begin
       fn:= ExtractFileName(FFileName);
-      dtFT := dtUtilsrec.GetDTFileTypeOfFile(fn);
-      dtUtilsrec.ExtractDTFile(fn, dtFT, FSessionID, FEventID, FHeatID,
-      GenderStr, HashStr);
+//      dtFT := dtUtilsrec.GetDTFileTypeOfFile(fn);
+//      dtUtilsrec.ExtractDTFile(fn, dtFT, FSessionID, FEventID, FHeatID,
+//      GenderStr, HashStr);
     end;
 end;
 
