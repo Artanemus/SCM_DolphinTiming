@@ -264,6 +264,13 @@ begin
   LoadSettings;
   // status message - unconnected: blank - connected: status/information.
   Status_ConnectionDescription;
+
+{$IFDEF DEBUG}
+  // A button that allows me to run dmDTData.BuildDTData.
+  // The FieldDefs are save out to XML. Load XML data to restore.
+  btnBuildDTData.Visible := true;
+{$ENDIF}
+
 end;
 
 procedure TdtBoot.ConnectOnTerminate(Sender: TObject);

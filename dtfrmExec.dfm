@@ -772,7 +772,7 @@ object dtExec: TdtExec
         Height = 41
         Alignment = taCenter
         DataField = 'FileName'
-        DataSource = DTData.dsDTSession
+        DataSource = DTData.dsDTHeat
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clWindowText
         Font.Height = -19
@@ -1106,6 +1106,7 @@ object dtExec: TdtExec
             PrintFont.Style = []
             Width = 90
           end>
+        DataSource = DTData.dsDTHeat
         InvalidPicture.Data = {
           055449636F6E0000010001002020200000000000A81000001600000028000000
           2000000040000000010020000000000000100000000000000000000000000000

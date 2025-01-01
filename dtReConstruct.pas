@@ -211,11 +211,38 @@ procedure ReConstructHeat(SessionID, eventNum: integer; gender: string;
    aEventType: scmEventType; sl: TStringList; adtFileType: dtFileType);
 var
   HeatNum: integer;
-  s, fn, id, sess, ev, ht: string;
+  s, fn, id, sess, ev, ht, RoundStr: string;
   success: boolean;
 begin
   if DTData.qryHeat.IsEmpty then exit;
   if adtFileType = dtUnknown then exit;
+
+  // Dolphin Timing term 'Round' : defined as :
+  //  A = ALL, P = Prelimary, F = Final.
+
+  // NOTE: GENDER >> A=boys, B=girls, X=mixed. (Not used in ReConstructHeat)
+
+  {
+  SCM 'Round' : defined as :
+    A = 1, 'All', 'A'   -  (for compatability)
+    P = 2, 'Prelimary',  'P'
+    Q = 3, 'QuaterFinal', 'Q'
+    S = 4, 'SemiFinal', 'S'
+    F = 5, 'Final', 'F"
+  }
+  {TODO -oBSA -cGeneral :
+    DB version 1.1.5.4 will have table dbo.Round.
+    Linked to dbo.Event on RoundID.
+    RoundID := DTData.qryEvent.FieldByName('RoundID').AsInteger;
+    SQLstr :=  'SELECT ABREV FROM SwimClubMeet.dbo.Round WHERE RoundID = :ID)';
+    v :=  SCM.scmConnection.ExecScalar(SQLstr,[RoundID]);
+    if not VarIsNull(v) then
+    begin
+      RoundStr := var.AsString;
+    end;
+  }
+  // DEFAULT ASSIGNMENT (DBv1.1.5.3 doesn't have knowledge of param).
+  RoundStr := 'A';
 
   // Assert the state of the local param 'seed' (int) ...
   if (seed > 999) or (seed = 0) then seed := 1;
@@ -240,7 +267,6 @@ begin
     begin
       success := true;
       // C o n s t r u c t   f i l e n a m e .
-      // NOTE: GENDER >> A=boys, B=girls, X=mixed.
       // pad numbers with leading zeros.
       ht := Get3Digits(HeatNum);
       ev := Get3Digits(EventNum);
@@ -256,7 +282,7 @@ begin
         dtDO4:
         begin
           id := Get4Digits(seed);
-          fn := sess + '-' + ev + '-' + ht + gender + '-' + id + '.DO4';
+          fn := sess + '-' + ev + '-' + ht + RoundStr + '-' + id + '.DO4';
         end;
       end;
       fn := IncludeTrailingPathDelimiter(Settings.DolphinReConstruct) + fn;

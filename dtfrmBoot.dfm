@@ -17949,6 +17949,7 @@ object dtBoot: TdtBoot
     Height = 64
     Caption = 'Build DT Data'
     TabOrder = 9
+    Visible = False
     WordWrap = True
     OnClick = btnBuildDTDataClick
   end
