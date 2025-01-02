@@ -554,8 +554,6 @@ begin
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
-var
-  dtFT: dtFileType;
 begin
 
   // A Class that uses JSON to read and write application configuration .
@@ -594,10 +592,8 @@ begin
   // Test DT directory exists...
   if DirectoryExists(Settings.DolphinMeetsFolder) then
   begin
-      dtFT := dtutils.GetDTFileTypeOfDirectory(Settings.DolphinMeetsFolder);
-      if (dtFT <> dtUnknown) then
+      if dtUtils.DirectoryHasDTFiles(Settings.DolphinMeetsFolder) then
       begin
-
         dtUtils.PrepareDTData;
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
       end;
@@ -629,7 +625,12 @@ begin
     pnlDT.Visible := true;
   end;
   // Windows handle to message after after data scroll...
-  if Assigned(DTData) then DTData.MSG_Handle := Self.Handle;
+  if Assigned(DTData) then
+  begin
+    DTData.MSG_Handle := Self.Handle;
+    // Assert Master - Detail ...
+    DTData.ActivateDataDT;
+  end;
   if fFlagSelectSession then
     // Prompt user to select session. (... and update UI.)
     PostMessage(Self.Handle, SCM_SELECTSESSION, 0 , 0 )

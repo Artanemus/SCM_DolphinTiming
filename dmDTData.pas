@@ -77,6 +77,7 @@ type
   public
     { Public declarations }
     procedure ActivateData();
+    procedure ActivateDataDT();
     procedure BuildDTData;
     procedure BuildCSVEventData(AFileName: string);
 
@@ -121,6 +122,40 @@ implementation
 {$R *.dfm}
 
 uses System.Variants, System.DateUtils;
+
+procedure TDTData.ActivateDataDT;
+begin
+  tblDTSession.Active := true;
+  tblDTEvent.Active := true;
+  tblDTHeat.Active := true;
+  tblDTEntrant.Active := true;
+  tblDTNoodle.Active := true;
+
+  // ASSERT Master - Detail
+  tblDTEvent.MasterSource := dsDTSession;
+  tblDTEvent.MasterFields := 'SessionID';
+  tblDTEvent.DetailFields := 'SessionID';
+  tblDTEvent.IndexFieldNames := 'SessionID';
+
+  tblDTHeat.MasterSource := dsDTEvent;
+  tblDTHeat.MasterFields := 'EventID';
+  tblDTHeat.DetailFields := 'EventID';
+  tblDTHeat.IndexFieldNames := 'EventID';
+
+  tblDTEntrant.MasterSource := dsDTHeat;
+  tblDTEntrant.MasterFields := 'HeatID';
+  tblDTEntrant.DetailFields := 'HeatID';
+  tblDTEntrant.IndexFieldNames := 'HeatID';
+
+
+  tblDTNoodle.MasterSource := dsDTHeat;
+  tblDTNoodle.MasterFields := 'HeatID';
+  tblDTNoodle.DetailFields := 'HeatID';
+  tblDTNoodle.IndexFieldNames := 'HeatID';
+
+  tblDTSession.First;
+
+end;
 
 procedure TDTData.BuildCSVEventData(AFileName: string);
 var
@@ -367,38 +402,6 @@ end;
 procedure TDTData.ActivateData;
 begin
 
-  // ASSERT Master - Detail
-  // Master - Detail
-  // performed on   DataModuleCreate
-  {
-  tblDTEvent.MasterSource := dsDTSession;
-  tblDTEvent.MasterFields := 'SessionID';
-  tblDTEvent.DetailFields := 'SessionID';
-  tblDTEvent.IndexFieldNames := 'SessionID';
-
-  tblDTHeat.MasterSource := dsDTEvent;
-  tblDTHeat.MasterFields := 'EventID';
-  tblDTHeat.DetailFields := 'EventID';
-  tblDTHeat.IndexFieldNames := 'EventID';
-
-  tblDTEntrant.MasterSource := dsDTHeat;
-  tblDTEntrant.MasterFields := 'HeatID';
-  tblDTEntrant.DetailFields := 'HeatID';
-  tblDTEntrant.IndexFieldNames := 'HeatID';
-
-
-  tblDTNoodle.MasterSource := dsDTHeat;
-  tblDTNoodle.MasterFields := 'THeatID';
-  tblDTNoodle.DetailFields := 'HeatID';
-  tblDTNoodle.IndexFieldNames := 'HeatID';
-  }
-  {
-  tblDTSession.Active := true;
-  tblDTHeat.Active := true;
-  tblDTEntrant.Active := true;
-  tblDTNoodle.Active := true;
-  }
-
   if Assigned(fConnection) and fConnection.Connected then
   begin
     // GRAND MASTER.
@@ -451,6 +454,7 @@ procedure TDTData.BuildDTData;
 begin
   fDTDataIsActive := false;
   tblDTSession.Active := false;
+  tblDTEvent.Active := false;
   tblDTHeat.Active := false;
   tblDTEntrant.Active := false;
   tblDTNoodle.Active := false;
@@ -532,7 +536,7 @@ begin
   // Derived from FileName.
   // DO3 - SplitString Field[2] hash number (alpha-numerical).
   // DO4 - SplitString Field[3] hash number (numerical - sequence).
-  tblDTHeat.FieldDefs.Add('HashStr', ftString, 8);
+  tblDTHeat.FieldDefs.Add('fnHashStr', ftString, 8);
   // Derived from FileName.
   // DO4 Hashstr can be converted to RaceID.
   tblDTHeat.FieldDefs.Add('fnRaceID', ftInteger);
@@ -622,7 +626,7 @@ end;
 
 procedure TDTData.DataModuleCreate(Sender: TObject);
 begin
-  //
+  // MAKE LIVE THE DOLPHIN TIMING TABLES
   tblDTSession.Active := true;
 
   // Master - Detail
@@ -636,6 +640,9 @@ begin
     tblDTEvent.IndexFieldNames := 'SessionID';
   end;
 
+  // Master - Detail
+  tblDTHeat.Active := true;
+
   if not Assigned(tblDTHeat.MasterSource) then
   begin
     tblDTHeat.Active := true;
@@ -644,6 +651,9 @@ begin
     tblDTHeat.DetailFields := 'EventID';
     tblDTHeat.IndexFieldNames := 'EventID';
   end;
+
+  // Master - Detail
+  tblDTEntrant.Active := true;
 
   if not Assigned(tblDTEntrant.MasterSource) then
   begin
@@ -654,6 +664,9 @@ begin
     tblDTEntrant.IndexFieldNames := 'HeatID';
   end;
 
+  // Master - Detail
+  tblDTNoodle.Active := true;
+
   if not Assigned(tblDTNoodle.MasterSource) then
   begin
     tblDTNoodle.Active := true;
@@ -663,7 +676,7 @@ begin
     tblDTNoodle.IndexFieldNames := 'HeatID';
   end;
 
-  fDTDataIsActive := false;
+  fDTDataIsActive := true;
 
   FConnection := nil;
   msgHandle := 0;

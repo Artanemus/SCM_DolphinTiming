@@ -67,7 +67,7 @@ uses dmDTData;
 constructor TTVDTData.Create(AFileName: string);
 var
 //GenderStr, HashStr: string;
-dtUtilsrec: TdtUtils;
+//dtUtilsrec: TdtUtils;
 //dtFT: dtFileType;
 fn: string;
 begin

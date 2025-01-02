@@ -49,7 +49,7 @@ type
     procedure FreeTreeViewData;
     procedure LocateEventID(AEventID: integer);
     procedure LocateHeatID(AHeatID: integer);
-    procedure LocateTreeItem(EventNum, HeatNum: integer);
+    { procedure LocateTreeItem(EventNum, HeatNum: integer); }
     procedure PopulateTree;
   public
     { Public declarations }
@@ -232,6 +232,7 @@ begin
   end;
 end;
 
+{
 procedure TTreeViewSCM.LocateTreeItem(EventNum, HeatNum: integer);
 var
   Node: TTreeNode;
@@ -270,6 +271,7 @@ begin
     end;
   end;
 end;
+}
 
 procedure TTreeViewSCM.PopulateTree;
 var

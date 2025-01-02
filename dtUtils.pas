@@ -8,19 +8,20 @@ uses dmDTData, vcl.ComCtrls, Math, System.Types, System.IOUtils,
 function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 function StripAlphaChars(const InputStr: string): string;
 
-type TdtUtils = record
-    private
-      type
-        PTime = ^TTime;
-      var
-        fSplits: array[0..9] of TTime;
-        fTimeKeepers: array[0..2] of TTime;
-        fPrecedence: dtPrecedence;
-        fSList: TStringList;  // Header, Body(multi-line ... lanes) and Footer.
-        fSListIndex: integer; // Current lane for data extraction.
-        fFileType: dtFileType; // dtUnknow,dtDO3, dtDO4
-        fFileName: String; // Filename + EXTENSION. NO PATH.
-        fCreatedDT: TDateTime;
+type
+  TdtUtils = record
+  private
+    type
+      PTime = ^TTime;
+    var
+      fSplits: array[0..9] of TTime;
+      fTimeKeepers: array[0..2] of TTime;
+      fPrecedence: dtPrecedence;
+      fSList: TStringList; // Header, Body(multi-line ... lanes) and Footer.
+      fSListIndex: integer; // Current lane for data extraction.
+      fFileType: dtFileType; // dtUnknow,dtDO3, dtDO4
+      fFileName: string; // Filename + EXTENSION. NO PATH.
+      fCreatedDT: TDateTime;
 
     // --------------------------------------------
     { Routine to :
@@ -44,10 +45,12 @@ type TdtUtils = record
     function sListFooterHashStr(): string;
     { FILENAME EXTRACTION ROUTINES...}
     function fn_SessionNum(): integer;
-    function fn_HashStr(): string;
-    function fn_HeatNum(): integer;
     function fn_EventNum(): integer;
+    function fn_HeatNum(): integer;
     function fn_RoundChar(): char;
+    function fn_HashStr(): string;
+    function fn_RaceID(): integer;
+
     // --------------------------------------------
 
     // Main Process entry points
@@ -59,18 +62,19 @@ type TdtUtils = record
     procedure ProcessHeat(EventID: integer);
     procedure ProcessEntrant(DTHeatID: integer);
 
-    public
-      procedure PrepareDTData();
-      procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
-      procedure AppendDTData(const AFileName:string);
-      // procedure CalculateDeviation(EntrantID: integer; AEventType: scmEventType);
-      function GetDTFileTypeOfDirectory(const ADirectory: string): dtFileType;
-      function GetDTFileTypeOfFile(const AFileName: string): dtFileType;
+  public
+    procedure PrepareDTData();
+    procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
+    procedure AppendDTData(const AFileName: string);
+    // procedure CalculateDeviation(EntrantID: integer; AEventType: scmEventType);
 
-      class operator Initialize (out Dest: TdtUtils);
-      class operator Finalize (var Dest: TdtUtils);
+    function DirectoryHasDTFiles(const ADirectory: string): boolean;
+    function GetDTFileTypeOfFile(const AFileName: string): dtFileType;
 
-end;
+    class operator Initialize(out Dest: TdtUtils);
+    class operator Finalize(var Dest: TdtUtils);
+
+  end;
 
 
 // ---------------------------------------------------
@@ -100,7 +104,6 @@ begin
     if Achar.IsDigit then
       Result := Result + Achar;
 end;
-
 
 function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 var
@@ -138,17 +141,495 @@ begin
 end;
 
 
+class operator TdtUtils.Finalize(var Dest: TdtUtils);
+begin
+  FreeAndNil(Dest.fSList);
+  Dest.fFileType := dtUnknown;
+end;
 
+class operator TdtUtils.Initialize(out Dest: TdtUtils);
+begin
+  Dest.fSList := TStringList.Create;
+  Dest.fFileType := dtUnknown;
+  Dest.fSListIndex := -1;
+  Dest.fFileName := '';
+end;
+
+function TdtUtils.DirectoryHasDTFiles(const ADirectory: string): boolean;
+var
+  LList: TStringDynArray;
+  LSearchOption: TSearchOption;
+  fileMask: string;
+begin
+  fileMask := '*.DO?';
+  result := false;
+  // do not do recursive extract into subfolders
+  LSearchOption := TSearchOption.soTopDirectoryOnly;
+  try
+    { For files use GetFiles method }
+    LList := TDirectory.GetFiles(ADirectory, fileMask, LSearchOption);
+    // TEST for Dolphin Timing files.
+    if (Length(LList) > 0) then
+    begin
+      result := true;
+      exit;
+    end;
+  except
+    { Catch the possible exceptions }
+    MessageBox(0, PChar('Incorrect path or search mask'),
+      PChar('Get file type of directory...'), MB_ICONERROR or MB_OK);
+    exit;
+  end;
+end;
+
+function TdtUtils.GetDTFileTypeOfFile(const AFileName: string): dtFileType;
+begin
+  result := dtUnknown;
+  if AfileName.Contains('.DO3') then
+    result := dtDO3
+  else if AfileName.Contains('.DO4') then
+    result := dtDO4;
+end;
+
+function TdtUtils.fn_SessionNum: integer;
+var
+  Fields: TArray<string>;
+begin
+  result := 0;
+  if fFileName.IsEmpty() then exit;
+  // Split string by the '-' character
+  Fields := SplitString(fFileName, '-');
+  if Length(Fields) > 0 then
+    // Extract the first field - SessionID
+    result := StrToIntDef(Fields[0], 0);
+end;
+
+function TdtUtils.fn_EventNum(): integer;
+var
+  Fields: TArray<string>;
+begin
+  result := 0;
+  if fFileName.IsEmpty then exit;
+  // Split string by the '-' character
+  // example of fFileName
+  // - 088-001-001A-0001.do4
+  // - 088-000-00F0147.do3
+  Fields := SplitString(fFileName, '-');
+  if Length(Fields) > 1 then
+    // Extract the first field - SessionID
+    result := StrToIntDef(Fields[1], 0);
+end;
+
+function TdtUtils.fn_HeatNum(): integer;
+var
+  Fields: TArray<string>;
+  HeatNumStr: string;
+begin
+  result := 0;
+  if fFileName.IsEmpty then exit;
+  // only Dolphin Timing v4 Files have 'Heat Number' information in FileName.
+  if (fFileType <> dtDO4) then exit;
+  // example of fFileName
+  // - 088-001-001A-0001.do4
+  // - 088-000-00F0147.do3
+  // Split string by the '-' character
+  Fields := SplitString(fFileName, '-');
+  if Length(Fields) > 2 then
+  begin
+    // remove the 'Round' character ['A', 'P', 'F'].
+    HeatNumStr := StripAlphaChars(Fields[2]);
+    // Extract the first field - SessionID
+    result := StrToIntDef(HeatNumStr, 0);
+  end;
+end;
+
+function TdtUtils.fn_HashStr(): string;
+var
+  HashStr: string;
+  Fields: TArray<string>;
+begin
+  result := '';
+  HashStr := '';
+  if fFileName.IsEmpty then exit;
+  // Split string by the '-' character
+  // example of fFileName
+  // - 088-001-001A-0001.do4
+  // - 088-000-00F0147.do3
+  Fields := SplitString(fFileName, '-');
+  case fFileType of
+    dtUnknown: ;
+    dtDO4:
+      begin
+        if Length(Fields) > 3 then
+        begin
+          // The fourthfield has a '.' delimiter for the string and the '.do4' part
+          HashStr := Copy(Fields[3], 1, Pos('.', Fields[3]) - 1);
+        end;
+      end;
+    dtDO3:
+      begin
+        if Length(Fields) > 2 then
+        begin
+          // The third field has a '.' delimiter for the string and the '.do3' part
+          HashStr := Copy(Fields[2], 1, Pos('.', Fields[2]) - 1);
+        end;
+      end;
+    dtALL: ;
+  end;
+  if Length(HashStr) > 0 then
+    // only 8 character permitted.
+    result := Copy(HashStr, 1, 8);
+end;
+
+function TdtUtils.fn_RaceID(): integer;
+var
+  RaceStr: string;
+  Fields: TArray<string>;
+begin
+  result := 0;
+  RaceStr := '';
+  if fFileName.IsEmpty then exit;
+  if (fFileType <> dtDO4) then exit;
+  // Split string by the '-' character
+  // example of fFileName
+  // - 088-001-001A-0001.do4
+  Fields := SplitString(fFileName, '-');
+  if Length(Fields) > 3 then
+  begin
+    // The fourthfield has a '.' delimiter for the string and the '.do4' part
+    RaceStr := Copy(Fields[3], 1, Pos('.', Fields[3]) - 1);
+    if Length(RaceStr) > 0 then
+      // only 8 character permitted.
+      result := StrToIntDef(RaceStr, 0);
+  end;
+end;
+
+function TdtUtils.fn_RoundChar(): char;
+var
+  RoundChar: char;
+  Fields: TArray<string>;
+begin
+  result := 'A'; // Safe to assign: DEFAULT.
+  if fFileName.IsEmpty then exit;
+  // only Dolphin Timing v4 Files have 'Heat Number' information in FileName.
+  if (fFileType <> dtDO4) then exit;
+  // Split string by the '-' character
+  // example of fFileName - 088-001-001A-0001.do4
+  // The letter A in the above example, indicates the 'Round Type'
+  // Round – “A” for all, “P” for prelim or “F” for final.
+  Fields := SplitString(fFileName, '-');
+  if Length(Fields) > 2 then // Correct condition
+  begin
+    RoundChar := Fields[2][Length(Fields[2])]; // Get the last character of Fields[2]
+    // Convert to uppercase before checking
+    RoundChar := UpCase(RoundChar);
+    // Round – “A” for all, “P” for prelim or “F” for final.
+    if CharInSet(RoundChar, ['A', 'P', 'F']) then
+      result := RoundChar;
+  end;
+end;
 
 procedure TdtUtils.AppendDTData(const AFileName:string);
 Begin
   ProcessSession(AFileName);
 End;
 
+function TdtUtils.PrepareExtraction(const AFileName: TFileName): boolean;
+begin
+  { Called by ProcessSession for each TFileName. Initialises private fields.
+    These paramas are then used later by fn_ and sList functions. }
+  result := false;
+  if not Assigned(fSList) then exit;
+  fSList.Clear;
+  if FileExists(AFileName) then
+  begin
+    fFileName := ExtractFileName(AFileName);
+      // Time stamp of file. Created On DateTime.
+    fCreatedDT :=TFile.GetCreationTime(AFileName);
+    fSList.LoadFromFile(AFilename);
+    fFileType := GetDTFileTypeOfFile(fFileName);;
+    result := true;
+  end
+  else
+  begin
+    fFileName := '';
+    fSList.Clear;
+    fFileType := dtUnKNown;
+  end;
+end;
+
+procedure TdtUtils.PrepareDTData();
+begin
+  fPrecedence := dtPrecHeader; // (sListHeaderSessionNum)
+
+  // clear all data records ....
+  DTData.tblDTSession.EmptyDataSet;
+  DTData.tblDTHeat.EmptyDataSet;
+  DTData.tblDTEntrant.EmptyDataSet;
+  DTData.tblDTNoodle.EmptyDataSet;
+
+  // re-establish Master Detail ...
+  DTData.tblDTEvent.MasterSource := DTData.dsDTSession;
+  DTData.tblDTEvent.MasterFields := 'SessionID';
+  DTData.tblDTEvent.DetailFields := 'SessionID';
+  DTData.tblDTEvent.IndexFieldNames := 'SessionID';
+
+  DTData.tblDTHeat.MasterSource := DTData.dsDTEvent;
+  DTData.tblDTHeat.MasterFields := 'EventID';
+  DTData.tblDTHeat.DetailFields := 'EventID';
+  DTData.tblDTHeat.IndexFieldNames := 'EventID';
+
+  DTData.tblDTEntrant.MasterSource := DTData.dsHeat;
+  DTData.tblDTEntrant.MasterFields := 'HeatID';
+  DTData.tblDTEntrant.DetailFields := 'HeatID';
+  DTData.tblDTEntrant.IndexFieldNames := 'HeatID';
+
+  DTData.tblDTNoodle.MasterSource := DTData.dsDTHeat;
+  DTData.tblDTNoodle.MasterFields := 'HeatID';
+  DTData.tblDTNoodle.DetailFields := 'HeatID';
+  DTData.tblDTNoodle.IndexFieldNames := 'HeatID';
+
+end;
+
+Procedure TdtUtils.PopulateDTData(const ADirectory: string; pBar: TProgressBar);
+begin
+  DTData.tblDTSession.DisableControls;
+  DTData.tblDTEvent.DisableControls;
+  DTData.tblDTHeat.DisableControls;
+  DTData.tblDTEntrant.DisableControls;
+  DTData.tblDTNoodle.DisableControls;
+
+  if Assigned(pBar) then pBar.Position := 0;
+
+  ProcessDirectory(ADirectory, pBar);
+
+  DTData.tblDTSession.First;
+  dtData.tblDTEvent.First;
+  dtData.tblDTHeat.First;
+
+  DTData.tblDTSession.EnableControls;
+  DTData.tblDTEvent.EnableControls;
+  DTData.tblDTHeat.EnableControls;
+  DTData.tblDTEntrant.EnableControls;
+  DTData.tblDTNoodle.EnableControls;
+
+  end;
+
+procedure TdtUtils.ProcessDirectory(const ADirectory: string; pBar: TProgressBar);
+var
+  LList, LListDO3, LListDO4: TStringDynArray;
+  LSearchOption: TSearchOption;
+  I: integer;
+begin
+{
+NOTE: The pattern '*.DO?' will match any file with a .DO extension followed
+by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
+.. but to future proof the following method was chosen.
+}
+  if Assigned(pBar) then pBar.Position := 0;
+  { Select the search option }
+  // do not do recursive extract into subfolders
+  LSearchOption := TSearchOption.soTopDirectoryOnly;
+  try
+    { For files use GetFiles method }
+    LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
+    LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
+
+    { Combine the lists }
+    SetLength(LList, Length(LListDO3) + Length(LListDO4));
+    if Length(LListDO3) > 0 then
+      Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
+    if Length(LListDO4) > 0 then
+      Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
+
+    { Extract DATA and Populate the memory table. }
+    for I := 0 to Length(LList) - 1 do
+    begin
+      { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
+      ProcessSession(LList[I]);
+      // update progress bar.
+      if Assigned(pBar) then
+      begin
+        pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
+        pBar.RePaint;
+      end;
+    end;
+  except
+    { Catch the possible exceptions }
+    MessageBox(0, PChar('Incorrect path or search mask'),
+      PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
+  end;
+end;
+
+procedure TdtUtils.ProcessSession(AFileName: TFileName);
+var
+  i, id: integer;
+  s: string;
+  fCreationDT: TDateTime;
+  fs: TFormatSettings;
+  Found: boolean;
+begin
+  // NOTE: Assumption - FileExists!
+  { Preparation of filename extraction must succeed.
+    On ERR - skip file - silent.}
+  if not (PrepareExtraction(AFileName)) then exit;
+  // DEFAULT Precedence dtPrecHeader - use the SessionNum given in the
+  // 'Header' (TStringList sList : line one : SplitString - field[0])
+  if (FPrecedence = dtPrecFileName) then
+    i := fn_SessionNum()
+  else
+    i := sListHeaderSessionNum();
+  // DOES THIS SESSION PK AREADY EXSIST?
+  Found := DTData.LocateDT_SessionNum(i, FPrecedence);
+  if Found then
+  begin
+    // assign this id to ProcessEvent.
+    id := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
+  end
+  else
+  begin
+    id := DTData.tblDTSession.RecordCount + 1;
+    // Get the creation time of the specified file
+    fCreationDT := TFile.GetCreationTime(AFileName);
+    DTData.tblDTSession.Append;
+    // Primary Key
+    DTData.tblDTSession.FieldByName('SessionID').AsInteger := id;
+    // Derived from line one ('Header') within the DT file.
+    DTData.tblDTSession.fieldbyName('SessionNum').AsInteger := sListHeaderSessionNum();
+    // Derived from filename : Last three digits of SCM qrySession.SessionID.
+    DTData.tblDTSession.fieldbyName('fnSessionNum').AsInteger := fn_SessionNum();
+    // Derived from filename : matches SCM qryEvent.EventNum.
+    DTData.tblDTSession.fieldbyName('fnEventNum').AsInteger := fn_EventNum();
+    // Derived from filename : matches SCM qryHeat.HeatNum.
+    DTData.tblDTSession.fieldbyName('fnHeatNum').AsInteger := fn_HeatNum();
+    // Creation date of file - by Dolphin Timing system.
+    DTData.tblDTSession.fieldbyName('SessionStart').AsDateTime := fCreationDT;
+    // TimeStamp
+    DTData.tblDTSession.fieldbyName('CreatedOn').AsDateTime := Now;
+    // Create a session caption.
+    fs := TFormatSettings.Create;
+    fs.DateSeparator := '_';
+    s := 'Session: ' + IntToStr(fn_SessionNum()) + ' Date: ' + DatetoStr(fCreationDT, fs);
+    DTData.tblDTSession.fieldbyName('Caption').AsString := s;
+    // FINALIZE - POST NEW RECORD.
+    DTData.tblDTSession.Post;
+  end;
+  // process event >> heat >> entrant.
+  ProcessEvent(id);
+end;
+
+procedure TdtUtils.ProcessEvent(SessionID: integer);
+var
+  i,j, id: integer;
+  Found: boolean;
+begin
+  id := 0;
+  // NOTE: Assumption - FileExists!
+  // DEFAULT Precedence dtPrecHeader
+  if (FPrecedence = dtPrecFileName) then
+    i := fn_EventNum()
+  else
+    i := sListHeaderEventNum();
+  // DOES THIS EVENT PK AREADY EXSIST?
+  Found := DTData.LocateDT_EventNum(i, FPrecedence);
+  if Found then
+    // assign this id to ProcessHeat.
+    id := DTData.tblDTEvent.FieldByName('EventID').AsInteger
+  else
+  begin
+    if not fSList.IsEmpty then
+    begin
+      // calculate the Primary Key : IDENTIFIER.
+      id := DTData.tblDTEvent.RecordCount + 1;
+      // NEW RECORD.
+      DTData.tblDTEvent.Append;
+      // Primary Key.
+      DTData.tblDTEvent.fieldbyName('EventID').AsInteger := id;
+      // master - detail. Also Index Field.
+      DTData.tblDTEvent.fieldbyName('SessionID').AsInteger := SessionID;
+      // Derived from DT filename.
+      DTData.tblDTEvent.fieldbyName('fnEventNum').AsInteger := fn_EventNum();
+      // Derived from TStringList - 'HEADER' - SplitString Field[1]
+      j := sListHeaderEventNum();
+      DTData.tblDTEvent.fieldbyName('EventNum').AsInteger := j;
+      // CAPTION for Event :
+      DTData.tblDTEvent.fieldbyName('Caption').AsString :=
+        'Event: ' +  IntToStr(j);
+      // DO4 A=boys, B=girls, X=any.
+      DTData.tblDTEvent.fieldbyName('GenderStr').AsString := sListHeaderGenderChar;
+      // Derived from FileName
+      // Round – “A” for all, “P” for prelim or “F” for final
+      DTData.tblDTEvent.fieldbyName('fnRoundStr').AsString := fn_RoundChar();
+      // POST
+      DTData.tblDTEvent.Post;
+    end;
+  end;
+  // CORE DATA - TimeStamp, Record Creation Date, Heat Number, etc.
+  ProcessHeat(id);
+end;
+
+procedure TdtUtils.ProcessHeat(EventID: integer);
+var
+  i, id: integer;
+  Found: boolean;
+begin
+  if (FPrecedence = dtPrecFileName) then
+    i := fn_HeatNum()
+  else
+    i := sListHeaderHeatNum();
+  // DOES THIS HEAT PK AREADY EXSIST?
+  Found := DTData.LocateDT_HeatNum(i, FPrecedence);
+  // NOTHING TO PROCESS IF FOUND.
+  if not Found then
+  begin
+    // read header and lane information (Racetimes x3).
+    if not fSList.IsEmpty then
+    begin
+      // calculate the IDENTIFIER.
+      id := DTData.tblDTHeat.RecordCount + 1;
+      // NEW RECORD.
+      DTData.tblDTHeat.Append;
+      // PK
+      DTData.tblDTHeat.fieldbyName('HeatID').AsInteger := id;
+      // master - detail.
+      DTData.tblDTHeat.fieldbyName('EventID').AsInteger := EventID;
+      // TIME STAMP
+      DTData.tblDTHeat.fieldbyName('TimeStampDT').AsDateTime := Now;
+      // Derived from Dolphin filename.
+      DTData.tblDTHeat.fieldbyName('fnHeatNum').AsInteger := fn_HeatNum;
+      // Derived from TStringList HEADER - first line of text - common
+      i := sListHeaderHeatNum();
+      DTData.tblDTHeat.fieldbyName('HeatNum').AsInteger := i;
+      DTData.tblDTHeat.fieldbyName('Caption').AsString := 'Heat Number: ' + IntToStr(i);
+      // Time stamp of file - created by Dolphin Timing system on write of file.
+      DTData.tblDTHeat.fieldbyName('CreatedDT').AsDateTime := fCreatedDT;
+      // FileName includes file extension.    (.DO3, .DO4)
+      // determines dtFileType dtDO3, dtDO4.
+      DTData.tblDTHeat.fieldbyName('FileName').AsString := fFileName;
+      // CHECKSUM - last line of text - common
+      // Max of 16 characters
+      DTData.tblDTHeat.fieldbyName('CheckSum').AsString := sListFooterHashStr();
+      // Filename doesn't match header info ...
+      DTData.tblDTHeat.fieldbyName('fnBadFN').AsBoolean := false;
+      // DO3 - SplitString Field[2] hash number (alpha-numerical).
+      // DO4 - SplitString Field[3] hash number (numerical - sequence).
+      // NOTE: MAX of 8 characters.
+      DTData.tblDTHeat.fieldbyName('fnHashStr').AsString := fn_HashStr;
+      // CONVERT DO4 - SplitString Field[3]
+      // A sequential number for each file (within the DT Session?)
+      if fFileType = dtDO4 then
+        DTData.tblDTHeat.fieldbyName('fnRaceID').AsInteger:= fn_RaceID;
+      DTData.tblDTHeat.Post;
+      // LANES + TIMEKEEPERS 1-3 + SPLITS 0-10 JOINED ON THIS HEAT.
+      ProcessEntrant(id);
+    end;
+  end;
+end;
+
 procedure TdtUtils.ProcessEntrant(DTHeatID: integer);
 var
   id, I, j, lane: integer;
-  TimeFieldName, TimeModeFieldName, TimeModeFieldNameErr, SplitFieldName, s: string;
+  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName, s: string;
 begin
   // A record for each lane.
   // Ignore first (header) and last line (checkSum).
@@ -186,19 +667,19 @@ begin
       // Generate field names
       TimeFieldName := Format('Time%d', [j + 1]);
       TimeModeFieldName := Format('Time%d', [j + 1]) + 'Mode';
-      TimeModeFieldName := Format('Time%d', [j + 1]) + 'Err';
+      TimeFieldNameErr := Format('Time%d', [j + 1]) + 'Err';
       // Set race-time and use flag based on TimeKeepers value
       if fTimeKeepers[j] > 0 then
       begin
         DTData.tblDTEntrant.FieldByName(TimeFieldName).AsDateTime := TDateTime(fTimeKeepers[j]);
         DTData.tblDTEntrant.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoEnabled);
-        DTData.tblDTEntrant.FieldByName(TimeModeFieldNameErr).Clear;
+        DTData.tblDTEntrant.FieldByName(TimeFieldNameErr).Clear;
       end
       else
       begin
         DTData.tblDTEntrant.FieldByName(TimeFieldName).Clear;
         DTData.tblDTEntrant.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoDisabled);
-        DTData.tblDTEntrant.FieldByName(TimeModeFieldNameErr).AsInteger := Ord(tmeEmpty);
+        DTData.tblDTEntrant.FieldByName(TimeFieldNameErr).AsInteger := Ord(tmeEmpty);
       end;
     end;
 
@@ -226,233 +707,6 @@ begin
 
 end;
 
-procedure TdtUtils.ProcessEvent(SessionID: integer);
-var
-  i,j, id: integer;
-  Found: boolean;
-begin
-  id := 0;
-  // NOTE: Assumption - FileExists!
-  // DEFAULT Precedence dtPrecHeader
-  if (FPrecedence = dtPrecFileName) then
-    i := fn_EventNum()
-  else
-    i := sListHeaderEventNum();
-
-  Found := DTData.LocateDT_EventNum(i, FPrecedence);
-  if Found then
-    id := DTData.tblDTEvent.FieldByName('EventID').AsInteger
-  else
-  begin
-    if not fSList.IsEmpty then
-    begin
-      // calculate the IDENTIFIER.
-      id := DTData.tblDTEvent.RecordCount + 1;
-      // NEW RECORD.
-      DTData.tblDTEvent.Append;
-      // Primary Key.
-      DTData.tblDTEvent.fieldbyName('EventID').AsInteger := id;
-      // master - detail. Also Index Field.
-      DTData.tblDTEvent.fieldbyName('SessionID').AsInteger := SessionID;
-      // Derived from DT filename.
-      DTData.tblDTEvent.fieldbyName('fnEventNum').AsInteger := fn_EventNum();
-      // Derived from TStringList - 'HEADER' - SplitString Field[1]
-      j := sListHeaderEventNum();
-      DTData.tblDTEvent.fieldbyName('EventNum').AsInteger := j;
-      // CAPTION for Event :
-      DTData.tblDTEvent.fieldbyName('Caption').AsString :=
-        'Event: ' +  IntToStr(j);
-      // DO4 A=boys, B=girls, X=any.
-      DTData.tblDTEvent.fieldbyName('GenderStr').AsString := sListHeaderGenderChar;
-      // Derived from FileName
-      // Round – “A” for all, “P” for prelim or “F” for final
-      DTData.tblDTEvent.fieldbyName('fnRoundStr').AsString := fn_RoundChar();
-      // POST
-      DTData.tblDTEvent.Post;
-    end;
-  end;
-  // LANES + TIMEKEEPERS 1-3 + SPLITS (upto 10).
-  ProcessHeat(id);
-end;
-
-procedure TdtUtils.ProcessHeat(EventID: integer);
-var
-  i, j, id: integer;
-  s: string;
-  Found: boolean;
-begin
-  if (FPrecedence = dtPrecFileName) then
-    i := fn_HeatNum()
-  else
-    i := sListHeaderHeatNum();
-
-  Found := DTData.LocateDT_HeatNum(i, FPrecedence);
-  if Found then
-  begin
-//    id := DTData.tblDTEvent.FieldByName('HeatID').AsInteger;
-  end
-  else
-  begin
-    // read header and lane information (Racetimes x3).
-    if not fSList.IsEmpty then
-    begin
-      // calculate the IDENTIFIER.
-      id := DTData.tblDTHeat.RecordCount + 1;
-      // NEW RECORD.
-      DTData.tblDTHeat.Append;
-      // PK
-      DTData.tblDTHeat.fieldbyName('HeatID').AsInteger := id;
-      // master - detail.
-      DTData.tblDTHeat.fieldbyName('EventID').AsInteger := EventID;
-      // TIME STAMP
-      DTData.tblDTEvent.fieldbyName('TimeStampDT').AsDateTime := Now;
-      // Derived from Dolphin filename.
-      DTData.tblDTHeat.fieldbyName('fnHeatNum').AsInteger := fn_HeatNum;
-      // Derived from TStringList HEADER - first line of text - common
-      j := sListHeaderHeatNum();
-      DTData.tblDTHeat.fieldbyName('HeatNum').AsInteger := j;
-      DTData.tblDTHeat.fieldbyName('Caption').AsString := 'Heat Number: ' + IntToStr(j);
-      // Time stamp of file - created by Dolphin Timing system on write of file.
-      DTData.tblDTEvent.fieldbyName('CreatedDT').AsDateTime := fCreatedDT;
-      // FileName includes file extension.    (.DO3, .DO4)
-      // determines dtFileType dtDO3, dtDO4.
-      DTData.tblDTHeat.fieldbyName('FileName').AsString := fFileName;
-      // CHECKSUM - last line of text - common
-      // Max of 16 characters
-      DTData.tblDTHeat.fieldbyName('CheckSum').AsString := sListFooterHashStr();
-      // Filename doesn't match header info ...
-      DTData.tblDTHeat.fieldbyName('dtBadFN').AsBoolean := false;
-      // DO3 - SplitString Field[2] hash number (alpha-numerical).
-      // DO4 - SplitString Field[3] hash number (numerical - sequence).
-      s := fn_HashStr;
-      // MAX of 8 characters
-      s := Copy(s, 1, 8);
-      DTData.tblDTSession.fieldbyName('HashStr').AsString := s;
-      // CONVERT DO4 - SplitString Field[3]
-      // A sequential number for each file (within the DT Session)
-      // - produced by the Dolphin Timing session.
-      if fFileType = dtDO4 then
-        DTData.tblDTSession.fieldbyName('fnRaceID').AsInteger:= StrToIntDef(s, 0);
-
-      DTData.tblDTHeat.Post;
-      // LANES + TIMEKEEPERS 1-3 + SPLITS (upto 10).
-      {TODO -oBSA -cGeneral : Heat can be TEAM or INDV event... }
-      // if scmEventType = etINDV
-      ProcessEntrant(id);
-    end;
-  end;
-
- // GetDTTEAM(fSList, id);
-end;
-
-procedure TdtUtils.ProcessSession(AFileName: TFileName);
-var
-  i, id: integer;
-  s: string;
-  fCreationDT: TDateTime;
-  fs: TFormatSettings;
-  Found: boolean;
-begin
-  // NOTE: Assumption - FileExists!
-  PrepareExtraction(AFileName);
-  // DEFAULT Precedence dtPrecHeader - use the SessionNum given in the
-  // 'Header' (line one : SplitString - field[0])
-  if (FPrecedence = dtPrecFileName) then
-    i := fn_SessionNum()
-  else
-    i := sListHeaderSessionNum();
-
-  Found := DTData.LocateDT_SessionNum(i, FPrecedence);
-  if Found then
-  begin
-    id := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
-  end
-  else
-  begin
-    id := DTData.tblDTSession.RecordCount + 1;
-    // Get the creation time of the specified file
-    fCreationDT := TFile.GetCreationTime(AFileName);
-    DTData.tblDTSession.Append;
-    // Primary Key
-    DTData.tblDTSession.FieldByName('SessionID').AsInteger := id;
-    // Derived from line one ('Header') within the DT file.
-    DTData.tblDTSession.fieldbyName('SessionNum').AsInteger := sListHeaderSessionNum();
-    // Derived from filename : Last three digits of SCM qrySession.SessionID.
-    DTData.tblDTSession.fieldbyName('fnSessionNum').AsInteger := fn_SessionNum();
-    // Derived from filename : matches SCM qryEvent.EventNum.
-    DTData.tblDTSession.fieldbyName('fnEventNum').AsInteger := fn_EventNum();
-    // Derived from filename : matches SCM qryHeat.HeatNum.
-    DTData.tblDTSession.fieldbyName('fnHeatNum').AsInteger := fn_HeatNum();
-    // Creation date of file - by Dolphin Timing system.
-    DTData.tblDTSession.fieldbyName('SessionStart').AsDateTime := fCreationDT;
-    // TimeStamp
-    DTData.tblDTSession.fieldbyName('CreatedOn').AsDateTime := Now;
-    // Create a session caption.
-    fs := TFormatSettings.Create;
-    fs.DateSeparator := '_';
-    s := 'Session: ' + IntToStr(fn_SessionNum()) + ' Date: ' + DatetoStr(fCreationDT, fs);
-    DTData.tblDTSession.fieldbyName('Caption').AsString := s;
-    // FINALIZE - POST NEW RECORD.
-    DTData.tblDTSession.Post;
-  end;
-  // process event >> heat >> entrant.
-  ProcessEvent(id);
-end;
-
-function TdtUtils.PrepareExtraction(const AFileName: TFileName): boolean;
-begin
-  result := false;
-  if not Assigned(fSList) then exit;
-  fSList.Clear;
-  if FileExists(AFileName) then
-  begin
-    fFileName := ExtractFileName(AFileName);
-      // Time stamp of file. Created On DateTime.
-    fCreatedDT :=TFile.GetCreationTime(AFileName);
-    fSList.LoadFromFile(AFilename);
-    fFileType := GetDTFileTypeOfFile(fFileName);;
-    result := true;
-  end
-  else
-  begin
-    fFileName := '';
-    fSList.Clear;
-    fFileType := dtUnKNown;
-  end;
-end;
-
-
-{
-function TdtUtils.GetFileCreationTime(const FileName: TFileName): TDateTime;
-var
-  Handle: THandle;
-  FindData: TWin32FindData;
-  SystemTime: TSystemTime;
-  LocalFileTime: TFileTime;
-begin
-  Handle := FindFirstFile(PChar(FileName), FindData);
-  if Handle <> INVALID_HANDLE_VALUE then
-  begin
-    Windows.FindClose(Handle);
-    // Convert file time to local file time
-    if FileTimeToLocalFileTime(FindData.ftCreationTime, LocalFileTime) then
-    begin
-      // Convert file time to system time
-      if FileTimeToSystemTime(LocalFileTime, SystemTime) then
-      begin
-        // Convert system time to TDateTime
-        Result := SystemTimeToDateTime(SystemTime);
-        Exit;
-      end;
-    end;
-  end;
-  // Return 0 if there is an error
-  Result := 0;
-end;
-}
-
-
-
 function TdtUtils.sListHeaderEventNum: integer;
 var
   Fields: TArray<string>;
@@ -467,10 +721,10 @@ begin
   end;
 end;
 
-
 function TdtUtils.sListHeaderGenderChar(): char;
 var
   Fields: TArray<string>;
+  GenderChar: char;
 begin
   {first line : SessionNum;EventNum;HeatNum;gender (A,B,X) }
   result := #0;
@@ -479,7 +733,11 @@ begin
     Fields := SplitString(fSList[0], ';');
     if Length(Fields) > 3 then
     begin
-      result := Fields[3].Chars[0];
+      GenderChar := Fields[3].Chars[0];
+      if CharInSet(GenderChar, ['A', 'B', 'X']) then
+      begin
+        result := UpperCase(GenderChar)[1]; // Convert to upper case if necessary
+      end;
     end;
   end;
 end;
@@ -500,20 +758,19 @@ end;
 
 function TdtUtils.sListFooterHashStr(): string;
 var
-  s: string;
+  HashStr: string;
 begin
   {last line of TStringList : 16 bit HASH number.}
   result := '';
-  if not fSList.IsEmpty then
+  if fSList.IsEmpty then exit;
+  // last line of StringList
+  HashStr := fSList[fSList.Count - 1];
+  // Quick hack to assert hash string.
+  // All preceeding lines in StringList contain character(s) ';'.
+  if not ContainsText(HashStr, ';') then
   begin
-    // last line
-    s := fSList[fSList.Count - 1];
-    // Assert Hash string.
-    if not ContainsText(s, ';') then
-    begin
-      s := Copy(s,1, 16); // max 16 chars
-      result := s;
-    end;
+    HashStr := Copy(HashStr,1, 16); // max 16 chars
+    result := HashStr;
   end;
 end;
 
@@ -530,19 +787,6 @@ begin
       result := StrToIntDef(Fields[0], 0);
   end;
 end;
-
-function TdtUtils.fn_SessionNum: integer;
-var
-  Fields: TArray<string>;
-begin
-  result := 0;
-  // Split string by the '-' character
-  Fields := SplitString(fFileName, '-');
-  if Length(Fields) > 0 then
-    // Extract the first field - SessionID
-    result := StrToIntDef(Fields[0], 0);
-end;
-
 
 function TdtUtils.sListBodySplits(ASplits: array of TTime): boolean;
 var
@@ -633,308 +877,6 @@ begin
     end;
     result := true;
   end;
-end;
-
-class operator TdtUtils.Finalize(var Dest: TdtUtils);
-begin
-  FreeAndNil(Dest.fSList);
-  Dest.fFileType := dtUnknown;
-end;
-
-
-
-
-{
-function TdtUtils.ExtractHeaderEventNum(const AFileName: TFileName;
-  ADTFileType: dtFileType): integer;
-var
-  sl: TStringList;
-  Fields: TArray<string>;
-begin
-  result := 0;
-  if FileExists(AFileName) then
-  begin
-    sl := TStringList.Create();
-    sl.LoadFromFile(AFileName);
-    if not sl.IsEmpty then
-    begin
-      Fields := SplitString(sl[0], ';');
-      if Length(Fields) > 1 then
-        result := StrToIntDef(Fields[1], 0);
-    end;
-    sl.Free;
-  end;
-end;
-}
-
-{
-procedure TdtUtils.ExtractFooter(const InputStr: string;
-  ADTFileType: dtFileType; var ACheckSum: string);
-begin
-  case ADTFileType of
-    dtDO4, dtDO3:
-    begin
-      // checksum is the last line
-      // 16 characters
-      if Length(InputStr) = 16 then
-        ACheckSum := InputStr
-      else
-        ACheckSum := '';
-    end;
-    dtUnknown, dtALL: ACheckSum := '';
-  end;
-end;
-}
-
-function TdtUtils.fn_EventNum(): integer;
-var
-  Fields: TArray<string>;
-begin
-  result := 0;
-  // Split string by the '-' character
-  Fields := SplitString(fFileName, '-');
-  if Length(Fields) > 2 then
-    // Extract the first field - SessionID
-    result := StrToIntDef(Fields[1], 0);
-end;
-
-
-
-function TdtUtils.fn_HashStr(): string;
-var
-  HashStr: string;
-  Fields: TArray<string>;
-begin
-  result := '';
-  HashStr := '';
-  // Split string by the '-' character
-  Fields := SplitString(fFileName, '-');
-  case fFileType of
-    dtUnknown: ;
-    dtDO4:
-      begin
-        if Length(Fields) > 4 then
-        begin
-          // The fourthfield has a '.' delimiter for the string and the '.do4' part
-          HashStr := Copy(Fields[3], 1, Pos('.', Fields[3]) - 1);
-        end;
-      end;
-    dtDO3:
-      begin
-        if Length(Fields) > 3 then
-        begin
-          // The third field has a '.' delimiter for the string and the '.do3' part
-          HashStr := Copy(Fields[2], 1, Pos('.', Fields[2]) - 1);
-        end;
-      end;
-    dtALL: ;
-  end;
-  if Length(HashStr) > 0 then
-    result := HashStr;
-end;
-
-function TdtUtils.fn_HeatNum(): integer;
-var
-  Fields: TArray<string>;
-  s: string;
-begin
-  result := 0;
-  if (fFileType = dtDO4) then
-  begin
-    // Split string by the '-' character
-    Fields := SplitString(fFileName, '-');
-    if Length(Fields) > 3 then
-    begin
-      s := StripAlphaChars(Fields[2]);
-      // Extract the first field - SessionID
-      result := StrToIntDef(s, 0);
-    end;
-  end;
-end;
-
-
-function TdtUtils.fn_RoundChar(): char;
-var
-  RoundStr: string;
-  Fields: TArray<string>;
-begin
-  result := 'A'; // Safe: DEFAULT.
-  RoundStr := '';
-  // Split string by the '-' character
-  Fields := SplitString(fFileName, '-');
-  // Round – “A” for all, “P” for prelim or “F” for final.
-  if (fFileType = dtDO4) then
-  begin
-    if Length(Fields) > 3 then
-    begin
-      RoundStr := RightStr(Fields[2], 1);
-      if (Length(RoundStr) > 0) then
-      begin
-        // Round – “A” for all, “P” for prelim or “F” for final.
-        if ContainsText('APF', RoundStr.Chars[0]) then
-          result := RoundStr.Chars[0];
-      end;
-    end;
-  end;
-end;
-
-
-class operator TdtUtils.Initialize(out Dest: TdtUtils);
-begin
-  Dest.fSList := TStringList.Create;
-  Dest.fFileType := dtUnknown;
-  Dest.fSListIndex := -1;
-  Dest.fFileName := '';
-end;
-
-procedure TdtUtils.ProcessDirectory(const ADirectory: string; pBar: TProgressBar);
-var
-  LList, LListDO3, LListDO4: TStringDynArray;
-  LSearchOption: TSearchOption;
-  I: integer;
-begin
-{
-NOTE: The pattern '*.DO?' will match any file with a .DO extension followed
-by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
-.. but to future proof the following method was chosen.
-}
-  if Assigned(pBar) then pBar.Position := 0;
-  { Select the search option }
-  // do not do recursive extract into subfolders
-  LSearchOption := TSearchOption.soTopDirectoryOnly;
-  try
-    { For files use GetFiles method }
-    LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
-    LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
-
-    { Combine the lists }
-    SetLength(LList, Length(LListDO3) + Length(LListDO4));
-    if Length(LListDO3) > 0 then
-      Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
-    if Length(LListDO4) > 0 then
-      Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
-
-    { Extract DATA and Populate the memory table. }
-    for I := 0 to Length(LList) - 1 do
-    begin
-      { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
-      ProcessSession(LList[I]);
-      // update progress bar.
-      if Assigned(pBar) then
-      begin
-        pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
-        pBar.RePaint;
-      end;
-    end;
-  except
-    { Catch the possible exceptions }
-    MessageBox(0, PChar('Incorrect path or search mask'),
-      PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
-  end;
-end;
-
-procedure TdtUtils.PrepareDTData();
-begin
-  fPrecedence := dtPrecHeader; // (sListHeaderSessionNum)
-
-  // clear all data records ....
-  DTData.tblDTSession.EmptyDataSet;
-  DTData.tblDTHeat.EmptyDataSet;
-  DTData.tblDTEntrant.EmptyDataSet;
-  DTData.tblDTNoodle.EmptyDataSet;
-
-  // re-establish Master Detail ...
-  DTData.tblDTEvent.MasterSource := DTData.dsDTSession;
-  DTData.tblDTEvent.MasterFields := 'SessionID';
-  DTData.tblDTEvent.DetailFields := 'SessionID';
-  DTData.tblDTEvent.IndexFieldNames := 'SessionID';
-
-  DTData.tblDTHeat.MasterSource := DTData.dsDTEvent;
-  DTData.tblDTHeat.MasterFields := 'EventID';
-  DTData.tblDTHeat.DetailFields := 'EventID';
-  DTData.tblDTHeat.IndexFieldNames := 'EventID';
-
-  DTData.tblDTEntrant.MasterSource := DTData.dsHeat;
-  DTData.tblDTEntrant.MasterFields := 'HeatID';
-  DTData.tblDTEntrant.DetailFields := 'HeatID';
-  DTData.tblDTEntrant.IndexFieldNames := 'HeatID';
-
-  DTData.tblDTNoodle.MasterSource := DTData.dsDTHeat;
-  DTData.tblDTNoodle.MasterFields := 'HeatID';
-  DTData.tblDTNoodle.DetailFields := 'HeatID';
-  DTData.tblDTNoodle.IndexFieldNames := 'HeatID';
-
-end;
-
-Procedure TdtUtils.PopulateDTData(const ADirectory: string; pBar: TProgressBar);
-begin
-  DTData.tblDTSession.DisableControls;
-  DTData.tblDTEvent.DisableControls;
-  DTData.tblDTHeat.DisableControls;
-  DTData.tblDTEntrant.DisableControls;
-  DTData.tblDTNoodle.DisableControls;
-
-  if Assigned(pBar) then pBar.Position := 0;
-
-  ProcessDirectory(ADirectory, pBar);
-
-  DTData.tblDTSession.First;
-  dtData.tblDTEvent.First;
-  dtData.tblDTHeat.First;
-
-  DTData.tblDTSession.EnableControls;
-  DTData.tblDTEvent.EnableControls;
-  DTData.tblDTHeat.EnableControls;
-  DTData.tblDTEntrant.EnableControls;
-  DTData.tblDTNoodle.EnableControls;
-
-  end;
-
-function TdtUtils.GetDTFileTypeOfDirectory(const ADirectory: string): dtFileType;
-var
-  LList: TStringDynArray;
-  LSearchOption: TSearchOption;
-  fileMask, fn: string;
-  I, countDO3, countDO4: integer;
-  ft: dtFileType;
-begin
-  fileMask := '*.DO?';
-  countDO3 := 0;
-  countDO4 := 0;
-  result := dtUnknown;
-  // do not do recursive extract into subfolders
-  LSearchOption := TSearchOption.soTopDirectoryOnly;
-  try
-    { For files use GetFiles method }
-    LList := TDirectory.GetFiles(ADirectory, fileMask, LSearchOption);
-    for I := 0 to Length(LList) - 1 do
-    begin
-      fn := ExtractFileName(LList[I]); // avoid mask match in directory part.
-      ft := GetDTFileTypeOfFile(fn);
-      if ft = dtFileType.dtDO3 then Inc(countDO3);
-      if ft = dtFileType.dtDO4 then Inc(countDO4);
-    end;
-  except
-    { Catch the possible exceptions }
-    MessageBox(0, PChar('Incorrect path or search mask'),
-      PChar('Get file type of directory...'), MB_ICONERROR or MB_OK);
-    exit;
-  end;
-  if (countDO3 > 0) and (countDO4 = 0) then
-    result := dtDO3
-  else if (countDO3 = 0) and (countDO4 > 0) then
-    result := dtDO4
-  else
-    result := dtALL;
-  end;
-
-function TdtUtils.GetDTFileTypeOfFile(const AFileName: string): dtFileType;
-begin
-  result := dtUnknown;
-  if AfileName.Contains('.DO3') then
-    result := dtDO3
-  else if AfileName.Contains('.DO4') then
-    result := dtDO4;
 end;
 
 
