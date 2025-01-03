@@ -18,7 +18,6 @@ type
       fTimeKeepers: array[0..2] of TTime;
       fPrecedence: dtPrecedence;
       fSList: TStringList; // Header, Body(multi-line ... lanes) and Footer.
-      fSListIndex: integer; // Current lane for data extraction.
       fFileType: dtFileType; // dtUnknow,dtDO3, dtDO4
       fFileName: string; // Filename + EXTENSION. NO PATH.
       fCreatedDT: TDateTime;
@@ -38,9 +37,9 @@ type
     function sListHeaderHeatNum(): integer;
     function sListHeaderGenderChar(): char;
     { TStringList - BODY - ref: fSListIndex }
-    function sListBodyLane(): integer;
-    function sListBodyTimeKeepers(ATimeKeepers: array of TTime): boolean;
-    function sListBodySplits(ASplits: array of TTime): boolean;
+    function sListBodyLane(LineIndex: integer): integer;
+    function sListBodyTimeKeepers(LineIndex: integer; ATimeKeepers: array of TTime): boolean;
+    function sListBodySplits(LineIndex: integer; ASplits: array of TTime): boolean;
     { TStringList - FOOTER }
     function sListFooterHashStr(): string;
     { FILENAME EXTRACTION ROUTINES...}
@@ -60,7 +59,7 @@ type
     procedure ProcessSession(AFileName: TFileName);
     procedure ProcessEvent(SessionID: integer);
     procedure ProcessHeat(EventID: integer);
-    procedure ProcessEntrant(DTHeatID: integer);
+    procedure ProcessEntrant(DTHeatID, LineIndex: integer);
 
   public
     procedure PrepareDTData();
@@ -151,7 +150,6 @@ class operator TdtUtils.Initialize(out Dest: TdtUtils);
 begin
   Dest.fSList := TStringList.Create;
   Dest.fFileType := dtUnknown;
-  Dest.fSListIndex := -1;
   Dest.fFileName := '';
 end;
 
@@ -364,6 +362,7 @@ begin
 
   // clear all data records ....
   DTData.tblDTSession.EmptyDataSet;
+  DTData.tblDTEvent.EmptyDataSet;
   DTData.tblDTHeat.EmptyDataSet;
   DTData.tblDTEntrant.EmptyDataSet;
   DTData.tblDTNoodle.EmptyDataSet;
@@ -431,33 +430,40 @@ by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
   // do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
   try
-    { For files use GetFiles method }
-    LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
-    LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
+    // DETACH MASTER-DETAIL
+//    DTData.DisableDTMasterDetail;
 
-    { Combine the lists }
-    SetLength(LList, Length(LListDO3) + Length(LListDO4));
-    if Length(LListDO3) > 0 then
-      Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
-    if Length(LListDO4) > 0 then
-      Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
+    try
+      { For files use GetFiles method }
+      LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
+      LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
 
-    { Extract DATA and Populate the memory table. }
-    for I := 0 to Length(LList) - 1 do
-    begin
-      { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
-      ProcessSession(LList[I]);
-      // update progress bar.
-      if Assigned(pBar) then
+      { Combine the lists }
+      SetLength(LList, Length(LListDO3) + Length(LListDO4));
+      if Length(LListDO3) > 0 then
+        Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
+      if Length(LListDO4) > 0 then
+        Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
+
+      { Extract DATA and Populate the memory table. }
+      for I := 0 to Length(LList) - 1 do
       begin
-        pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
-        pBar.RePaint;
+        { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
+        ProcessSession(LList[I]);
+        // update progress bar.
+        if Assigned(pBar) then
+        begin
+          pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
+          pBar.RePaint;
+        end;
       end;
+    except
+      { Catch the possible exceptions }
+      MessageBox(0, PChar('Incorrect path or search mask'),
+        PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
     end;
-  except
-    { Catch the possible exceptions }
-    MessageBox(0, PChar('Incorrect path or search mask'),
-      PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
+  finally
+//    DTData.EnableDTMasterDetail;
   end;
 end;
 
@@ -531,7 +537,7 @@ begin
   else
     i := sListHeaderEventNum();
   // DOES THIS EVENT PK AREADY EXSIST?
-  Found := DTData.LocateDT_EventNum(i, FPrecedence);
+  Found := DTData.LocateDT_EventNum(SessionID, i, FPrecedence);
   if Found then
     // assign this id to ProcessHeat.
     id := DTData.tblDTEvent.FieldByName('EventID').AsInteger
@@ -562,6 +568,7 @@ begin
       DTData.tblDTEvent.fieldbyName('fnRoundStr').AsString := fn_RoundChar();
       // POST
       DTData.tblDTEvent.Post;
+//      DTData.tblDTEvent.ApplyUpdates();
     end;
   end;
   // CORE DATA - TimeStamp, Record Creation Date, Heat Number, etc.
@@ -578,9 +585,11 @@ begin
   else
     i := sListHeaderHeatNum();
   // DOES THIS HEAT PK AREADY EXSIST?
-  Found := DTData.LocateDT_HeatNum(i, FPrecedence);
-  // NOTHING TO PROCESS IF FOUND.
-  if not Found then
+  Found := DTData.LocateDT_HeatNum(EventID, i, FPrecedence);
+  if Found then
+    // assign this id to ProcessHeat.
+    // id := DTData.tblDTHeat.FieldByName('HeatID').AsInteger
+  else
   begin
     // read header and lane information (Racetimes x3).
     if not fSList.IsEmpty then
@@ -620,32 +629,37 @@ begin
       if fFileType = dtDO4 then
         DTData.tblDTHeat.fieldbyName('fnRaceID').AsInteger:= fn_RaceID;
       DTData.tblDTHeat.Post;
+      // Read each line of 'lanes' and link to HeatID
       // LANES + TIMEKEEPERS 1-3 + SPLITS 0-10 JOINED ON THIS HEAT.
-      ProcessEntrant(id);
+      for I := 1 to (fSList.Count - 2) do
+      begin
+          ProcessEntrant(id, I);
+      end;
     end;
   end;
 end;
 
-procedure TdtUtils.ProcessEntrant(DTHeatID: integer);
+procedure TdtUtils.ProcessEntrant(DTHeatID, LineIndex: integer);
 var
   id, I, j, lane: integer;
   TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName, s: string;
 begin
   // A record for each lane.
   // Ignore first (header) and last line (checkSum).
-  for I := 1 to (fSList.Count - 2) do
-  begin
-    id := DTData.tblDTEntrant.RecordCount + 1;
-    fSListIndex := I;
-    DTData.tblDTEntrant.Append;
-    lane := sListBodyLane;
-    sListBodyTimeKeepers(fTimeKeepers);
-    sListBodySplits(fSplits);
 
-    {
-    if EnabledSplits then
-      ExtractSplits(sl[I], Splits);
-    }
+  //  id := DTData.tblDTEntrant.RecordCount;
+
+    id := DTData.tblDTEntrant.RecordCount + 1;
+
+
+    DTData.tblDTEntrant.Append;
+
+//    lane := sListBodyLane(I);
+//    sListBodyTimeKeepers(I, fTimeKeepers);
+//    sListBodySplits(I, fSplits);
+
+    lane := sListBodyLane(LineIndex);
+
     // primary key
     DTData.tblDTEntrant.fieldbyName('EntrantID').AsInteger := id;
     // master.detail.
@@ -661,7 +675,7 @@ begin
     DTData.tblDTEntrant.fieldbyName('CalcTime').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
-
+{
     for j := 0 to High(fTimeKeepers) do
     begin
       // Generate field names
@@ -683,7 +697,7 @@ begin
       end;
     end;
 
-    {TODO -oBSA -cGeneral : Calculate deviation for each timekeeper?}
+    // TODO -oBSA -cGeneral : Calculate deviation for each timekeeper?
     DTData.tblDTEntrant.fieldbyName('Deviation1').Clear;
     DTData.tblDTEntrant.fieldbyName('Deviation2').Clear;
     DTData.tblDTEntrant.fieldbyName('Deviation3').Clear;
@@ -701,9 +715,10 @@ begin
         DTData.tblDTEntrant.FieldByName(SplitFieldName).Clear;
     end;
 
+}
     DTData.tblDTEntrant.Post;
 
-  end;
+
 
 end;
 
@@ -788,7 +803,7 @@ begin
   end;
 end;
 
-function TdtUtils.sListBodySplits(ASplits: array of TTime): boolean;
+function TdtUtils.sListBodySplits(LineIndex: integer;ASplits: array of TTime): boolean;
 var
   Fields: TArray<string>;
   i: Integer;
@@ -812,7 +827,7 @@ begin
   // Only DO4 captures split data?
   if not (fFileType = dtDO4) then exit;
   // Split string by the ';' character
-  Fields := SplitString(fSList[fSListIndex], ';');
+  Fields := SplitString(fSList[LineIndex], ';');
   // Field[0] - lane number
   // Field[1] ... [3] - timekeepers data.
   // Fiels[4] - split data index
@@ -831,14 +846,14 @@ begin
   result := true;
 end;
 
-function TdtUtils.sListBodyLane(): integer;
+function TdtUtils.sListBodyLane(LineIndex: integer): integer;
 var
   Fields: TArray<string>;
   s: string;
 begin
   result := 0;
   // Split string by the ';' character
-  Fields := SplitString(fSList[fSListIndex], ';');
+  Fields := SplitString(fSList[LineIndex], ';');
   if Length(Fields) = 0 then exit;   // Input string is empty - err.
   // examples.
   // DO4 - 'Lane1;55.98;;'
@@ -848,14 +863,14 @@ begin
     result := StrToIntDef(s, 0); // Extract the lane as an integer
 end;
 
-function TdtUtils.sListBodyTimeKeepers(ATimeKeepers: array of TTime): boolean;
+function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;ATimeKeepers: array of TTime): boolean;
 var
   Fields: TArray<string>;
   i: integer;
 begin
   result := false;
   // Split string by the ';' character
-  Fields := SplitString(fSList[fSListIndex], ';');
+  Fields := SplitString(fSList[LineIndex], ';');
   // Note: Dolphin Timing allows for three timekeepers.
   // Fields[0] = lane number.
   // Fields[1], Fields[2], Fields[3] - TimeKeepers data in DTTime format.

@@ -80,6 +80,7 @@ type
     btnPickEvent: TButton;
     btnPickDTFile: TButton;
     actnSelectSwimClub: TAction;
+    btnDataDebug: TButton;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
@@ -91,6 +92,7 @@ type
     procedure actnSelectSessionExecute(Sender: TObject);
     procedure actnSetDTMeetsFolderExecute(Sender: TObject);
     procedure actnSyncDTExecute(Sender: TObject);
+    procedure btnDataDebugClick(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
     procedure btnPickEventClick(Sender: TObject);
@@ -143,7 +145,8 @@ implementation
 
 {$R *.dfm}
 
-uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM;
+uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM,
+  dlgDataDebug;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -434,6 +437,15 @@ begin
 
 end;
 
+procedure TdtExec.btnDataDebugClick(Sender: TObject);
+var
+dlg: TDataDebug;
+begin
+  dlg := TDataDebug.Create(self);
+  dlg.ShowModal;
+  dlg.Free;
+end;
+
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
 begin
     if not DTData.dsDTEvent.DataSet.EOF then
@@ -598,6 +610,11 @@ begin
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
       end;
   end;
+
+{$IFDEF DEBUG}
+  pnlTool2.Visible := true;
+{$ENDIF}
+
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);

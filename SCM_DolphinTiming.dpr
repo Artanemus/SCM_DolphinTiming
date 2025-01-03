@@ -21,7 +21,8 @@ uses
   dtReConstruct in 'dtReConstruct.pas',
   Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas',
   dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM},
-  dtTreeViewDT in 'dtTreeViewDT.pas' {TreeViewDT};
+  dtTreeViewDT in 'dtTreeViewDT.pas' {TreeViewDT},
+  dlgDataDebug in 'dlgDataDebug.pas' {DataDebug};
 
 {$R *.res}
 

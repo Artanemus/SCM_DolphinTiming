@@ -177,6 +177,10 @@
             <Form>TreeViewDT</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="dlgDataDebug.pas">
+            <Form>DataDebug</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

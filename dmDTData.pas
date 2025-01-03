@@ -84,19 +84,25 @@ type
     procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
 
+    procedure EnableDTMasterDetail();
+    procedure DisableDTMasterDetail();
+
     // Look for Dolphin Timing session number given :
     // - in the filename  fn_FileName()
     // - or in the file's text : line one (Header) sListHeaderSessionNum()
     function LocateDT_SessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
         boolean;
-    function LocateDT_EventNum(AEventNum: integer; Aprecedence: dtPrecedence):
+    function LocateDT_EventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
         boolean;
-    function LocateDT_HeatNum(AHeatNum: integer; Aprecedence: dtPrecedence):
+    function LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
         boolean;
 
     function LocateSession(ASessionID: integer): boolean;
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
+    function LocateDTSession(ASessionID: integer): boolean;
+    function LocateDTEvent(AEventID: integer): boolean;
+    function LocateDTHeat(AHeatID: integer): boolean;
     function LocateNearestSession(aDate: TDateTime): integer;
     function dtLocateEventNum(AEventNum: integer): boolean;
     function dtLocateSessionNum(ASessionNum: integer): boolean;
@@ -131,6 +137,12 @@ begin
   tblDTEntrant.Active := true;
   tblDTNoodle.Active := true;
 
+  EnableDTMasterDetail;
+
+end;
+
+procedure TDTData.EnableDTMasterDetail();
+begin
   // ASSERT Master - Detail
   tblDTEvent.MasterSource := dsDTSession;
   tblDTEvent.MasterFields := 'SessionID';
@@ -154,8 +166,39 @@ begin
   tblDTNoodle.IndexFieldNames := 'HeatID';
 
   tblDTSession.First;
-
 end;
+
+procedure TDTData.DisableDTMasterDetail();
+begin
+  // ASSERT Master - Detail
+  tblDTEvent.MasterSource := nil;
+  tblDTEvent.MasterFields := '';
+  tblDTEvent.DetailFields := '';
+  tblDTEvent.IndexFieldNames := 'EventID';
+
+  tblDTHeat.MasterSource := nil;
+  tblDTHeat.MasterFields := '';
+  tblDTHeat.DetailFields := '';
+  tblDTHeat.IndexFieldNames := 'HeatID';
+
+  tblDTEntrant.MasterSource := nil;
+  tblDTEntrant.MasterFields := '';
+  tblDTEntrant.DetailFields := '';
+  tblDTEntrant.IndexFieldNames := 'EntrantID';
+
+
+  tblDTNoodle.MasterSource := nil;
+  tblDTNoodle.MasterFields := '';
+  tblDTNoodle.DetailFields := '';
+  tblDTNoodle.IndexFieldNames := 'NoodleID';
+
+  tblDTSession.First;
+  tblDTEvent.First;
+  tblDTHeat.First;
+  tblDTEntrant.First;
+  tblDTNoodle.First;
+end;
+
 
 procedure TDTData.BuildCSVEventData(AFileName: string);
 var
@@ -285,19 +328,62 @@ begin
 
 end;
 
-function TDTData.LocateDT_EventNum(AEventNum: integer; Aprecedence:
-    dtPrecedence): boolean;
+function TDTData.LocateDTEvent(AEventID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
 begin
   result := false;
+  if not tblDTEvent.Active then exit;
+  if (AEventID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
+end;
+
+function TDTData.LocateDTHeat(AHeatID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not tblDTHeat.Active then exit;
+  if (AHeatID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateDTSession(ASessionID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not tblDTSession.Active then exit;
+  if (ASessionID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+end;
+
+function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; Aprecedence:
+    dtPrecedence): boolean;
+var
+  SearchOptions: TLocateOptions;
+  indexStr: string;
+begin
+  result := false;
   if not tbldtEvent.Active then exit;
   if (AEventNum = 0) then exit;
-  SearchOptions := [];
+//  SearchOptions := [];
+  indexStr := tbldtEvent.IndexFieldNames;
   if (Aprecedence = dtPrecFileName) then
-    result := tbldtEvent.Locate('fnEventNum', AEventNum, SearchOptions)
+  begin
+    tbldtEvent.IndexFieldNames := 'SessionID;fnEventNum';
+    result := tbldtEvent.Locate('fnEventNum', AEventNum, SearchOptions);
+  end
   else if (Aprecedence = dtPrecHeader) then
-    result := tbldtEvent.Locate('EventNum', AEventNum, SearchOptions)
+  begin
+    tbldtEvent.IndexFieldNames := 'SessionID;EventNum';
+    result := tbldtEvent.Locate('EventNum', AEventNum, SearchOptions);
+  end;
+  // restore original index;
+  tbldtEvent.IndexFieldNames := indexStr;
 end;
 
 function TDTData.LocateEvent(AEventID: integer): boolean;
@@ -324,19 +410,29 @@ begin
       result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
 end;
 
-function TDTData.LocateDT_HeatNum(AHeatNum: integer; Aprecedence:
+function TDTData.LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence:
     dtPrecedence): boolean;
 var
   SearchOptions: TLocateOptions;
+  indexStr: string;
 begin
   result := false;
   if not tbldtHeat.Active then exit;
   if (AHeatNum = 0) then exit;
   SearchOptions := [];
+  indexStr := tbldtHeat.IndexFieldNames;
   if (Aprecedence = dtPrecFileName) then
+  begin
+    tbldtHeat.IndexFieldNames := 'EventID;fnHeatNum';
     result := tbldtHeat.Locate('fnHeatNum', AHeatNum, SearchOptions)
+  end
   else if (Aprecedence = dtPrecHeader) then
-    result := tbldtHeat.Locate('HeatNum', AHeatNum, SearchOptions)
+  begin
+    tbldtHeat.IndexFieldNames := 'EventID;HeatNum';
+    result := tbldtHeat.Locate('HeatNum', AHeatNum, SearchOptions);
+  end;
+  // restore original index;
+  tbldtHeat.IndexFieldNames := indexStr;
 end;
 
 function TDTData.LocateNearestSession(aDate: TDateTime): integer;

@@ -1316,6 +1316,9 @@ object dtExec: TdtExec
           end
           item
             Control = btnClose
+          end
+          item
+            Control = btnDataDebug
           end>
         HorizontalPositioning = sphpCenter
         Spacing = 4
@@ -1362,6 +1365,15 @@ object dtExec: TdtExec
           Caption = 'Close'
           ModalResult = 8
           TabOrder = 1
+        end
+        object btnDataDebug: TButton
+          Left = 17
+          Top = 201
+          Width = 109
+          Height = 40
+          Caption = 'Data Debug'
+          TabOrder = 2
+          OnClick = btnDataDebugClick
         end
       end
     end
