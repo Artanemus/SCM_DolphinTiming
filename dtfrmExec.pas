@@ -98,6 +98,8 @@ type
     procedure btnPickEventClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
+    procedure dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
+        string);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormHide(Sender: TObject);
@@ -109,6 +111,8 @@ type
     { Private declarations }
     FConnection: TFDConnection;
     fDolphinMeetsFolder: string;
+    // dtPrecedence = (dtPrecHeader, dtPrecFileName);
+    fPrecedence: dtPrecedence;
 
     { On FormShow - prompt user to select session.
       Default value : FALSE     }
@@ -407,34 +411,11 @@ end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
 var
-currSessionID, currEventID: integer;
-
+  ASessionID, AEventNum: integer;
 begin
-  // SYNC SCM session to DT session ...
-  // SYNC DT session to SCM session ...
-  currSessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
-  currEventID := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
-
-//  DTData.tblDTSession.DisableControls;
-//  DTData.tblDTEvent.DisableControls;
-//  DTData.tblDTHeat.DisableControls;
-//  DTData.tblDTEntrant.DisableControls;
-//  DTData.tblDTNoodle.DisableControls;
-
-  DTData.dtLocateSessionNum(currSessionID);
-  DTData.dtLocateEventNum(currEventID);
-
-//  DTData.tblDTEvent.Refresh;
-//  DTData.tblDTHeat.Refresh;
-//  DTData.tblDTEntrant.Refresh;
-//  DTData.tblDTNoodle.Refresh;
-//
-//  DTData.tblDTSession.EnableControls;
-//  DTData.tblDTEvent.EnableControls;
-//  DTData.tblDTHeat.EnableControls;
-//  DTData.tblDTEntrant.EnableControls;
-//  DTData.tblDTNoodle.EnableControls;
-
+  ASessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
+  AEventNum := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
+  DTData.LocateDT_EventNum(ASessionID, AEventNum, fPrecedence);
 end;
 
 procedure TdtExec.btnDataDebugClick(Sender: TObject);
@@ -565,6 +546,19 @@ begin
     PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
+procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
+    Value: string);
+var
+  TimeValue: TDateTime;
+begin
+  // Check if the cell contains the time value you want to format
+  if (ACol = 3) and (ARow > 0) and TryStrToTime(Value, TimeValue) then
+  begin
+    // Format the time value as nn:ss.zzz
+    Value := FormatDateTime('nn:ss.zzz', TimeValue);
+  end;
+end;
+
 procedure TdtExec.FormCreate(Sender: TObject);
 begin
 
@@ -660,6 +654,7 @@ end;
 procedure TdtExec.LoadFromSettings;
 begin
   fDolphinMeetsFolder := Settings.DolphinMeetsFolder;
+  fPrecedence := Settings.DolphinPrecedence;
 end;
 
 procedure TdtExec.LoadSettings;
@@ -884,9 +879,9 @@ end;
 
 procedure TdtExec.UpdateSessionStartLabel;
 var
-s: string;
-v: variant;
-dt: TDateTime;
+  s: string;
+  v: variant;
+  dt: TDateTime;
 begin
   if not DTData.qrysession.Active then
   begin
@@ -894,11 +889,12 @@ begin
     exit;
   end;
   if DTData.qrySession.IsEmpty or
-    (DTData.qrySession.FieldByName('SessionID').AsInteger = 0) then
+  (DTData.qrySession.FieldByName('SessionID').AsInteger = 0) then
     lblSessionStart.Caption := ''
   else
   begin
-    s := 'SESSION' + sLineBreak;
+    s := 'SESS:' + IntToStr(DTData.qrysession.FieldByName('SessionID').AsInteger)
+      + sLineBreak;
     v := DTData.qrysession.FieldByName('SessionStart').AsVariant;
     if not VarIsNull(v) then
     begin

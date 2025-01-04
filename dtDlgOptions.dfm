@@ -3,7 +3,7 @@ object dlgOptions: TdlgOptions
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Application Options ...'
-  ClientHeight = 473
+  ClientHeight = 510
   ClientWidth = 661
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -8403,12 +8403,13 @@ object dlgOptions: TdlgOptions
   end
   object pnlFooter: TPanel
     Left = 0
-    Top = 432
+    Top = 469
     Width = 661
     Height = 41
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 432
     object btnClose: TButton
       Left = 574
       Top = 6
@@ -8423,18 +8424,20 @@ object dlgOptions: TdlgOptions
     Left = 0
     Top = 67
     Width = 661
-    Height = 365
+    Height = 402
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 365
     object pgcntrl: TPageControl
       Left = 0
       Top = 0
       Width = 661
-      Height = 365
-      ActivePage = tabsheetPaths
+      Height = 402
+      ActivePage = tabSettings
       Align = alClient
       TabOrder = 0
+      ExplicitHeight = 365
       object tabSettings: TTabSheet
         Caption = 'Settings'
         ImageIndex = 1
@@ -8480,6 +8483,22 @@ object dlgOptions: TdlgOptions
           Height = 25
           Caption = 'Auto rename DT files.'
           TabOrder = 3
+        end
+        object rgrpPrecedence: TRadioGroup
+          Left = 20
+          Top = 255
+          Width = 573
+          Height = 97
+          Caption = 'Precedence '
+          ItemIndex = 0
+          Items.Strings = (
+            
+              'Use  '#39'Header'#39' info (line one) of the DT file for Session, Event ' +
+              '&& Heat data.'
+            
+              'Use the DT filename to extract Session, Event && Heat (DO4) data' +
+              '.')
+          TabOrder = 4
         end
       end
       object tabsheetPaths: TTabSheet

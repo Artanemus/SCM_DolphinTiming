@@ -38,8 +38,8 @@ type
     function sListHeaderGenderChar(): char;
     { TStringList - BODY - ref: fSListIndex }
     function sListBodyLane(LineIndex: integer): integer;
-    function sListBodyTimeKeepers(LineIndex: integer; ATimeKeepers: array of TTime): boolean;
-    function sListBodySplits(LineIndex: integer; ASplits: array of TTime): boolean;
+    function sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers: array of TTime): boolean;
+    function sListBodySplits(LineIndex: integer; var ASplits: array of TTime): boolean;
     { TStringList - FOOTER }
     function sListFooterHashStr(): string;
     { FILENAME EXTRACTION ROUTINES...}
@@ -59,7 +59,7 @@ type
     procedure ProcessSession(AFileName: TFileName);
     procedure ProcessEvent(SessionID: integer);
     procedure ProcessHeat(EventID: integer);
-    procedure ProcessEntrant(DTHeatID, LineIndex: integer);
+    procedure ProcessEntrant(HeatID: integer);
 
   public
     procedure PrepareDTData();
@@ -92,7 +92,7 @@ Example:
 
 implementation
 
-uses System.Character;
+uses System.Character, DateUtils;
 
 function StripAlphaChars(const InputStr: string): string;
 var
@@ -106,14 +106,18 @@ end;
 
 function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 var
-  Seconds, Hundredths: integer;
-  DotPos: integer;
-  TimeValue: Double;
+//  Seconds, Hundredths: integer;
+//  DotPos: integer;
+  TimeValue: TDateTime;
+  fs: TFormatSettings;
 begin
-  // Handle empty string (no time provided)
-  if DTTimeStr = '' then
-    Exit(0);
 
+  result := 0;
+
+  // Handle empty string (no time provided)
+//  if DTTimeStr = '' then
+//    Exit(0);
+{
   // Find the position of the dot
   DotPos := Pos('.', DTTimeStr);
 
@@ -135,8 +139,11 @@ begin
     Seconds := StrToInt(DTTimeStr);
     TimeValue := Seconds / SecsPerDay;
   end;
+}
 
-  Result := TimeValue;
+  fs := TFormatSettings.Create;
+  if TryStrToTime(DTTimeStr, TimeValue, fs) then
+    Result := TTime(TimeValue);
 end;
 
 
@@ -429,42 +436,49 @@ by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
   { Select the search option }
   // do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
+
+  // clear all datasets of records.
+  DTData.tblDTSession.EmptyDataSet;
+  DTData.tblDTEvent.EmptyDataSet;
+  DTData.tblDTHeat.EmptyDataSet;
+  DTData.tblDTEntrant.EmptyDataSet;
+  DTData.tblDTNoodle.EmptyDataSet;
+  // De-attach from Master-Detail. Create flat files.
+  // Necessary to calculate table Primary keys...
+  DTData.DisableDTMasterDetail;
+
   try
-    // DETACH MASTER-DETAIL
-//    DTData.DisableDTMasterDetail;
+    { For files use GetFiles method }
+    LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
+    LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
 
-    try
-      { For files use GetFiles method }
-      LListDO3 := TDirectory.GetFiles(ADirectory, '*.DO3', LSearchOption);
-      LListDO4 := TDirectory.GetFiles(ADirectory, '*.DO4', LSearchOption);
+    { Combine the lists }
+    SetLength(LList, Length(LListDO3) + Length(LListDO4));
+    if Length(LListDO3) > 0 then
+      Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
+    if Length(LListDO4) > 0 then
+      Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
 
-      { Combine the lists }
-      SetLength(LList, Length(LListDO3) + Length(LListDO4));
-      if Length(LListDO3) > 0 then
-        Move(LListDO3[0], LList[0], Length(LListDO3) * SizeOf(string));
-      if Length(LListDO4) > 0 then
-        Move(LListDO4[0], LList[Length(LListDO3)], Length(LListDO4) * SizeOf(string));
-
-      { Extract DATA and Populate the memory table. }
-      for I := 0 to Length(LList) - 1 do
+    { Extract DATA and Populate the memory table. }
+    for I := 0 to Length(LList) - 1 do
+    begin
+      { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
+      ProcessSession(LList[I]);
+      // update progress bar.
+      if Assigned(pBar) then
       begin
-        { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
-        ProcessSession(LList[I]);
-        // update progress bar.
-        if Assigned(pBar) then
-        begin
-          pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
-          pBar.RePaint;
-        end;
+        pBar.Position := Trunc(Ceil((I + 1) / Length(LList) * 100));
+        pBar.RePaint;
       end;
-    except
-      { Catch the possible exceptions }
-      MessageBox(0, PChar('Incorrect path or search mask'),
-        PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
     end;
-  finally
-//    DTData.EnableDTMasterDetail;
+  except
+    { Catch the possible exceptions }
+    MessageBox(0, PChar('Incorrect path or search mask'),
+      PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
   end;
+  // Re-attach Master-Detail.
+  DTData.EnableDTMasterDetail;
+
 end;
 
 procedure TdtUtils.ProcessSession(AFileName: TFileName);
@@ -494,7 +508,8 @@ begin
   end
   else
   begin
-    id := DTData.tblDTSession.RecordCount + 1;
+    // ID isn't AutoInc - calc manually.
+    id := DTData.MaxID_Session + 1;
     // Get the creation time of the specified file
     fCreationDT := TFile.GetCreationTime(AFileName);
     DTData.tblDTSession.Append;
@@ -536,8 +551,11 @@ begin
     i := fn_EventNum()
   else
     i := sListHeaderEventNum();
+
   // DOES THIS EVENT PK AREADY EXSIST?
   Found := DTData.LocateDT_EventNum(SessionID, i, FPrecedence);
+
+
   if Found then
     // assign this id to ProcessHeat.
     id := DTData.tblDTEvent.FieldByName('EventID').AsInteger
@@ -546,7 +564,8 @@ begin
     if not fSList.IsEmpty then
     begin
       // calculate the Primary Key : IDENTIFIER.
-      id := DTData.tblDTEvent.RecordCount + 1;
+      // ID isn't AutoInc - calc manually.
+      id := DTData.MaxID_Event + 1;
       // NEW RECORD.
       DTData.tblDTEvent.Append;
       // Primary Key.
@@ -580,22 +599,26 @@ var
   i, id: integer;
   Found: boolean;
 begin
+  id := 0;
+
   if (FPrecedence = dtPrecFileName) then
     i := fn_HeatNum()
   else
     i := sListHeaderHeatNum();
-  // DOES THIS HEAT PK AREADY EXSIST?
+
+  // HAS THIS HEAT AREADY been processed?
   Found := DTData.LocateDT_HeatNum(EventID, i, FPrecedence);
   if Found then
-    // assign this id to ProcessHeat.
-    // id := DTData.tblDTHeat.FieldByName('HeatID').AsInteger
+    // use this id to call process entrant.
+    id := DTData.tblDTHeat.FieldByName('HeatID').AsInteger
   else
   begin
     // read header and lane information (Racetimes x3).
     if not fSList.IsEmpty then
     begin
       // calculate the IDENTIFIER.
-      id := DTData.tblDTHeat.RecordCount + 1;
+      // ID isn't AutoInc - calc manually.
+      id := DTData.MaxID_Heat() + 1;
       // NEW RECORD.
       DTData.tblDTHeat.Append;
       // PK
@@ -629,41 +652,40 @@ begin
       if fFileType = dtDO4 then
         DTData.tblDTHeat.fieldbyName('fnRaceID').AsInteger:= fn_RaceID;
       DTData.tblDTHeat.Post;
-      // Read each line of 'lanes' and link to HeatID
-      // LANES + TIMEKEEPERS 1-3 + SPLITS 0-10 JOINED ON THIS HEAT.
-      for I := 1 to (fSList.Count - 2) do
-      begin
-          ProcessEntrant(id, I);
-      end;
     end;
   end;
+  // DON'T process heats we have already done...
+  if not Found then
+    ProcessEntrant(id);
 end;
 
-procedure TdtUtils.ProcessEntrant(DTHeatID, LineIndex: integer);
+procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
-  id, I, j, lane: integer;
-  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName, s: string;
+  id, I, lane: integer;
+  j: integer;
+  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName: string;
+  s: string;
+  Found: boolean;
 begin
-  // A record for each lane.
-  // Ignore first (header) and last line (checkSum).
+  if HeatID = 0 then exit;
 
-  //  id := DTData.tblDTEntrant.RecordCount;
-
-    id := DTData.tblDTEntrant.RecordCount + 1;
-
-
+  Found := DTData.tblDTEntrant.Locate('HeatID', HeatID, []);
+  if Found then
+    // This heat has been process of all it's lanes...
+    exit;
+  // dtfrmExec has a grid linked to this datasource.
+  DTData.tblDTEntrant.DisableControls;
+  // ID isn't AutoInc - calc manually.
+  id := DTData.MaxID_Entrant + 1;
+  for I := 1 to (fSList.Count - 2) do
+  begin
+    lane := sListBodyLane(I);
+    id := id + 1;
     DTData.tblDTEntrant.Append;
-
-//    lane := sListBodyLane(I);
-//    sListBodyTimeKeepers(I, fTimeKeepers);
-//    sListBodySplits(I, fSplits);
-
-    lane := sListBodyLane(LineIndex);
-
     // primary key
     DTData.tblDTEntrant.fieldbyName('EntrantID').AsInteger := id;
     // master.detail.
-    DTData.tblDTEntrant.fieldbyName('HeatID').AsInteger := DTHeatID;
+    DTData.tblDTEntrant.fieldbyName('HeatID').AsInteger := HeatID;
     // SYNC with SwimClubMeet - INDV or TEAM lane
     DTData.tblDTEntrant.fieldbyName('Lane').AsInteger := lane;
     // Should read 'Lane: #Lane#'
@@ -675,9 +697,38 @@ begin
     DTData.tblDTEntrant.fieldbyName('CalcTime').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
-{
-    for j := 0 to High(fTimeKeepers) do
+
+    // gather up the timekeepers 1-3 recorded race times for this lane.
+    sListBodyTimeKeepers(I, fTimeKeepers);
+
+    if (fTimeKeepers[0] > 0) then
+      DTData.tblDTEntrant.FieldByName('Time1').AsDateTime := TDateTime(fTimeKeepers[0])
+    else
+      DTData.tblDTEntrant.FieldByName('Time1').Clear;
+    if (fTimeKeepers[1] > 0) then
+      DTData.tblDTEntrant.FieldByName('Time2').AsDateTime := TDateTime(fTimeKeepers[1])
+    else
+      DTData.tblDTEntrant.FieldByName('Time2').Clear;
+    if (fTimeKeepers[2] > 0) then
+      DTData.tblDTEntrant.FieldByName('Time3').AsDateTime := TDateTime(fTimeKeepers[2])
+    else
+      DTData.tblDTEntrant.FieldByName('Time3').Clear;
+
+
+
+
+    DTData.tblDTEntrant.Post;
+  end;
+  DTData.tblDTEntrant.EnableControls;
+
+    {
+
+    for j := low(fTimeKeepers)  to High(fTimeKeepers) do
     begin
+
+
+    end;
+
       // Generate field names
       TimeFieldName := Format('Time%d', [j + 1]);
       TimeModeFieldName := Format('Time%d', [j + 1]) + 'Mode';
@@ -695,7 +746,9 @@ begin
         DTData.tblDTEntrant.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoDisabled);
         DTData.tblDTEntrant.FieldByName(TimeFieldNameErr).AsInteger := Ord(tmeEmpty);
       end;
-    end;
+
+
+    //    sListBodySplits(I, fSplits);
 
     // TODO -oBSA -cGeneral : Calculate deviation for each timekeeper?
     DTData.tblDTEntrant.fieldbyName('Deviation1').Clear;
@@ -716,8 +769,6 @@ begin
     end;
 
 }
-    DTData.tblDTEntrant.Post;
-
 
 
 end;
@@ -803,7 +854,7 @@ begin
   end;
 end;
 
-function TdtUtils.sListBodySplits(LineIndex: integer;ASplits: array of TTime): boolean;
+function TdtUtils.sListBodySplits(LineIndex: integer; var ASplits: array of TTime): boolean;
 var
   Fields: TArray<string>;
   i: Integer;
@@ -863,35 +914,43 @@ begin
     result := StrToIntDef(s, 0); // Extract the lane as an integer
 end;
 
-function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;ATimeKeepers: array of TTime): boolean;
+function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;var ATimeKeepers: array of TTime): boolean;
 var
   Fields: TArray<string>;
   i: integer;
+  ATimeValue: TDateTime;
+  fs: TFormatSettings;
+  s: string;
 begin
-  result := false;
-  // Split string by the ';' character
-  Fields := SplitString(fSList[LineIndex], ';');
   // Note: Dolphin Timing allows for three timekeepers.
   // Fields[0] = lane number.
   // Fields[1], Fields[2], Fields[3] - TimeKeepers data in DTTime format.
-  // examples.
-  // DO4 - 'Lane1;55.98;;'
-  // DO3 - '1;95.25;;'
+  // examples.  DO4 - 'Lane1;55.98;;' ...  DO3 - '1;95.25;;'
+  result := false;
+  fs := TFormatSettings.Create;
+  // Split string by the ';' character
+  Fields := SplitString(fSList[LineIndex], ';');
   // Initialize timekeepers
-  for i := Low(ATimeKeepers) to High(ATimeKeepers) do ATimeKeepers[i] := 0;
+  for I := Low(ATimeKeepers) to High(ATimeKeepers) do
+    ATimeKeepers[I] := 0;
   // Extract timekeepers data.
-  if Length(Fields) > 1 then
+  // ignore Fields[0]. this field has the lane number. lane number.
+  // Fields[4] and beyond are split-times.
+
+  if Length(Fields) > 0 then
   begin
-    for i := 1 to Length(Fields) - 1 do  // ignore Fields[0] = lane number.
+    s := Fields[1];
+    if s <> '' then
     begin
-      if Length(Fields[i]) > 0 then
-      begin
-        if i <= High(ATimeKeepers) then // trap array index overrun
-          ATimeKeepers[i] := ConvertDTTimeToTime(Fields[i])
-      end;
-    end;
-    result := true;
+      if TryStrToTime(s, ATimeValue, fs) then
+        ATimeKeepers[0] := ATimeValue;
+    end
   end;
+  if Length(Fields) > 1 then
+    ATimeKeepers[1] := ConvertDTTimeToTime(Fields[2]);
+  if Length(Fields) > 2 then
+    ATimeKeepers[2] := ConvertDTTimeToTime(Fields[3]);
+  result := true;
 end;
 
 

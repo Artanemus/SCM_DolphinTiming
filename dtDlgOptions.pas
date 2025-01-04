@@ -33,6 +33,7 @@ type
     tabsheetPaths: TTabSheet;
     vimgDT: TVirtualImage;
     BrowseFolderDlg: TFileOpenDialog;
+    rgrpPrecedence: TRadioGroup;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtEventCSVRightButtonClick(Sender: TObject);
@@ -171,6 +172,8 @@ begin
   btnedtEventCSV.Text := Settings.DolphinEventFolder;
   btnedtAppData.Text := Settings.DolphinAppData;
   btnedtReConstruct.Text := Settings.DolphinReConstruct;
+  // dtPrecedence = (dtPrecHeader, dtPrecFileName); (Delphi default base 0)
+  rgrpPrecedence.ItemIndex := Ord(Settings.DolphinPrecedence)
 end;
 
 procedure TdlgOptions.LoadSettings;
@@ -192,6 +195,12 @@ begin
   Settings.DolphinEventFolder := btnedtEventCSV.Text;
   Settings.DolphinAppData := btnedtAppData.Text;
   Settings.DolphinReConstruct := btnedtReConstruct.Text;
+  case rgrpPrecedence.ItemIndex of
+    1:
+    Settings.DolphinPrecedence := dtPrecFileName;
+    else
+    Settings.DolphinPrecedence := dtPrecHeader;
+  end;
 
   Settings.SaveToFile();
 end;

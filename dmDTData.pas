@@ -100,12 +100,14 @@ type
     function LocateSession(ASessionID: integer): boolean;
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
-    function LocateDTSession(ASessionID: integer): boolean;
-    function LocateDTEvent(AEventID: integer): boolean;
-    function LocateDTHeat(AHeatID: integer): boolean;
+    function LocateDTSessionID(ASessionID: integer): boolean;
+    function LocateDTHeatID(AHeatID: integer): boolean;
     function LocateNearestSession(aDate: TDateTime): integer;
-    function dtLocateEventNum(AEventNum: integer): boolean;
-    function dtLocateSessionNum(ASessionNum: integer): boolean;
+
+    function MaxID_Session():integer;
+    function MaxID_Event(): integer;
+    function MaxID_Heat(): integer;
+    function MaxID_Entrant: integer;
 
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
@@ -269,38 +271,6 @@ begin
   // clean-up.
 end;
 
-function TDTData.dtLocateEventNum(AEventNum: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fDTDataIsActive then exit;
-  if (AEventNum = 0) then exit;
-  SearchOptions := [];
-  if tbldtEvent.Active then
-  begin
-    tbldtEvent.DisableControls;
-    result := tbldtEvent.Locate('EventNum', AEventNum, SearchOptions);
-    tbldtEvent.EnableControls;
-  end;
-end;
-
-function TDTData.dtLocateSessionNum(ASessionNum: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fDTDataIsActive then exit;
-  if (ASessionNum = 0) then exit;
-  SearchOptions := [];
-  if tbldtSession.Active then
-  begin
-    tbldtSession.DisableControls;
-    result := tbldtSession.Locate('SessionNum', ASessionNum, SearchOptions);
-    tbldtSession.EnableControls;
-  end;
-end;
-
 function TDTData.GetRoundABBREV(AEventID: integer): string;
 var
 SQL: string;
@@ -328,18 +298,7 @@ begin
 
 end;
 
-function TDTData.LocateDTEvent(AEventID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTEvent.Active then exit;
-  if (AEventID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
-end;
-
-function TDTData.LocateDTHeat(AHeatID: integer): boolean;
+function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
 begin
@@ -350,7 +309,7 @@ begin
   result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
 end;
 
-function TDTData.LocateDTSession(ASessionID: integer): boolean;
+function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
 begin
@@ -361,28 +320,27 @@ begin
   result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
 end;
 
-function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; Aprecedence:
-    dtPrecedence): boolean;
+function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; APrecedence:
+  dtPrecedence): boolean;
 var
-  SearchOptions: TLocateOptions;
   indexStr: string;
 begin
+  // ensure DisableDTMasterDetail();
   result := false;
+  // Exit if the table is not active or if AEventNum is 0
   if not tbldtEvent.Active then exit;
-  if (AEventNum = 0) then exit;
-//  SearchOptions := [];
+  if AEventNum = 0 then exit;
+  // Store the original index field names
   indexStr := tbldtEvent.IndexFieldNames;
-  if (Aprecedence = dtPrecFileName) then
-  begin
-    tbldtEvent.IndexFieldNames := 'SessionID;fnEventNum';
-    result := tbldtEvent.Locate('fnEventNum', AEventNum, SearchOptions);
-  end
-  else if (Aprecedence = dtPrecHeader) then
-  begin
-    tbldtEvent.IndexFieldNames := 'SessionID;EventNum';
-    result := tbldtEvent.Locate('EventNum', AEventNum, SearchOptions);
-  end;
-  // restore original index;
+  tbldtEvent.IndexFieldNames := 'EventID';
+  // Set the index based on the precedence
+  if APrecedence = dtPrecFileName then
+    result := tbldtEvent.Locate('SessionID;fnEventNum', VarArrayOf([SessionID,
+      AEventNum]), [])
+  else if APrecedence = dtPrecHeader then
+    result := tbldtEvent.Locate('SessionID;EventNum', VarArrayOf([SessionID,
+      AEventNum]), []);
+  // Restore the original index field names
   tbldtEvent.IndexFieldNames := indexStr;
 end;
 
@@ -413,25 +371,24 @@ end;
 function TDTData.LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence:
     dtPrecedence): boolean;
 var
-  SearchOptions: TLocateOptions;
   indexStr: string;
 begin
+  // ensure DisableDTMasterDetail();
   result := false;
+  // Exit if the table is not active or if AHeatNum is 0
   if not tbldtHeat.Active then exit;
-  if (AHeatNum = 0) then exit;
-  SearchOptions := [];
+  if AHeatNum = 0 then exit;
+  // Store the original index field names
   indexStr := tbldtHeat.IndexFieldNames;
-  if (Aprecedence = dtPrecFileName) then
-  begin
-    tbldtHeat.IndexFieldNames := 'EventID;fnHeatNum';
-    result := tbldtHeat.Locate('fnHeatNum', AHeatNum, SearchOptions)
-  end
-  else if (Aprecedence = dtPrecHeader) then
-  begin
-    tbldtHeat.IndexFieldNames := 'EventID;HeatNum';
-    result := tbldtHeat.Locate('HeatNum', AHeatNum, SearchOptions);
-  end;
-  // restore original index;
+  tbldtHeat.IndexFieldNames := 'HeatID';
+  // Set the index based on the precedence
+  if APrecedence = dtPrecFileName then
+    result := tbldtHeat.Locate('EventID;fnHeatNum', VarArrayOf([EventID,
+      AHeatNum]), [])
+  else if APrecedence = dtPrecHeader then
+    result := tbldtHeat.Locate('EventID;HeatNum', VarArrayOf([EventID,
+      AHeatNum]), []);
+  // Restore the original index field names
   tbldtHeat.IndexFieldNames := indexStr;
 end;
 
@@ -450,16 +407,22 @@ end;
 function TDTData.LocateDT_SessionNum(ASessionNum: integer; Aprecedence:
     dtPrecedence): boolean;
 var
-  SearchOptions: TLocateOptions;
+  indexStr: string;
 begin
+  // ensure DisableDTMasterDetail();
   result := false;
   if not tbldtSession.Active then exit;
+  if ASessionNum = 0 then exit;
+  // Store the original index field names
+  indexStr := tbldtSession.IndexFieldNames;
   if (ASessionNum = 0) then exit;
-  SearchOptions := [];
+  tbldtSession.IndexFieldNames := 'SessionID';
   if (Aprecedence = dtPrecFileName) then
-    result := tbldtSession.Locate('fnSessionNum', ASessionNum, SearchOptions)
+    result := tbldtSession.Locate('fnSessionNum', ASessionNum, [])
   else if (Aprecedence = dtPrecHeader) then
-    result := tbldtSession.Locate('SessionNum', ASessionNum, SearchOptions)
+    result := tbldtSession.Locate('SessionNum', ASessionNum, []);
+  // Restore the original index field names
+  tbldtSession.IndexFieldNames := indexStr;
 end;
 
 
@@ -473,6 +436,74 @@ begin
   SearchOptions := [];
   if dsSession.DataSet.Active then
       result := dsSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+end;
+
+function TDTData.MaxID_Entrant: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTEntrant.First;
+  while not tblDTEntrant.eof do
+  begin
+    id := tblDTEntrant.FieldByName('EntrantID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTEntrant.Next;
+  end;
+  result := max;
+end;
+
+function TDTData.MaxID_Event: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTEvent.First;
+  while not tblDTEvent.eof do
+  begin
+    id := tblDTEvent.FieldByName('EventID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTEvent.Next;
+  end;
+  result := max;
+end;
+
+function TDTData.MaxID_Heat: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTHeat.First;
+  while not tblDTHeat.eof do
+  begin
+    id := tblDTHeat.FieldByName('HeatID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTHeat.Next;
+  end;
+  result := max;
+end;
+
+function TDTData.MaxID_Session: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTSession.First;
+  while not tblDTSession.eof do
+  begin
+    id := tblDTSession.FieldByName('SessionID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTSession.Next;
+  end;
+  result := max;
 end;
 
 function TDTData.GetActiveSessionID: integer;

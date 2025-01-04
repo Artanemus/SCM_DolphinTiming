@@ -6,7 +6,8 @@ uses
   system.IOUtils,
   system.SysUtils, system.Types, system.UITypes, system.Classes,
   system.Variants, VCL.Controls,
-  XsuperObject;
+  XsuperObject,
+  dmDTData;
 
 type
 
@@ -27,6 +28,7 @@ type
     DolphinEventFolder: string;
     DolphinAppData: string;
     DolphinReConstruct: string;
+    DolphinPrecedence: dtPrecedence;
 
     constructor Create();
     function GetDefaultSettingsFilename(): string;
@@ -56,6 +58,7 @@ begin
   DolphinEventFolder := 'c:\CTSDolphin\EventCSV';
   DolphinAppData := 'c:\CTSDolphin\AppData';
   DolphinReConstruct := 'c:\CTSDolphin\ReConstruct';
+  DolphinPrecedence := dtPrecHeader;
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in

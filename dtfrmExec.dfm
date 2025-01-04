@@ -810,7 +810,7 @@ object dtExec: TdtExec
         Color = 6445643
         ColCount = 6
         Ctl3D = True
-        DefaultRowHeight = 34
+        DefaultRowHeight = 46
         DrawingStyle = gdsClassic
         FixedColor = 3880234
         RowCount = 2
@@ -828,6 +828,7 @@ object dtExec: TdtExec
         TabOrder = 2
         StyleElements = [seFont, seBorder]
         HoverRowCells = [hcNormal, hcSelected]
+        OnGetDisplText = dtGridGetDisplText
         ActiveCellFont.Charset = DEFAULT_CHARSET
         ActiveCellFont.Color = 4474440
         ActiveCellFont.Height = -16
@@ -1044,13 +1045,14 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
             PrintFont.Height = -12
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
-            Width = 90
+            Width = 94
           end
           item
             Borders = []
@@ -1071,13 +1073,14 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
             PrintFont.Height = -12
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
-            Width = 90
+            Width = 94
           end
           item
             Borders = []
@@ -1098,13 +1101,14 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
             PrintFont.Height = -12
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
-            Width = 90
+            Width = 94
           end>
         DataSource = DTData.dsDTEntrant
         InvalidPicture.Data = {
@@ -1248,12 +1252,12 @@ object dtExec: TdtExec
           20
           34
           44
-          90
-          90
-          90)
+          94
+          94
+          94)
         RowHeights = (
           34
-          34)
+          46)
       end
       object pBar: TProgressBar
         Left = 15
