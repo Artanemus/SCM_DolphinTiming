@@ -15,10 +15,6 @@ implementation
 var
 seed: integer = 1;
 
-type
-dtFileType = (dtUnknown, dtDO3, dtDO4);
-
-
 function GetStringListChecksum(sl: TStringList; hashLength: Integer = 8): string;
 var
   fullHash: string;
@@ -131,80 +127,75 @@ begin
   end;
 end;
 
-procedure TestDataINDV(sl: TStringList; adtFileType: dtFileType);
+procedure ReConstructLanes(sl: TStringList; adtFileType: dtFileType; ADataSet: TDataSet);
 var
-  lanevalue: variant;
-  s, lane: string;
-  rt: TTime;
-  msec: double;
+  laneValue: Variant;
+  s, lane, dtstr: string;
+  rt: TDateTime;
+  fs: TFormatSettings;
 begin
-  if DTData.qryINDV.IsEmpty then exit;
+  if ADataSet.IsEmpty then exit;
 
-  DTData.qryINDV.first;
-  while not DTData.qryINDV.eof do
+  ADataSet.First;
+  fs := TFormatSettings.Create;
+
+  // Set the time format to nn:ss.zzz
+  // NOTE: No swimming race runs 1+ hours. Hours are not used.
+  fs.ShortTimeFormat := 'nn:ss.zzz';
+  fs.TimeSeparator := ':';
+  fs.DecimalSeparator := '.';
+
+  while not ADataSet.Eof do
   begin
     // lane data
-    laneValue := DTData.qryINDV.FieldByName('Lane').AsVariant;
+    laneValue := ADataSet.FieldByName('Lane').AsVariant;
     if not VarIsNull(laneValue) then
       lane := IntToStr(laneValue)
     else
-      lane := '0'; // or some default value
+      // SCM will always return a lane number.
+      // SCM uses lane numbers 1 to TotalNumOfLanes in swimming pool
+      // Safe to assign Dolphin Timing File with zero lane number.
+      // Does indicates a error but this code line will never be reached.
+      lane := '0'; // SAFE...
 
-    rt := TimeOf(DTData.qryINDV.FieldByName('RaceTime').AsDateTime);
-    msec := TimeToMilliseconds(rt) / 1000.00;
     case adtFileType of
-      dtUnknown: ;
-      dtDO3: ;
       dtDO4: lane := 'Lane' + lane;
     end;
 
-    if msec <> 0.0 then
-      s := lane + ';' + Format('%0.3f', [msec]) + ';;'
+    rt := TimeOf(ADataSet.FieldByName('RaceTime').AsDateTime);
+
+    if rt <> 0 then
+    begin
+      // Use FormatDateTime to format the time string
+      dtstr := FormatDateTime(fs.ShortTimeFormat, rt, fs);
+      // Dolphin Timing time format is terse.
+      // Remove leading zeros from the formatted time string
+      if dtstr.StartsWith('00:') then
+        dtstr := Copy(dtstr, 4, Length(dtstr) - 3) // Remove '00:'
+      else if dtstr.StartsWith('0') then
+        dtstr := Copy(dtstr, 2, Length(dtstr) - 1); // Remove '0'
+
+      // indicates no time given by TimeKeepers 2 and 3.
+      s := lane + ';' + dtstr + ';;'
+    end
     else
-      s := lane + ';;;'; // or some default value
+      // Dolphin Timing syntax -
+      // indicates no time given by TimeKeepers 1, 2 and 3.
+      s := lane + ';;;';
 
     sl.Add(s);
-    DTData.qryINDV.next;
+    ADataSet.Next;
   end;
 end;
 
-procedure TestDataTEAM(sl: TStringList; adtFileType: dtFileType);
-var
-lanevalue: variant;
-s, lane: string;
-rt: TTime;
-msec: double;
-seed: integer;
+procedure ReConstructINDV(sl: TStringList; adtFileType: dtFileType);
 begin
-  if DTData.qryTEAM.IsEmpty then exit;
-  seed := 1;
-  DTData.qryTEAM.first;
-  while not DTData.qryTEAM.eof do
-  begin
-    // lane data
-    laneValue := DTData.qryTEAM.FieldByName('Lane').AsVariant;
-    if not VarIsNull(laneValue) then
-      lane := IntToStr(laneValue)
-    else
-      lane := IntToStr(seed);
+  ReConstructLanes(sl,adtFileType, DTData.qryINDV);
+end;
 
-    rt := TimeOf(DTData.qryTEAM.FieldByName('RaceTime').AsDateTime);
-    msec := TimeToMilliseconds(rt) / 1000.00;
-    case adtFileType of
-      dtUnknown: ;
-      dtDO3: ;
-      dtDO4: lane := 'Lane' + lane;
-    end;
-
-    if msec <> 0.0 then
-      s := lane + ';' + Format('%8.3f', [msec]) + ';;'
-    else
-      s := lane + ';0.000;;'; // or some default value
-
-    sl.Add(s);
-    inc(seed);
-    DTData.qryTEAM.next;
-  end;
+procedure ReConstructTEAM(sl: TStringList; adtFileType: dtFileType);
+begin
+  ReConstructLanes(sl,adtFileType, DTData.qryTEAM);
 end;
 
 procedure ReConstructHeat(SessionID, eventNum: integer; gender: string;
@@ -256,9 +247,9 @@ begin
     sl.Add(s);
     // body - lanes and timekeepers times.
     if aEventType = etINDV then
-      TestDataINDV(sl, adtFileType)
+      ReConstructINDV(sl, adtFileType)
     else if aEventType = etTEAM then
-      TestDataTEAM(sl, adtFileType);
+      ReConstructTEAM(sl, adtFileType);
     // last line - footer. - checksum
     s := UpperCase(GetStringListChecksum(sl, 16));
     // ALT METHOD : THashSHA2.GetHashString(sl.Text, SHA256);

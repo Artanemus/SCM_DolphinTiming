@@ -546,17 +546,44 @@ begin
     PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
-procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
-    Value: string);
+procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value: string);
 var
   TimeValue: TDateTime;
+  Hour, Min, Sec, MSec: Word;
 begin
-  // Check if the cell contains the time value you want to format
-  if (ACol = 3) and (ARow > 0) and TryStrToTime(Value, TimeValue) then
+  {
+  // Ensure that we are not processing the header row
+  if ARow > 0 then
   begin
-    // Format the time value as nn:ss.zzz
-    Value := FormatDateTime('nn:ss.zzz', TimeValue);
+    // Check if the cell is in the column where you want to display the custom formatted TDateTime value
+    if ACol = 3 then // Adjust ACol to the correct column index
+    begin
+      // Ensure the dataset is in a valid state
+      if dtGrid.DataSource.DataSet.Active and (ARow <= dtGrid.DataSource.DataSet.RecordCount) then
+      begin
+        // Move the dataset to the correct record
+        dtGrid.DataSource.DataSet.RecNo := ARow;
+
+        // Get the time value from the dataset field
+        TimeValue := dtGrid.DataSource.DataSet.FieldByName('Time1').AsDateTime;
+        if (TimeValue <> 0) then
+        begin
+          // Decode the time value into hours, minutes, seconds, and milliseconds
+          DecodeTime(TimeValue, Hour, Min, Sec, MSec);
+
+          // Build the string in nn:ss.zzz format
+          Value := Format('%.2d:%.2d.%.3d', [Min, Sec, MSec]);
+
+          // Adjust the format if the time is less than one minute
+          if Min = 0 then
+            Value := Format('%.2d.%.3d', [Sec, MSec]);
+        end
+        else
+          Value := '';
+      end;
+    end;
   end;
+  }
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
@@ -893,7 +920,7 @@ begin
     lblSessionStart.Caption := ''
   else
   begin
-    s := 'SESS:' + IntToStr(DTData.qrysession.FieldByName('SessionID').AsInteger)
+    s := 'Session: ' + IntToStr(DTData.qrysession.FieldByName('SessionID').AsInteger)
       + sLineBreak;
     v := DTData.qrysession.FieldByName('SessionStart').AsVariant;
     if not VarIsNull(v) then

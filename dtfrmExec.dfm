@@ -1282,7 +1282,6 @@ object dtExec: TdtExec
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 4
-        OnClick = btnPrevEventClick
       end
     end
     object pnlTool2: TPanel

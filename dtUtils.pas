@@ -5,7 +5,7 @@ interface
 uses dmDTData, vcl.ComCtrls, Math, System.Types, System.IOUtils,
   SysUtils, Windows, StrUtils, System.Classes, SCMDefines;
 
-function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
+//function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 function StripAlphaChars(const InputStr: string): string;
 
 type
@@ -14,8 +14,8 @@ type
     type
       PTime = ^TTime;
     var
-      fSplits: array[0..9] of TTime;
-      fTimeKeepers: array[0..2] of TTime;
+      fSplits: array[0..9] of double;
+      fTimeKeepers: array[0..2] of double;
       fPrecedence: dtPrecedence;
       fSList: TStringList; // Header, Body(multi-line ... lanes) and Footer.
       fFileType: dtFileType; // dtUnknow,dtDO3, dtDO4
@@ -38,8 +38,8 @@ type
     function sListHeaderGenderChar(): char;
     { TStringList - BODY - ref: fSListIndex }
     function sListBodyLane(LineIndex: integer): integer;
-    function sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers: array of TTime): boolean;
-    function sListBodySplits(LineIndex: integer; var ASplits: array of TTime): boolean;
+    function sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers: array of double): boolean;
+    function sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
     { TStringList - FOOTER }
     function sListFooterHashStr(): string;
     { FILENAME EXTRACTION ROUTINES...}
@@ -60,6 +60,9 @@ type
     procedure ProcessEvent(SessionID: integer);
     procedure ProcessHeat(EventID: integer);
     procedure ProcessEntrant(HeatID: integer);
+
+    function TryParseCustomTime(const s: string; out ATimeValue: TDateTime): boolean;
+
 
   public
     procedure PrepareDTData();
@@ -104,6 +107,7 @@ begin
       Result := Result + Achar;
 end;
 
+{
 function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 var
 //  Seconds, Hundredths: integer;
@@ -117,7 +121,7 @@ begin
   // Handle empty string (no time provided)
 //  if DTTimeStr = '' then
 //    Exit(0);
-{
+
   // Find the position of the dot
   DotPos := Pos('.', DTTimeStr);
 
@@ -139,13 +143,12 @@ begin
     Seconds := StrToInt(DTTimeStr);
     TimeValue := Seconds / SecsPerDay;
   end;
-}
 
   fs := TFormatSettings.Create;
   if TryStrToTime(DTTimeStr, TimeValue, fs) then
     Result := TTime(TimeValue);
 end;
-
+}
 
 class operator TdtUtils.Finalize(var Dest: TdtUtils);
 begin
@@ -662,8 +665,8 @@ end;
 procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
   id, I, lane: integer;
-  j: integer;
-  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName: string;
+//  j: integer;
+//  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName: string;
   s: string;
   Found: boolean;
 begin
@@ -854,10 +857,75 @@ begin
   end;
 end;
 
-function TdtUtils.sListBodySplits(LineIndex: integer; var ASplits: array of TTime): boolean;
+function TdtUtils.TryParseCustomTime(const s: string; out ATimeValue: TDateTime): boolean;
+var
+  Minutes, Seconds, Milliseconds: word;
+  TimeParts: TArray<string>;
+begin
+  Result := False;
+  ATimeValue := 0;
+  Minutes := 0;
+  Seconds := 0;
+  Milliseconds := 0;
+  ATimeValue := 0;
+
+  if length(s) = 0 then exit;
+
+  // Check if the string contains ':'
+  if Pos(':', s) > 0 then
+  begin
+    // Split the string by the ':'
+    TimeParts := SplitString(s, ':');
+    if Length(TimeParts) = 2 then
+    begin
+      // Convert the minute part
+      Minutes := StrToIntDef(TimeParts[0], -1);
+      // Further split the seconds and optional milliseconds part by the '.'
+      TimeParts := SplitString(TimeParts[1], '.');
+      if Length(TimeParts) = 2 then
+      begin
+        // Convert the parts to integer values using StrToIntDef
+        Seconds := StrToIntDef(TimeParts[0], -1);
+        Milliseconds := StrToIntDef(TimeParts[1], -1);
+      end
+      else
+      begin
+        // Only seconds part
+        Seconds := StrToIntDef(TimeParts[0], -1);
+      end;
+    end;
+  end
+  else
+  begin
+    // Split the string by the '.'
+    TimeParts := SplitString(s, '.');
+    if Length(TimeParts) = 2 then
+    begin
+      // Convert the parts to integer values using StrToIntDef
+      Seconds := StrToIntDef(TimeParts[0], -1);
+      Milliseconds := StrToIntDef(TimeParts[1], -1);
+    end
+    else
+    begin
+      // Only seconds part
+      Seconds := StrToIntDef(s, -1);
+    end;
+  end;
+
+  // Validation not required.
+  // Create the TDateTime value
+  ATimeValue := EncodeTime(0, Minutes, Seconds, Milliseconds);
+  Result := True;
+end;
+
+function TdtUtils.sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
 var
   Fields: TArray<string>;
-  i: Integer;
+  i, j: Integer;
+  s: string;
+  Found: boolean;
+  ATimeValue: TDateTime;
+  fs: TFormatSettings;
 begin
 {
   Number of Splits – (1-10) Enter 1 to use the first time as the final time.
@@ -873,28 +941,50 @@ begin
   Example 3: A 200 yard race in a 25 yard pool would have a split count of 4.
 }
   result := false;
-  // Initialize splits
+  Found := false;
+  // fSplits: array[0..9] of TTime;  -  Initialize splits.
   for i := Low(ASplits) to High(ASplits) do ASplits[i] := 0;
   // Only DO4 captures split data?
   if not (fFileType = dtDO4) then exit;
-  // Split string by the ';' character
-  Fields := SplitString(fSList[LineIndex], ';');
+
+  fs := TFormatSettings.Create;
+  fs.TimeSeparator := ':';
+  fs.DecimalSeparator := '.';
+
   // Field[0] - lane number
   // Field[1] ... [3] - timekeepers data.
-  // Fiels[4] - split data index
+  // Fiels[4] ... [14] - split-time data.
+
+  // Split string by the ';' character
+  Fields := SplitString(fSList[LineIndex], ';');
   // Extract split data.
   if Length(Fields) > 4 then
   begin
-    for i := 4 to Length(Fields) - 1 do  // ignore Fields[0] = lane number.
+    for i := 4 to Length(Fields) - 1 do
     begin
       if Length(Fields[i]) > 0 then
       begin
-        if i <= High(ASplits) then // trap array index overrun
-          ASplits[i] := ConvertDTTimeToTime(Fields[i])
+          s := Fields[I];
+          if s <> '' then
+          begin
+            // Try to parse the time
+            if TryParseCustomTime(s, ATimeValue) then
+            begin
+              // Calculate the ASplit index.
+              j := i-4;
+              // trap array out-of-bounds error.
+              if (j >= Low(ASplits)) and (j <= High(ASplits)) then
+              begin
+                ASplits[j] := ATimeValue;
+                Found := true;
+              end;
+           end;
+          end
       end;
     end;
   end;
-  result := true;
+  if Found then
+    result := true;
 end;
 
 function TdtUtils.sListBodyLane(LineIndex: integer): integer;
@@ -914,43 +1004,52 @@ begin
     result := StrToIntDef(s, 0); // Extract the lane as an integer
 end;
 
-function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;var ATimeKeepers: array of TTime): boolean;
+function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;var ATimeKeepers: array of double): boolean;
 var
   Fields: TArray<string>;
   i: integer;
   ATimeValue: TDateTime;
-  fs: TFormatSettings;
   s: string;
+  Found: boolean;
+//  Hour, Min, Sec, MSec: word;
 begin
   // Note: Dolphin Timing allows for three timekeepers.
   // Fields[0] = lane number.
   // Fields[1], Fields[2], Fields[3] - TimeKeepers data in DTTime format.
   // examples.  DO4 - 'Lane1;55.98;;' ...  DO3 - '1;95.25;;'
   result := false;
-  fs := TFormatSettings.Create;
+  Found := false;
+
+
+  // Using LineIndex, get the TStringList[...] string.
   // Split string by the ';' character
+  s := fSList[LineIndex];
   Fields := SplitString(fSList[LineIndex], ';');
-  // Initialize timekeepers
+  // Initialize timekeepers - zero indicates no race time recorded
   for I := Low(ATimeKeepers) to High(ATimeKeepers) do
     ATimeKeepers[I] := 0;
   // Extract timekeepers data.
-  // ignore Fields[0]. this field has the lane number. lane number.
   // Fields[4] and beyond are split-times.
 
-  if Length(Fields) > 0 then
+  for I := 1 to 3 do
   begin
-    s := Fields[1];
-    if s <> '' then
+    if Length(Fields) > I then
     begin
-      if TryStrToTime(s, ATimeValue, fs) then
-        ATimeKeepers[0] := ATimeValue;
-    end
+      s := Fields[I];
+      if s <> '' then
+      begin
+          // Try to parse the time
+          if TryParseCustomTime(s, ATimeValue) then
+          begin
+//            DecodeTime(ATimeValue, Hour, Min, Sec, MSec);
+            ATimeKeepers[I-1] := ATimeValue;
+            Found := true;
+          end;
+      end
+    end;
   end;
-  if Length(Fields) > 1 then
-    ATimeKeepers[1] := ConvertDTTimeToTime(Fields[2]);
-  if Length(Fields) > 2 then
-    ATimeKeepers[2] := ConvertDTTimeToTime(Fields[3]);
-  result := true;
+  if Found then
+    result := true;
 end;
 
 

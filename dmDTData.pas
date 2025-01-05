@@ -692,6 +692,9 @@ begin
   tblDTEntrant.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
   tblDTEntrant.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
   tblDTEntrant.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
+  tblDTEntrant.FieldDefs.Add('Time1Str', ftTime); // timekeeper 1.
+  tblDTEntrant.FieldDefs.Add('Time2Str', ftTime); // timekeeper 2.
+  tblDTEntrant.FieldDefs.Add('Time3Str', ftTime);  // timekeeper 3.
   // tmtimeMode = tmManualDisabled, tmMaualenabled, tmAutoDisabled, tmAutoEnabled.
   tblDTEntrant.FieldDefs.Add('Time1Mode', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time2Mode', ftInteger);
@@ -715,6 +718,16 @@ begin
   tblDTEntrant.FieldDefs.Add('Split8', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split9', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split10', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split1Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split2Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split3Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split4Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split5Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split6Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split7Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split8Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split9Str', ftTime); // DO4.
+  tblDTEntrant.FieldDefs.Add('Split10Str', ftTime); // DO4.
   tblDTEntrant.CreateDataSet;
 {$IFDEF DEBUG}
   // save schema ...

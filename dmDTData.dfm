@@ -11183,6 +11183,8 @@ object DTData: TDTData
     DetailFields = 'HeatID'
     FetchOptions.AssignedValues = [evMode, evItems, evCache]
     FetchOptions.Mode = fmAll
+    FormatOptions.AssignedValues = [fvFmtDisplayTime]
+    FormatOptions.FmtDisplayTime = 'nn:ss.zzz'
     ResourceOptions.AssignedValues = [rvPersistent, rvSilentMode]
     ResourceOptions.Persistent = True
     ResourceOptions.SilentMode = True
