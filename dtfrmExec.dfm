@@ -828,7 +828,6 @@ object dtExec: TdtExec
         TabOrder = 2
         StyleElements = [seFont, seBorder]
         HoverRowCells = [hcNormal, hcSelected]
-        OnGetDisplText = dtGridGetDisplText
         ActiveCellFont.Charset = DEFAULT_CHARSET
         ActiveCellFont.Color = 4474440
         ActiveCellFont.Height = -16
@@ -1282,6 +1281,7 @@ object dtExec: TdtExec
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 4
+        OnClick = btnPickDTFileClick
       end
     end
     object pnlTool2: TPanel

@@ -16,7 +16,6 @@ object TreeViewSCM: TTreeViewSCM
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
-  OnShow = FormShow
   TextHeight = 21
   object TV: TTreeView
     Left = 0

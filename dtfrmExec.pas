@@ -95,11 +95,10 @@ type
     procedure btnDataDebugClick(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
+    procedure btnPickDTFileClick(Sender: TObject);
     procedure btnPickEventClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
-    procedure dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
-        string);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormHide(Sender: TObject);
@@ -150,7 +149,7 @@ implementation
 {$R *.dfm}
 
 uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM,
-  dlgDataDebug;
+  dlgDataDebug, dtTreeViewDT;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -428,11 +427,64 @@ begin
 end;
 
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
+var
+  sessNum, evNum, htNum: integer;
+  maxHtNum, maxEvNum, maxSessNum: integer;
 begin
-    if not DTData.dsDTEvent.DataSet.EOF then
+  if fPrecedence = dtPrecFileName then
+  begin
+    sessNum := DTData.dsDTSession.DataSet.FieldByName('fnSessionNum').AsInteger;
+    evNum := DTData.dsDTEvent.DataSet.FieldByName('fnEventNum').AsInteger;
+    htNum := DTData.dsDTHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
+  end
+  else
+  begin
+    sessNum := DTData.dsDTSession.DataSet.FieldByName('SessionNum').AsInteger;
+    evNum := DTData.dsDTEvent.DataSet.FieldByName('EventNum').AsInteger;
+    htNum := DTData.dsDTHeat.DataSet.FieldByName('HeatNum').AsInteger;
+  end;
+
+  maxHtNum := 99;
+  maxEvNum := 99;
+  maxSessNum := 99;
+
+  // CNTRL+SHIFT - quick key to move to NEXT S E S S I O N .
+  if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_SHIFT) < 0) then
+  begin
+    // no other sessions.
+    if (sessNum = maxSessNum) then exit;
+
+    DTData.dsDTSession.DataSet.next;
+    DTData.dsDTEvent.DataSet.first;
+    DTData.dsDTHeat.DataSet.first;
+  end
+  // CNTRL- quick key to move to NEXT E V E N T .
+  else if (GetKeyState(VK_CONTROL) < 0) then
+  begin
+    { After reaching the last record a second click of btnNextDTFileClick is needed to
+      recieve a Eof. Checking for max event number removes this UI nonsence.}
+    if DTData.dsdtEvent.DataSet.Eof or  (evNum = maxEvNum) then
     begin
-      DTData.dsDTEvent.DataSet.next;
+      DTData.dsdtEvent.DataSet.next;
+      DTData.dsdtHeat.DataSet.First;
     end;
+  end
+  // move to N E X T   H E A T .
+  else
+  begin
+    { After reaching the last record a second click of btnNextDTFileClick is needed to
+      recieve a Eof. Checking for max heat number removes this UI nonsence.}
+    if DTData.dsdtHeat.DataSet.Eof or (htNum = maxHtNum) then
+    begin
+      DTData.dsdtEvent.DataSet.next;
+      DTData.dsdtHeat.DataSet.First;
+    end
+    else
+    begin
+      DTData.dsdtHeat.DataSet.next;
+    end;
+  end;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.btnNextEventClick(Sender: TObject);
@@ -466,6 +518,56 @@ begin
     end;
   end;
   PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+end;
+
+procedure TdtExec.btnPickDTFileClick(Sender: TObject);
+var
+dlg: TTreeViewDT;
+sess, ev, ht: integer;
+mr: TModalResult;
+found: boolean;
+begin
+
+  // Open the SCM TreeView.
+  dlg := TTreeViewDT.Create(Self);
+
+  sess := DTData.dsdtSession.DataSet.FieldByName('SessionID').AsInteger;
+  ev := DTData.dsdtEvent.DataSet.FieldByName('EventID').AsInteger;
+  ht := DTData.dsdtHeat.DataSet.FieldByName('HeatID').AsInteger;
+  dlg.Prepare(sess, ev, ht);
+  mr := dlg.ShowModal;
+
+    // CUE-TO selected TreeView item ...
+  if IsPositiveResult(mr) then
+  begin
+    DTData.dsdtHeat.DataSet.DisableControls;
+    DTData.dsdtEvent.DataSet.DisableControls;
+    DTData.dsdtSession.DataSet.DisableControls;
+
+    if (dlg.SelectedSessionID <> 0) then
+    begin
+      found := DTData.LocatedtSessionID(dlg.SelectedSessionID);
+      if found then
+      begin
+        if (dlg.SelectedEventID <> 0) then
+        begin
+          found := DTData.LocatedtEventID(dlg.SelectedEventID);
+          if found then
+          begin
+            if (dlg.SelectedHeatID <> 0) then
+              DTData.LocateDTHeatID(dlg.SelectedHeatID);
+          end;
+        end;
+      end;
+    end;
+    DTData.dsdtSession.DataSet.EnableControls;
+    DTData.dsEvent.DataSet.EnableControls;
+    DTData.dsHeat.DataSet.EnableControls;
+    // Update UI controls ...
+    PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+  end;
+  dlg.Free;
+
 end;
 
 procedure TdtExec.btnPickEventClick(Sender: TObject);
@@ -510,11 +612,58 @@ begin
 end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
+var
+  minSessNum, sessNum, evNum, htNum: integer;
 begin
-  if not DTData.dsdtEvent.DataSet.Bof then
+
+  minSessNum := 1;
+
+  if fPrecedence = dtPrecFileName then
   begin
-      DTData.dsdtEvent.DataSet.prior;
+    sessNum := DTData.dsDTSession.DataSet.FieldByName('fnSessionNum').AsInteger;
+    evNum := DTData.dsDTEvent.DataSet.FieldByName('fnEventNum').AsInteger;
+    htNum := DTData.dsDTHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
+  end
+  else
+  begin
+    sessNum := DTData.dsDTSession.DataSet.FieldByName('SessionNum').AsInteger;
+    evNum := DTData.dsDTEvent.DataSet.FieldByName('EventNum').AsInteger;
+    htNum := DTData.dsDTHeat.DataSet.FieldByName('HeatNum').AsInteger;
   end;
+
+  // CNTRL+SHIFT - quick key to move to previous session.
+  if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_SHIFT) < 0) then
+  begin
+    // reached bottom of table ...
+    if DTData.dsDTSession.DataSet.BOF then exit;
+    DTData.dsDTSession.DataSet.prior;
+    DTData.dsDTEvent.DataSet.first;
+    DTData.dsDTHeat.DataSet.first;
+  end
+  // CNTRL move to previous event ...
+  else if (GetKeyState(VK_CONTROL) < 0) then
+  begin
+    if DTData.dsDTEvent.DataSet.BOF or (evNum = 1) then
+    begin
+      DTData.dsDTSession.DataSet.prior;
+      DTData.dsDTEvent.DataSet.first;
+    end
+    else
+      DTData.dsDTEvent.DataSet.prior;
+  end
+  else
+  begin
+    { After reaching the first record a second click of btnPrevDTFileClick is needed to
+      recieve a Bof. Checking for heatnum = 1 removes this UI nonsence.}
+    if DTData.dsDTHeat.DataSet.BOF or (htNum = 1) then
+    begin
+      DTData.dsDTEvent.DataSet.prior;
+      DTData.dsDTHeat.DataSet.Last;
+    end
+    else
+      DTData.dsDTHeat.DataSet.prior;
+  end;
+  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
 procedure TdtExec.btnPrevEventClick(Sender: TObject);
@@ -544,46 +693,6 @@ begin
       end;
     end;
     PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
-end;
-
-procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value: string);
-var
-  TimeValue: TDateTime;
-  Hour, Min, Sec, MSec: Word;
-begin
-  {
-  // Ensure that we are not processing the header row
-  if ARow > 0 then
-  begin
-    // Check if the cell is in the column where you want to display the custom formatted TDateTime value
-    if ACol = 3 then // Adjust ACol to the correct column index
-    begin
-      // Ensure the dataset is in a valid state
-      if dtGrid.DataSource.DataSet.Active and (ARow <= dtGrid.DataSource.DataSet.RecordCount) then
-      begin
-        // Move the dataset to the correct record
-        dtGrid.DataSource.DataSet.RecNo := ARow;
-
-        // Get the time value from the dataset field
-        TimeValue := dtGrid.DataSource.DataSet.FieldByName('Time1').AsDateTime;
-        if (TimeValue <> 0) then
-        begin
-          // Decode the time value into hours, minutes, seconds, and milliseconds
-          DecodeTime(TimeValue, Hour, Min, Sec, MSec);
-
-          // Build the string in nn:ss.zzz format
-          Value := Format('%.2d:%.2d.%.3d', [Min, Sec, MSec]);
-
-          // Adjust the format if the time is less than one minute
-          if Min = 0 then
-            Value := Format('%.2d.%.3d', [Sec, MSec]);
-        end
-        else
-          Value := '';
-      end;
-    end;
-  end;
-  }
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);

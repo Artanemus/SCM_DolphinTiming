@@ -15,11 +15,10 @@ type
   TIdentData = class(TObject)
   private
     FID: integer; // EventID or HeatID - rootNode or SubNode
-    FValue: Integer;  // EventNum or HeatNum - rootNode or SubNode
+    FValue: integer; // EventNum or HeatNum.
   public
-    constructor Create(AID: integer; AValue: Integer);
+    constructor Create(AID: integer; AValue: integer);
     property ID: Integer read FID write FID;
-    property Value: Integer read FValue write FValue;
   end;
 
 
@@ -38,7 +37,6 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure FormShow(Sender: TObject);
     procedure TVDblClick(Sender: TObject);
   private
     { Private declarations }
@@ -68,10 +66,10 @@ implementation
 {$R *.dfm}
 
 { TIdentData }
-constructor TIdentData.Create(AID: integer; AValue: Integer);
+constructor TIdentData.Create(AID: integer; AValue: integer);
 begin
-  FID := AID;
-  FValue := AValue;
+  FID := AID; // Identifier ...  eg EventID, HEATID.
+  FValue := AValue; // EventNum or HeatNum ...
 end;
 
 procedure TTreeViewSCM.btnCancelClick(Sender: TObject);
@@ -173,11 +171,6 @@ begin
   end;
 end;
 
-procedure TTreeViewSCM.FormShow(Sender: TObject);
-begin
-//  TreeView.FullExpand;
-end;
-
 procedure TTreeViewSCM.LocateEventID(AEventID: integer);
 var
   Node, ChildNode: TTreeNode;
@@ -244,7 +237,7 @@ begin
   while Node <> nil do
   begin
     obj := Node.Data;
-    if (obj <> nil) and (obj.FValue = EventNum) then
+    if (obj <> nil) and (obj.FID= EventNum) then
     begin
       Found := True;
       break;
@@ -258,7 +251,7 @@ begin
     while Node <> nil do
     begin
       obj := Node.Data;
-      if (obj <> nil) and (obj.FValue = HeatNum) then
+      if (obj <> nil) and (obj.FID = HeatNum) then
       begin
         // Expand the parent node if it's collapsed
         if not Node.Parent.Expanded then
@@ -290,9 +283,8 @@ begin
     i := qryEvent.FieldByName('StrokeID').AsInteger;
     j := qryEvent.FieldByName('EventNum').AsInteger;
     id := qryEvent.FieldByName('EventID').AsInteger;
-    { CREATE NODE }
+    { CREATE NODE : EventID, EventNum.}
     ident := TIdentData.Create(id, j); // object to hold event and even number.
-//    IdentList.Add(ident); // add object to local list.
     Node := TV.Items.AddObject(nil, s, ident); // assign data ptr.
 
     if (qryEvent.FieldByName('EventTypeID').AsInteger = 1) then
@@ -346,8 +338,8 @@ begin
       j := qryHeat.FieldByName('HeatStatusID').AsInteger;
       id := qryHeat.FieldByName('HeatID').AsInteger;
 
-      { CREATE SUBNODE }
-      ident := TIdentData.Create(id, i); // object to hold event and even number.
+      { CREATE SUBNODE : HeatID, HeatNum.}
+      ident := TIdentData.Create(id, i);
       subnode := TV.Items.AddChildObject(Node, s, ident);
 
       // ICON ORDERED heat numbers ...
@@ -380,7 +372,7 @@ end;
 procedure TTreeViewSCM.Prepare(AConnectionID: TFDConnection;
   ASessionID, AEventID, AHeatID: integer);
 var
-node: TTreeNode;
+  node: TTreeNode;
 begin
   if Assigned(AConnectionID) then
   begin

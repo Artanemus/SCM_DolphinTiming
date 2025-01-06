@@ -101,6 +101,7 @@ type
     function LocateEvent(AEventID: integer): boolean;
     function LocateHeat(AHeatID: integer): boolean;
     function LocateDTSessionID(ASessionID: integer): boolean;
+    function LocateDTEventID(AEventID: integer): boolean;
     function LocateDTHeatID(AHeatID: integer): boolean;
     function LocateNearestSession(aDate: TDateTime): integer;
 
@@ -111,6 +112,7 @@ type
 
     function GetNumberOfHeats(AEventID: integer): integer;
     function GetRoundABBREV(AEventID: integer): string;
+
     property IsActive: Boolean read fDTDataIsActive write fDTDataIsActive;
     property ActiveSessionID: integer read GetActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
@@ -296,6 +298,17 @@ begin
   if VarIsNull(v) or VarIsEmpty(v) then exit;
   result := v;
 
+end;
+
+function TDTData.LocateDTEventID(AEventID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not tblDTHeat.Active then exit;
+  if (AEventID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
 end;
 
 function TDTData.LocateDTHeatID(AHeatID: integer): boolean;

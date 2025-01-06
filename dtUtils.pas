@@ -635,7 +635,7 @@ begin
       // Derived from TStringList HEADER - first line of text - common
       i := sListHeaderHeatNum();
       DTData.tblDTHeat.fieldbyName('HeatNum').AsInteger := i;
-      DTData.tblDTHeat.fieldbyName('Caption').AsString := 'Heat Number: ' + IntToStr(i);
+      DTData.tblDTHeat.fieldbyName('Caption').AsString := 'Heat: ' + IntToStr(i);
       // Time stamp of file - created by Dolphin Timing system on write of file.
       DTData.tblDTHeat.fieldbyName('CreatedDT').AsDateTime := fCreatedDT;
       // FileName includes file extension.    (.DO3, .DO4)
