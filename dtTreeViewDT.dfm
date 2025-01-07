@@ -12,6 +12,7 @@ object TreeViewDT: TTreeViewDT
   Font.Name = 'Segoe UI'
   Font.Style = []
   KeyPreview = True
+  Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown

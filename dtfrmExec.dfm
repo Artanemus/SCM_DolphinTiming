@@ -767,9 +767,9 @@ object dtExec: TdtExec
       TabOrder = 2
       object dbtxtDTFileName: TDBText
         Left = 16
-        Top = 1
+        Top = 3
         Width = 449
-        Height = 41
+        Height = 39
         Alignment = taCenter
         DataField = 'FileName'
         DataSource = DTData.dsDTHeat

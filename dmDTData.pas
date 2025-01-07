@@ -87,24 +87,56 @@ type
     procedure EnableDTMasterDetail();
     procedure DisableDTMasterDetail();
 
-    // Look for Dolphin Timing session number given :
-    // - in the filename  fn_FileName()
-    // - or in the file's text : line one (Header) sListHeaderSessionNum()
+    // S P E C I A L  L O C A T E S  F O R  P R O C E S S  D T  F I L E .
+    // .......................................................
+    // WARNING : DisableDTMasterDetail() before calling here.
+    // USED ONLY BY TdtUtils.ProcessSession.
     function LocateDT_SessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
         boolean;
+    // WARNING : DisableDTMasterDetail() before calling here.
+    // USED ONLY BY TdtUtils.ProcessEvent.
     function LocateDT_EventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
         boolean;
+    // WARNING : DisableDTMasterDetail() before calling here.
+    // USED ONLY BY TdtUtils.ProcessHeat.
     function LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
         boolean;
+    // .......................................................
 
+
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected SwimClub if SCM SessionID is visible.
     function LocateSession(ASessionID: integer): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected session if SCM EventID is visible.
     function LocateEvent(AEventID: integer): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected event if SCM HeatID is visible.
     function LocateHeat(AHeatID: integer): boolean;
+
     function LocateDTSessionID(ASessionID: integer): boolean;
+    // WARNING : Master-Detail enabled... DT EventID may not be visible.
     function LocateDTEventID(AEventID: integer): boolean;
+    // WARNING : Master-Detail enabled... DT HeatID may not be visible.
     function LocateDTHeatID(AHeatID: integer): boolean;
+
     function LocateNearestSession(aDate: TDateTime): integer;
 
+    // Dependant on dtPrecedence setting.
+    // This is a clone of function LocateDT_SessionNum.
+    // Improves code readbility.
+    function CueDTtoSessionNum(SessionNum: integer; Aprecedence: dtPrecedence): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on dtPrecedence setting.
+    // Dependant on selected session.
+    function CueDTtoEventNum(EventNum: integer; Aprecedence: dtPrecedence): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on dtPrecedence setting.
+    // Dependant on selected event.
+    function CueDTtoHeatNum(HeatNum: integer; Aprecedence: dtPrecedence): boolean;
+
+
+    // WARNING : DisableDTMasterDetail() before calling MaxID routines.
     function MaxID_Session():integer;
     function MaxID_Event(): integer;
     function MaxID_Heat(): integer;
@@ -147,6 +179,9 @@ end;
 
 procedure TDTData.EnableDTMasterDetail();
 begin
+  // Master - index field.
+  tblDTSession.IndexFieldNames := 'SessionID';
+
   // ASSERT Master - Detail
   tblDTEvent.MasterSource := dsDTSession;
   tblDTEvent.MasterFields := 'SessionID';
@@ -338,7 +373,8 @@ function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; APrecedence:
 var
   indexStr: string;
 begin
-  // ensure DisableDTMasterDetail();
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessEvent.
   result := false;
   // Exit if the table is not active or if AEventNum is 0
   if not tbldtEvent.Active then exit;
@@ -386,7 +422,8 @@ function TDTData.LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence:
 var
   indexStr: string;
 begin
-  // ensure DisableDTMasterDetail();
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessHeat.
   result := false;
   // Exit if the table is not active or if AHeatNum is 0
   if not tbldtHeat.Active then exit;
@@ -422,7 +459,8 @@ function TDTData.LocateDT_SessionNum(ASessionNum: integer; Aprecedence:
 var
   indexStr: string;
 begin
-  // ensure DisableDTMasterDetail();
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessSession
   result := false;
   if not tbldtSession.Active then exit;
   if ASessionNum = 0 then exit;
@@ -773,8 +811,60 @@ begin
   tblDTNoodle.SaveToFile('C:\Users\Ben\Documents\GitHub\SCM_DolphinTiming\DTDataNoodle.xml');
 {$ENDIF}
 
+end;
 
+function TDTData.CueDTtoEventNum(EventNum: integer; Aprecedence: dtPrecedence): boolean;
+var
+  indexStr: string;
+begin
+  result := false;
+  if not tbldtEvent.Active then exit;
+  if EventNum = 0 then exit;
+  // Store the original index field names
+  indexStr := tbldtEvent.IndexFieldNames;
+  if (EventNum = 0) then exit;
+  // Master - Detail : IndexFieldNames = 'SessionID'
+  tbldtEvent.IndexFieldNames := 'EventID';
+  if (Aprecedence = dtPrecFileName) then
+    result := tbldtEvent.Locate('fnEventNum', EventNum, [])
+  else if (Aprecedence = dtPrecHeader) then
+    result := tbldtEvent.Locate('EventNum', EventNum, []);
+  // Restore the original index field names
+  tbldtEvent.IndexFieldNames := indexStr;
+end;
 
+function TDTData.CueDTtoHeatNum(HeatNum: integer; Aprecedence: dtPrecedence): boolean;
+var
+  indexStr: string;
+begin
+  result := false;
+  if not tbldtHeat.Active then exit;
+  if HeatNum = 0 then exit;
+  // Store the original index field names
+  indexStr := tbldtHeat.IndexFieldNames;
+  if (HeatNum = 0) then exit;
+  // Master - Detail : IndexFieldNames = 'EventID'
+  tbldtHeat.IndexFieldNames := 'HeatID';
+  if (Aprecedence = dtPrecFileName) then
+    result := tbldtHeat.Locate('fnHeatNum', HeatNum, [])
+  else if (Aprecedence = dtPrecHeader) then
+    result := tbldtHeat.Locate('HeatNum', HeatNum, []);
+  // Restore the original index field names
+  tbldtHeat.IndexFieldNames := indexStr;
+end;
+
+function TDTData.CueDTtoSessionNum(SessionNum: integer; Aprecedence: dtPrecedence): boolean;
+
+begin
+  result := false;
+  if not tbldtSession.Active then exit;
+  if SessionNum = 0 then exit;
+  if (SessionNum = 0) then exit;
+  tbldtSession.IndexFieldNames := 'SessionID'; // ASSERT : DEFAULT
+  if (Aprecedence = dtPrecFileName) then
+    result := tbldtSession.Locate('fnSessionNum', SessionNum, [])
+  else if (Aprecedence = dtPrecHeader) then
+    result := tbldtSession.Locate('SessionNum', SessionNum, []);
 end;
 
 procedure TDTData.DataModuleCreate(Sender: TObject);

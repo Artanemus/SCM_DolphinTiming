@@ -53,19 +53,22 @@ type
 
   private
     { Private declarations }
-    FSelectedSessionID: integer;
-    FSelectedEventID: integer;
-    FSelectedHeatID: integer;
+    FSelectedSessionNum: integer;
+    FSelectedEventNum: integer;
+    FSelectedHeatNum: integer;
     FSelectedFileName: string;
     fPrecedence: dtPrecedence;
     procedure FreeTreeViewData;
     procedure PopulateTree;
+    function CueTVtoSessionNum(ASessionNum: integer): boolean;
+    function CueTVtoEventNum(AEventNum: integer): boolean;
+    function CueTVtoHeatNum(AHeatNum: integer): boolean;
 
   public
-    procedure Prepare(ASessionID, AEventID, AHeatID: integer);
-    property SelectedSessionID: integer read FSelectedSessionID;
-    property SelectedEventID: integer read FSelectedEventID;
-    property SelectedHeatID: integer read FSelectedHeatID;
+    procedure Prepare(ASessionNum, AEventNum, AHeatNum: integer);
+    property SelectedSessionNum: integer read FSelectedSessionNum;
+    property SelectedEventNum: integer read FSelectedEventNum;
+    property SelectedHeatNum: integer read FSelectedHeatNum;
 
 
   end;
@@ -90,9 +93,9 @@ end;
 
 procedure TTreeViewDT.btnCancelClick(Sender: TObject);
 begin
-    FSelectedSessionID := 0;
-    FSelectedEventID := 0;
-    FSelectedHeatID := 0;
+    FSelectedSessionNum := 0;
+    FSelectedEventNum := 0;
+    FSelectedHeatNum := 0;
     FSelectedFileName := '';
     ModalResult := mrCancel;
 end;
@@ -102,115 +105,196 @@ var
 node, nodeSess, nodeEv, nodeHt, nodeLane: TTreeNode;
 obj : TTVDTData;
 begin
-  FSelectedSessionID := 0;
-  FSelectedEventID := 0;
-  FSelectedHeatID := 0;
+  FSelectedSessionNum := 0;
+  FSelectedEventNum := 0;
+  FSelectedHeatNum := 0;
 
   node := TV.Selected;
-
-  if (node <> nil) then
+  if (node = nil) then
   begin
-    case node.level of
-    0: { ROOT NODE - LEVEL 0 - SESSION}
+    ModalResult := mrCancel;
+    exit;
+  end;
+
+  case node.level of
+  0: { ROOT NODE - LEVEL 0 - SESSION}
+    begin
+      obj := node.Data;
+      if (obj <> nil) then
       begin
-        obj := node.Data;
-        if (obj <> nil) then
+        // S e s s i o n .
+        FSelectedSessionNum := obj.FValue;
+        nodeEv := node.getFirstChild;
+        if (nodeEv <> nil) then
         begin
-          // S e s s i o n .
-          FSelectedSessionID := obj.FID;
-          nodeEv := node.getFirstChild;
-          if (nodeEv <> nil) then
+          obj := nodeEv.Data;
+          if (obj <> nil) then
           begin
-            obj := nodeEv.Data;
-            if (obj <> nil) then
+            // E v e n t .
+            FSelectedEventNum := obj.FValue;
+            nodeHt := nodeEv.getFirstChild;
+            if (nodeHt <> nil) then
             begin
-              // E v e n t .
-              FSelectedEventID := obj.FID;
-              nodeHt := nodeEv.getFirstChild;
-              if (nodeHt <> nil) then
+              obj := nodeHt.Data;
+              if (obj <> nil) then
               begin
-                obj := nodeHt.Data;
-                if (obj <> nil) then
-                begin
-                  // H e a t .
-                  FSelectedHeatID := obj.FID;
-                end;
+                // H e a t .
+                FSelectedHeatNum := obj.FValue;
               end;
             end;
           end;
         end;
       end;
-
-    1: { LEVEL 1 NODE - EVENT}
-       begin
-        obj := node.Data;
-        if (obj <> nil) then
-        begin
-          // E v e n t .
-          FSelectedEventID := obj.FID;
-          if (node.Parent <> nil) then
-          begin
-            nodeSess := TTreeNode(node.Parent);
-            obj := nodeSess.Data;
-            if (obj <> nil) then
-            begin
-              // S e s s i o n .
-              FSelectedSessionID := obj.FID;
-            end;
-          end;
-          nodeHt := node.getFirstChild;
-          if (nodeHt <> nil) then
-          begin
-            obj := nodeHt.Data;
-            if (obj <> nil) then
-            begin
-              // H e a t .
-              FSelectedHeatID := obj.FID;
-            end;
-          end;
-        end;
-      end;
-
-    2: { LEVEL 2 NODE - HEAT}
-       begin
-        obj := node.Data;
-        if (obj <> nil) then
-        begin
-          // H e a t .
-          FSelectedHeatID := obj.FID;
-          if (node.Parent <> nil) then
-          begin
-            nodeEv := TTreeNode(node.Parent);
-            obj := nodeEv.Data;
-            if (obj <> nil) then
-            begin
-              // E v e n t .
-              FSelectedEventID := obj.FID;
-              if (nodeEv.Parent <> nil) then
-              begin
-                nodeSess := TTreeNode(nodeEv.Parent);
-                obj := nodeSess.Data;
-                if (obj <> nil) then
-                begin
-                  // S e s s i o n .
-                  FSelectedSessionID := obj.FID;
-                end;
-              end;
-            end;
-          end;
-        end;
-      end
     end;
+
+  1: { LEVEL 1 NODE - EVENT}
+     begin
+      obj := node.Data;
+      if (obj <> nil) then
+      begin
+        // E v e n t .
+        FSelectedEventNum := obj.FValue;
+        if (node.Parent <> nil) then
+        begin
+          nodeSess := TTreeNode(node.Parent);
+          obj := nodeSess.Data;
+          if (obj <> nil) then
+          begin
+            // S e s s i o n .
+            FSelectedSessionNum := obj.FValue;
+          end;
+        end;
+        nodeHt := node.getFirstChild;
+        if (nodeHt <> nil) then
+        begin
+          obj := nodeHt.Data;
+          if (obj <> nil) then
+          begin
+            // H e a t .
+            FSelectedHeatNum := obj.FValue;
+          end;
+        end;
+      end;
+    end;
+
+  2: { LEVEL 2 NODE - HEAT}
+     begin
+      obj := node.Data;
+      if (obj <> nil) then
+      begin
+        // H e a t .
+        FSelectedHeatNum := obj.FValue;
+        if (node.Parent <> nil) then
+        begin
+          nodeEv := TTreeNode(node.Parent);
+          obj := nodeEv.Data;
+          if (obj <> nil) then
+          begin
+            // E v e n t .
+            FSelectedEventNum := obj.FValue;
+            if (nodeEv.Parent <> nil) then
+            begin
+              nodeSess := TTreeNode(nodeEv.Parent);
+              obj := nodeSess.Data;
+              if (obj <> nil) then
+              begin
+                // S e s s i o n .
+                FSelectedSessionNum := obj.FValue;
+              end;
+            end;
+          end;
+        end;
+      end;
+    end
   end;
 
   ModalResult := mrOk;
 end;
 
+function TTreeViewDT.CueTVtoEventNum(AEventNum: integer): boolean;
+var
+  NodeSess, NodeEv: TTreeNode;
+  obj: TTVDTData;
+begin
+  Result := False; // Initialize the result as False
+  NodeSess := TV.Items.GetFirstNode; // Start with the first level 0 node
+
+  while NodeSess <> nil do
+  begin
+    NodeEv := NodeSess.GetFirstChild; // Get the first child of the current level 0 node
+    while NodeEv <> nil do
+    begin
+      obj := TTVDTData(NodeEv.Data);
+      if (obj <> nil) and (obj.FValue = AEventNum) then
+      begin
+        Result := True; // Found the node with the matching event number
+        Exit; // Exit the function immediately since we've found the match
+      end;
+      NodeEv := NodeEv.GetNextSibling; // Move to the next sibling (level 1 node)
+    end;
+    NodeSess := NodeSess.GetNextSibling; // Move to the next level 0 node
+  end;
+end;
+
+function TTreeViewDT.CueTVtoHeatNum(AHeatNum: integer): boolean;
+var
+  NodeSess, NodeEv, NodeHt: TTreeNode;
+  obj: TTVDTData;
+begin
+  Result := False; // Initialize the result as False
+  NodeSess := TV.Items.GetFirstNode; // Start with the first level 0 node
+
+  // Iterate over all level 0 nodes (sessions)
+  while NodeSess <> nil do
+  begin
+    NodeEv := NodeSess.GetFirstChild; // Get the first child of the current level 0 node (events)
+
+    // Iterate over all level 1 nodes (events) under the current level 0 node (session)
+    while NodeEv <> nil do
+    begin
+      NodeHt := NodeEv.GetFirstChild; // Get the first child of the current level 1 node (heats)
+
+      // Iterate over all level 2 nodes (heats) under the current level 1 node (event)
+      while NodeHt <> nil do
+      begin
+        obj := TTVDTData(NodeHt.Data); // Cast the Data property to TTVDTData
+        if (obj <> nil) and (obj.FValue = AHeatNum) then // Check if the node data matches the target heat number
+        begin
+          Result := True; // Set the result to True if a matching node is found
+          Exit; // Exit the function immediately since we've found the match
+        end;
+        NodeHt := NodeHt.GetNextSibling; // Move to the next sibling (level 2 node)
+      end;
+      NodeEv := NodeEv.GetNextSibling; // Move to the next sibling (level 1 node)
+    end;
+    NodeSess := NodeSess.GetNextSibling; // Move to the next sibling (level 0 node)
+  end;
+end;
+
+function TTreeViewDT.CueTVtoSessionNum(ASessionNum: integer): boolean;
+var
+  NodeSess: TTreeNode;
+  obj: TTVDTData;
+begin
+  Result := False; // Initialize the result as False
+  NodeSess := TV.Items.GetFirstNode;
+  while (NodeSess <> nil) do
+  begin
+    obj := TTVDTData(NodeSess.Data);
+    if (obj <> nil) and (obj.FValue = ASessionNum) then
+    begin
+      Result := True; // Found the node with the matching session number
+      Break;
+    end;
+    NodeSess := NodeSess.GetNextSibling; // Iterate only over level 0 nodes
+  end;
+end;
+
 procedure TTreeViewDT.FormCreate(Sender: TObject);
 begin
-    FSelectedSessionID := 0;
-    FSelectedEventID := 0;
-    FSelectedHeatID := 0;
+    FSelectedSessionNum := 0;
+    FSelectedEventNum := 0;
+    FSelectedHeatNum := 0;
     FSelectedFileName := '';;
     // remove all design-time layout items.
     TV.Items.Clear;
@@ -229,9 +313,9 @@ procedure TTreeViewDT.FormKeyDown(Sender: TObject; var Key: Word; Shift:
 begin
   if Key = VK_ESCAPE then
   begin
-    fSelectedSessionID := 0;
-    FSelectedEventID := 0;
-    FSelectedHeatID := 0;
+    FSelectedSessionNum := 0;
+    FSelectedEventNum := 0;
+    FSelectedHeatNum := 0;
     fSelectedFileName := '';
     ModalResult := mrCancel;
   end;
@@ -261,7 +345,7 @@ begin
     Settings.SaveToFile();
   end;
   Settings.LoadFromFile();
-  LoadFromSettings();
+  LoadSettings();
 end;
 
 procedure TTreeViewDT.LoadSettings;
@@ -371,21 +455,17 @@ procedure TTreeViewDT.PopulateTree;
 var
   nodeSess, nodeEv, nodeHt: TTreeNode;
   s: string;
-  i, id, storeSess, storeEv, storeHt: integer;
+  i, id: integer;
   ident: TTVDTData;
 
 begin
   { p o p u l a t e   t h e   T r e e V i e w . . .
     TABLES HAVE MASTER-DETAIL RELATIONSHIP
   }
-  DTData.tblDTEntrant.DisableControls;
-  DTData.tblDTHeat.DisableControls;
-  DTData.tblDTEvent.DisableControls;
-  DTData.tblDTSession.DisableControls;
-
-  storeSess := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
-  storeEv := DTData.tblDTEvent.FieldByName('EventID').AsInteger;
-  storeHt := DTData.tblDTHeat.FieldByName('HeatID').AsInteger;
+//  DTData.tblDTEntrant.DisableControls;
+//  DTData.tblDTHeat.DisableControls;
+//  DTData.tblDTEvent.DisableControls;
+//  DTData.tblDTSession.DisableControls;
 
   // R O O T   N O D E    -   LEVEL 0 - S E S S I O N   . . .
   DTData.tblDTSession.First;
@@ -458,35 +538,37 @@ begin
     DTData.tblDTSession.Next;
   end;
 
-  // restore location
-  if DTData.LocateDTSessionID(storeSess) then
-    if DTData.LocateDTEventID(storeEv) then
-      DTData.LocateDTHeatID(storeht);
-
-  DTData.tblDTSession.EnableControls;
-  DTData.tblDTEvent.EnableControls;
-  DTData.tblDTHeat.EnableControls;
-  DTData.tblDTEntrant.EnableControls;
+//  DTData.tblDTSession.EnableControls;
+//  DTData.tblDTEvent.EnableControls;
+//  DTData.tblDTHeat.EnableControls;
+//  DTData.tblDTEntrant.EnableControls;
 
 
 end;
 
 
-procedure TTreeViewDT.Prepare(ASessionID, AEventID, AHeatID: integer);
+procedure TTreeViewDT.Prepare(ASessionNum, AEventNum, AHeatNum: integer);
 var
   node: TTreeNode;
+  found: boolean;
 begin
   if not Assigned(DTData) then exit;
   if not DTData.IsActive then exit;
   // File the tree view with nodes deom the Dolphin Timing data tables.
   PopulateTree;
   // Attempt to cue-to-node ... order is important.
-  if (AHeatID <> 0) then
-    LocateTVHeatID(AHeatID)
-  else if (AEventID <> 0) then
-    LocateTVEventID(AEventID)
-  else if (ASessionID <> 0) then
-    LocateTVSessionID(ASessionID)
+  if (ASessionNum <> 0) then
+  begin
+    found := CueTVtoSessionNum(ASessionNum);
+    if found and (AEventNum <> 0) then
+    begin
+      found := CueTVtoEventNum(AEventNum);
+      if found and (AHeatNum <> 0) then
+      begin
+        CueTVtoHeatNum(AHeatNum);
+      end;
+    end;
+  end
   else
   begin
     node := TV.Items.GetFirstNode;

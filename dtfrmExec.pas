@@ -409,12 +409,12 @@ begin
 end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
-var
-  ASessionID, AEventNum: integer;
+//var
+//  ASessionID, AEventNum: integer;
 begin
-  ASessionID := DTData.dsSession.DataSet.FieldByName('SessionID').AsInteger;
-  AEventNum := DTData.dsEvent.DataSet.FieldByName('EventID').AsInteger;
-  DTData.LocateDT_EventNum(ASessionID, AEventNum, fPrecedence);
+{ SCM.sessionID <> DT.SessionID.
+  SCM.sessionID = DT.SessionNum or DT.fnSessionNum based on fPrecedence.
+}
 end;
 
 procedure TdtExec.btnDataDebugClick(Sender: TObject);
@@ -523,7 +523,7 @@ end;
 procedure TdtExec.btnPickDTFileClick(Sender: TObject);
 var
 dlg: TTreeViewDT;
-sess, ev, ht: integer;
+sessNum, evNum, htNum: integer;
 mr: TModalResult;
 found: boolean;
 begin
@@ -531,40 +531,52 @@ begin
   // Open the SCM TreeView.
   dlg := TTreeViewDT.Create(Self);
 
-  sess := DTData.dsdtSession.DataSet.FieldByName('SessionID').AsInteger;
-  ev := DTData.dsdtEvent.DataSet.FieldByName('EventID').AsInteger;
-  ht := DTData.dsdtHeat.DataSet.FieldByName('HeatID').AsInteger;
-  dlg.Prepare(sess, ev, ht);
-  mr := dlg.ShowModal;
+  sessNum := DTData.dsdtSession.DataSet.FieldByName('SessionID').AsInteger;
+  evNum := DTData.dsdtEvent.DataSet.FieldByName('EventNum').AsInteger;
+  htNum := DTData.dsdtHeat.DataSet.FieldByName('HeatNum').AsInteger;
 
-    // CUE-TO selected TreeView item ...
+  // DT TreeView will attemp to cue-to-node based on params.
+  dlg.Prepare(sessNum, evNum, htNum);
+  mr := dlg.ShowModal;
+  // A TreeView node was selected.
   if IsPositiveResult(mr) then
   begin
+    { NOTE: DT session pick by the user may differ from the current
+      SCM session being operated on. }
+
     DTData.dsdtHeat.DataSet.DisableControls;
     DTData.dsdtEvent.DataSet.DisableControls;
     DTData.dsdtSession.DataSet.DisableControls;
-
-    if (dlg.SelectedSessionID <> 0) then
+    // Attempt to cue-to-data in Dolphin Timing tables.
+    if (dlg.SelectedSessionNum <> 0) then
     begin
-      found := DTData.LocatedtSessionID(dlg.SelectedSessionID);
+      // CUE-TO-RECORD in Dolphin Timing data tables.
+      // Master-Detail enabled : Order of operation is important.
+      found := DTData.CueDTtoSessionNum(dlg.SelectedSessionNum, fPrecedence);
       if found then
       begin
-        if (dlg.SelectedEventID <> 0) then
+        if (dlg.SelectedEventNum <> 0) then
         begin
-          found := DTData.LocatedtEventID(dlg.SelectedEventID);
+          // Master-Detail enabled.
+          found := DTData.CueDTtoEventNum(dlg.SelectedEventNum, fPrecedence);
           if found then
           begin
-            if (dlg.SelectedHeatID <> 0) then
-              DTData.LocateDTHeatID(dlg.SelectedHeatID);
+            if (dlg.SelectedHeatNum <> 0) then
+              // Master-Detail enabled.
+              DTData.CueDTtoHeatNum(dlg.SelectedHeatNum, fPrecedence);
+              DTData.tblDTEntrant.First;
           end;
         end;
       end;
     end;
+    // Update the Dolphin Timing TDBAdvGrid.
     DTData.dsdtSession.DataSet.EnableControls;
     DTData.dsEvent.DataSet.EnableControls;
     DTData.dsHeat.DataSet.EnableControls;
+
     // Update UI controls ...
     PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+
   end;
   dlg.Free;
 
