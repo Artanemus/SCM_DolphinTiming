@@ -344,6 +344,8 @@ begin
   if (AEventID = 0) then exit;
   SearchOptions := [];
   result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
+  if result then
+    dsdtHeat.DataSet.Refresh;
 end;
 
 function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
@@ -366,6 +368,11 @@ begin
   if (ASessionID = 0) then exit;
   SearchOptions := [];
   result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+  if result then
+  begin
+    dsdtEvent.DataSet.Refresh;
+    dsdtHeat.DataSet.Refresh;
+  end;
 end;
 
 function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; APrecedence:
@@ -646,10 +653,6 @@ begin
   tblDTSession.FieldDefs.Add('SessionNum', ftInteger);
   // Derived from filename : Last three digits of SCM qrySession.SessionID.
   tblDTSession.FieldDefs.Add('fnSessionNum', ftInteger);
-  // Derived from filename : matches SCM qryEvent.EventNum.
-  tblDTSession.FieldDefs.Add('fnEventNum', ftInteger);
-  // Derived from filename : matches SCM qryHeat.HeatNum.
-  tblDTSession.FieldDefs.Add('fnHeatNum', ftInteger);
   // file creation date  - produced by Dolphin timing when file was saved.
   tblDTSession.FieldDefs.Add('SessionStart', ftDateTime);
   // TimeStamp - Now.
@@ -739,22 +742,23 @@ begin
   tblDTEntrant.FieldDefs.Add('Caption', ftString, 64); // Summary of status/mode
   tblDTEntrant.FieldDefs.Add('AutoTime', ftBoolean); // Auto-Calc best racetime.
   tblDTEntrant.FieldDefs.Add('CalcTime', ftTime); // Swimmers calculated racetime.
+  // NOODLE or PATCH cable .
   tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
+  // User manually selecting TimeKeeper's race-times to use - OR - Auto
+  tblDTEntrant.FieldDefs.Add('imgAuto', ftInteger); // index in DTData.vimglistDTGrid.
+  // TimeKeeper's RACE_TIMES - 1,2, 3  (DT allows for 3 TimeKeepers.)
   tblDTEntrant.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
   tblDTEntrant.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
   tblDTEntrant.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
-  tblDTEntrant.FieldDefs.Add('Time1Str', ftTime); // timekeeper 1.
-  tblDTEntrant.FieldDefs.Add('Time2Str', ftTime); // timekeeper 2.
-  tblDTEntrant.FieldDefs.Add('Time3Str', ftTime);  // timekeeper 3.
-  // tmtimeMode = tmManualDisabled, tmMaualenabled, tmAutoDisabled, tmAutoEnabled.
+  // Time Mode = ENABLED - DISABLED - EMPTY?
   tblDTEntrant.FieldDefs.Add('Time1Mode', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time2Mode', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time3Mode', ftInteger);
-  // tmtimeModeerr = tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty.
+  // Time Error = tmeUnknowErr, tmeBADTime, tmeExceedsDeviation, tmeEmpty.
   tblDTEntrant.FieldDefs.Add('Time1Err', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time2Err', ftInteger);
   tblDTEntrant.FieldDefs.Add('Time3Err', ftInteger);
-  // calculated deviation for each timekeeper based on average
+  // calculated deviation for each timekeeper's time - based on average
   tblDTEntrant.FieldDefs.Add('Deviation1', ftTime); // deviation from average time1
   tblDTEntrant.FieldDefs.Add('Deviation2', ftTime); // deviation from average time2
   tblDTEntrant.FieldDefs.Add('Deviation3', ftTime); // deviation from average time3
@@ -768,17 +772,8 @@ begin
   tblDTEntrant.FieldDefs.Add('Split7', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split8', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split9', ftTime); // DO4.
+  // Last split can also represent TimeKeeper 4.
   tblDTEntrant.FieldDefs.Add('Split10', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split1Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split2Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split3Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split4Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split5Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split6Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split7Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split8Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split9Str', ftTime); // DO4.
-  tblDTEntrant.FieldDefs.Add('Split10Str', ftTime); // DO4.
   tblDTEntrant.CreateDataSet;
 {$IFDEF DEBUG}
   // save schema ...
@@ -816,19 +811,23 @@ end;
 function TDTData.CueDTtoEventNum(EventNum: integer; Aprecedence: dtPrecedence): boolean;
 var
   indexStr: string;
+  ASessionID: integer;
+  SearchOptions: TLocateOptions;
 begin
   result := false;
   if not tbldtEvent.Active then exit;
   if EventNum = 0 then exit;
   // Store the original index field names
   indexStr := tbldtEvent.IndexFieldNames;
-  if (EventNum = 0) then exit;
+  tbldtEvent.Refresh;
+  ASessionID := tbldtSession.FieldByName('SessionID').AsInteger;
   // Master - Detail : IndexFieldNames = 'SessionID'
-  tbldtEvent.IndexFieldNames := 'EventID';
+  tbldtEvent.IndexFieldNames := 'sessId;EventID';
+  SearchOptions := [];
   if (Aprecedence = dtPrecFileName) then
-    result := tbldtEvent.Locate('fnEventNum', EventNum, [])
-  else if (Aprecedence = dtPrecHeader) then
-    result := tbldtEvent.Locate('EventNum', EventNum, []);
+    result := tbldtEvent.Locate('fnEventNum', EventNum, SearchOptions)
+  else
+    result := tbldtEvent.Locate('EventNum', EventNum, SearchOptions);
   // Restore the original index field names
   tbldtEvent.IndexFieldNames := indexStr;
 end;
@@ -836,41 +835,45 @@ end;
 function TDTData.CueDTtoHeatNum(HeatNum: integer; Aprecedence: dtPrecedence): boolean;
 var
   indexStr: string;
+  SearchOptions: TLocateOptions;
 begin
   result := false;
   if not tbldtHeat.Active then exit;
   if HeatNum = 0 then exit;
   // Store the original index field names
   indexStr := tbldtHeat.IndexFieldNames;
-  if (HeatNum = 0) then exit;
   // Master - Detail : IndexFieldNames = 'EventID'
   tbldtHeat.IndexFieldNames := 'HeatID';
+  SearchOptions := [];
   if (Aprecedence = dtPrecFileName) then
-    result := tbldtHeat.Locate('fnHeatNum', HeatNum, [])
-  else if (Aprecedence = dtPrecHeader) then
-    result := tbldtHeat.Locate('HeatNum', HeatNum, []);
+    result := tbldtHeat.Locate('fnHeatNum', HeatNum, SearchOptions)
+  else
+    result := tbldtHeat.Locate('HeatNum', HeatNum, SearchOptions);
   // Restore the original index field names
   tbldtHeat.IndexFieldNames := indexStr;
 end;
 
 function TDTData.CueDTtoSessionNum(SessionNum: integer; Aprecedence: dtPrecedence): boolean;
-
+var
+  SearchOptions: TLocateOptions;
 begin
   result := false;
   if not tbldtSession.Active then exit;
   if SessionNum = 0 then exit;
   if (SessionNum = 0) then exit;
   tbldtSession.IndexFieldNames := 'SessionID'; // ASSERT : DEFAULT
+  SearchOptions := [];
   if (Aprecedence = dtPrecFileName) then
-    result := tbldtSession.Locate('fnSessionNum', SessionNum, [])
+    result := tbldtSession.Locate('fnSessionNum', SessionNum, SearchOptions)
   else if (Aprecedence = dtPrecHeader) then
-    result := tbldtSession.Locate('SessionNum', SessionNum, []);
+    result := tbldtSession.Locate('SessionNum', SessionNum, SearchOptions);
 end;
 
 procedure TDTData.DataModuleCreate(Sender: TObject);
 begin
   // MAKE LIVE THE DOLPHIN TIMING TABLES
   tblDTSession.Active := true;
+  tblDTSession.IndexFieldNames := 'SessionID';
 
   // Master - Detail
   tblDTEvent.Active := true;

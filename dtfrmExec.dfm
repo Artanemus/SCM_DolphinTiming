@@ -3,7 +3,7 @@ object dtExec: TdtExec
   Top = 0
   BorderStyle = bsSingle
   Caption = 'SwimClubMeet - Dolphin Timing.'
-  ClientHeight = 743
+  ClientHeight = 801
   ClientWidth = 1330
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -41,7 +41,7 @@ object dtExec: TdtExec
     Left = 0
     Top = 25
     Width = 1330
-    Height = 718
+    Height = 776
     ControlCollection = <
       item
         Control = pnlTool1
@@ -85,15 +85,16 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 718
     DesignSize = (
       1330
-      718)
+      776)
     object pnlTool1: TPanel
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 144
-      Height = 712
+      Height = 770
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 0
@@ -210,15 +211,15 @@ object dtExec: TdtExec
       Left = 153
       Top = 3
       Width = 525
-      Height = 712
+      Height = 770
       BevelOuter = bvNone
       Color = 5988209
       ParentBackground = False
       TabOrder = 1
       object lblEventDetails: TLabel
         Left = 0
-        Top = 0
-        Width = 450
+        Top = 28
+        Width = 497
         Height = 64
         Alignment = taCenter
         AutoSize = False
@@ -234,7 +235,7 @@ object dtExec: TdtExec
       end
       object btnNextEvent: TButton
         Left = 0
-        Top = 655
+        Top = 683
         Width = 498
         Height = 50
         Caption = 'NEXT'
@@ -243,7 +244,7 @@ object dtExec: TdtExec
       end
       object btnPrevEvent: TButton
         Left = 0
-        Top = 70
+        Top = 98
         Width = 434
         Height = 50
         Caption = 'PREVIOUS'
@@ -252,7 +253,7 @@ object dtExec: TdtExec
       end
       object scmGrid: TDBAdvGrid
         Left = 0
-        Top = 126
+        Top = 154
         Width = 498
         Height = 523
         Cursor = crDefault
@@ -745,7 +746,7 @@ object dtExec: TdtExec
       end
       object btnPickEvent: TButton
         Left = 440
-        Top = 70
+        Top = 98
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
@@ -761,15 +762,15 @@ object dtExec: TdtExec
       Left = 684
       Top = 3
       Width = 482
-      Height = 712
+      Height = 770
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 2
       object dbtxtDTFileName: TDBText
         Left = 16
-        Top = 3
+        Top = 19
         Width = 449
-        Height = 39
+        Height = 31
         Alignment = taCenter
         DataField = 'FileName'
         DataSource = DTData.dsDTHeat
@@ -780,9 +781,25 @@ object dtExec: TdtExec
         Font.Style = []
         ParentFont = False
       end
+      object lblDTDetails: TLabel
+        Left = 16
+        Top = 56
+        Width = 449
+        Height = 36
+        Alignment = taCenter
+        AutoSize = False
+        Caption = 'Session - Event - Heat'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -19
+        Font.Name = 'Segoe UI'
+        Font.Style = []
+        ParentFont = False
+        Layout = tlCenter
+      end
       object btnPrevDTFile: TButton
         Left = 15
-        Top = 71
+        Top = 99
         Width = 385
         Height = 49
         Caption = 'PREVIOUS'
@@ -791,7 +808,7 @@ object dtExec: TdtExec
       end
       object btnNextDTFile: TButton
         Left = 16
-        Top = 655
+        Top = 683
         Width = 449
         Height = 50
         Caption = 'NEXT'
@@ -800,7 +817,7 @@ object dtExec: TdtExec
       end
       object dtGrid: TDBAdvGrid
         Left = 16
-        Top = 126
+        Top = 154
         Width = 449
         Height = 523
         Cursor = crDefault
@@ -1260,7 +1277,7 @@ object dtExec: TdtExec
       end
       object pBar: TProgressBar
         Left = 15
-        Top = 55
+        Top = 739
         Width = 449
         Height = 9
         Position = 50
@@ -1273,7 +1290,7 @@ object dtExec: TdtExec
       end
       object btnPickDTFile: TButton
         Left = 406
-        Top = 70
+        Top = 98
         Width = 58
         Height = 50
         DisabledImages = DTData.vimglistDTEvent
@@ -1289,7 +1306,7 @@ object dtExec: TdtExec
       Left = 1172
       Top = 3
       Width = 144
-      Height = 712
+      Height = 770
       Anchors = []
       BevelOuter = bvNone
       Color = clDimgray
@@ -1302,6 +1319,7 @@ object dtExec: TdtExec
         Width = 144
         Height = 457
         Align = alTop
+        BevelOuter = bvNone
         ControlCollection = <
           item
             Control = sbtnSync
@@ -1327,25 +1345,27 @@ object dtExec: TdtExec
         Spacing = 4
         TabOrder = 0
         object sbtnSync: TSpeedButton
-          Left = 1
-          Top = 1
+          Left = 0
+          Top = 0
           Width = 128
           Height = 41
           Action = actnSyncDT
+          Caption = 'SYNC'
           Images = DTData.vimglistMenu
         end
         object spbtnPost: TSpeedButton
-          Left = 1
-          Top = 46
-          Width = 104
+          Left = 0
+          Top = 45
+          Width = 128
           Height = 41
           Action = actnPost
+          Caption = 'POST'
           Images = DTData.vimglistMenu
         end
         object ShapeSpacer: TShape
           AlignWithMargins = True
           Left = 11
-          Top = 97
+          Top = 96
           Width = 121
           Height = 4
           Margins.Top = 6
@@ -1354,7 +1374,7 @@ object dtExec: TdtExec
         end
         object btnRefresh: TButton
           Left = 19
-          Top = 111
+          Top = 110
           Width = 106
           Height = 41
           Caption = 'Refresh'
@@ -1362,16 +1382,17 @@ object dtExec: TdtExec
         end
         object btnClose: TButton
           Left = 19
-          Top = 156
+          Top = 155
           Width = 106
           Height = 41
           Caption = 'Close'
           ModalResult = 8
           TabOrder = 1
+          Visible = False
         end
         object btnDataDebug: TButton
           Left = 17
-          Top = 201
+          Top = 200
           Width = 109
           Height = 40
           Caption = 'Data Debug'
@@ -1454,12 +1475,6 @@ object dtExec: TdtExec
                 Caption = '&Sync DT'
                 ImageIndex = 4
                 ImageName = 'Sync'
-              end
-              item
-                Action = actnConnect
-                Caption = '&Connect'
-                ImageIndex = 5
-                ImageName = 'link'
               end
               item
                 Action = actnPost
@@ -1547,12 +1562,14 @@ object dtExec: TdtExec
     object actnSaveSession: TAction
       Category = 'File'
       Caption = 'Save DT Session ...'
+      Enabled = False
       ImageIndex = 1
       ImageName = 'file_saveAlt'
     end
     object actnLoadSession: TAction
       Category = 'File'
       Caption = 'Load DT Session ...'
+      Enabled = False
       ImageIndex = 0
       ImageName = 'file_open'
     end

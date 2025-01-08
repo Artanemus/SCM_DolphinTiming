@@ -81,6 +81,7 @@ type
     btnPickDTFile: TButton;
     actnSelectSwimClub: TAction;
     btnDataDebug: TButton;
+    lblDTDetails: TLabel;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnImportDO4Execute(Sender: TObject);
@@ -122,6 +123,7 @@ type
     procedure UpdateCaption();
     procedure UpdateSessionStartLabel();
     procedure UpdateEventDetailsLabel();
+    procedure UpdateDTDetailsLabel();
     procedure DeleteFilesWithWildcard(const APath, APattern: string);
     procedure ReconstructAndExportFiles(fileExtension: string; messageText: string);
 
@@ -131,6 +133,7 @@ type
 
   protected
     procedure MSG_UpdateUI(var Msg: TMessage); message SCM_UPDATEUI;
+    procedure MSG_UpdateUI2(var Msg: TMessage); message SCM_UPDATEUI2;
     procedure MSG_SelectSession(var Msg: TMessage); message SCM_SELECTSESSION;
 
   public
@@ -484,7 +487,7 @@ begin
       DTData.dsdtHeat.DataSet.next;
     end;
   end;
-  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+  PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
 end;
 
 procedure TdtExec.btnNextEventClick(Sender: TObject);
@@ -527,15 +530,24 @@ sessNum, evNum, htNum: integer;
 mr: TModalResult;
 found: boolean;
 begin
-
   // Open the SCM TreeView.
   dlg := TTreeViewDT.Create(Self);
-
-  sessNum := DTData.dsdtSession.DataSet.FieldByName('SessionID').AsInteger;
-  evNum := DTData.dsdtEvent.DataSet.FieldByName('EventNum').AsInteger;
-  htNum := DTData.dsdtHeat.DataSet.FieldByName('HeatNum').AsInteger;
+  // Params to cue-to-record in DT TreeView.
+  if fPrecedence = dtPrecFileName then
+  begin
+    sessNum := DTData.dsdtSession.DataSet.FieldByName('fnSessionNum').AsInteger;
+    evNum := DTData.dsdtEvent.DataSet.FieldByName('fnEventNum').AsInteger;
+    htNum := DTData.dsdtHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
+  end
+  else
+  begin
+    sessNum := DTData.dsdtSession.DataSet.FieldByName('SessionNum').AsInteger;
+    evNum := DTData.dsdtEvent.DataSet.FieldByName('EventNum').AsInteger;
+    htNum := DTData.dsdtHeat.DataSet.FieldByName('HeatNum').AsInteger;
+  end;
 
   // DT TreeView will attemp to cue-to-node based on params.
+
   dlg.Prepare(sessNum, evNum, htNum);
   mr := dlg.ShowModal;
   // A TreeView node was selected.
@@ -568,14 +580,14 @@ begin
           end;
         end;
       end;
-    end;
-    // Update the Dolphin Timing TDBAdvGrid.
-    DTData.dsdtSession.DataSet.EnableControls;
-    DTData.dsEvent.DataSet.EnableControls;
-    DTData.dsHeat.DataSet.EnableControls;
+      // Update the Dolphin Timing TDBAdvGrid.
+      DTData.dsdtSession.DataSet.EnableControls;
+      DTData.dsEvent.DataSet.EnableControls;
+      DTData.dsHeat.DataSet.EnableControls;
 
-    // Update UI controls ...
-    PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+      // Update UI controls ...
+      PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+    end;
 
   end;
   dlg.Free;
@@ -625,20 +637,16 @@ end;
 
 procedure TdtExec.btnPrevDTFileClick(Sender: TObject);
 var
-  minSessNum, sessNum, evNum, htNum: integer;
+  evNum, htNum: integer;
 begin
-
-  minSessNum := 1;
 
   if fPrecedence = dtPrecFileName then
   begin
-    sessNum := DTData.dsDTSession.DataSet.FieldByName('fnSessionNum').AsInteger;
     evNum := DTData.dsDTEvent.DataSet.FieldByName('fnEventNum').AsInteger;
     htNum := DTData.dsDTHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
   end
   else
   begin
-    sessNum := DTData.dsDTSession.DataSet.FieldByName('SessionNum').AsInteger;
     evNum := DTData.dsDTEvent.DataSet.FieldByName('EventNum').AsInteger;
     htNum := DTData.dsDTHeat.DataSet.FieldByName('HeatNum').AsInteger;
   end;
@@ -675,7 +683,7 @@ begin
     else
       DTData.dsDTHeat.DataSet.prior;
   end;
-  PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+  PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
 end;
 
 procedure TdtExec.btnPrevEventClick(Sender: TObject);
@@ -750,6 +758,7 @@ begin
       begin
         dtUtils.PrepareDTData;
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+        PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
       end;
   end;
 
@@ -892,6 +901,11 @@ begin
 
 end;
 
+procedure TdtExec.MSG_UpdateUI2(var Msg: TMessage);
+begin
+    UpdateDTDetailsLabel;
+end;
+
 procedure TdtExec.Prepare(AConnection: TFDConnection);
 begin
   FConnection := AConnection;
@@ -989,6 +1003,48 @@ begin
     if Length(s) > 0 then s2 := s2 + ' ' + s;
     Caption := s2;
   end;
+end;
+
+procedure TdtExec.UpdateDTDetailsLabel;
+var
+i: integer;
+s: string;
+begin
+  lblDTDetails.caption := '';
+
+  if DTData.tblDTSession.IsEmpty then exit;
+  s := 'Session ID: ';
+  if fPrecedence = dtPrecFileName then
+    i := DTData.tblDTSession.FieldByName('fnSessionNum').AsInteger
+  else
+    i := DTData.tblDTSession.FieldByName('SessionNum').AsInteger;
+  s := s + IntToStr(i);
+
+  if DTData.tblDTEvent.IsEmpty then
+  begin
+    lblDTDetails.caption := s;
+    exit;
+  end;
+  s := s + '  Event #: ';
+  if fPrecedence = dtPrecFileName then
+    i := DTData.tblDTEvent.FieldByName('fnEventNum').AsInteger
+  else
+    i := DTData.tblDTEvent.FieldByName('EventNum').AsInteger;
+  s := s + IntToStr(i);
+
+  if DTData.tblDTHeat.IsEmpty then
+  begin
+    lblDTDetails.caption := s;
+    exit;
+  end;
+  s := s + '  Heat #: ';
+  if fPrecedence = dtPrecFileName then
+    i := DTData.tblDTHeat.FieldByName('fnHeatNum').AsInteger
+  else
+    i := DTData.tblDTHeat.FieldByName('HeatNum').AsInteger;
+  s := s + IntToStr(i);
+  lblDTDetails.caption := s;
+
 end;
 
 procedure TdtExec.UpdateEventDetailsLabel;

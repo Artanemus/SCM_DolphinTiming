@@ -58,6 +58,12 @@ type
     FSelectedHeatNum: integer;
     FSelectedFileName: string;
     fPrecedence: dtPrecedence;
+
+    // Snapshot of the current position in the DTData tables.
+    // NOTE: lane is ignored.
+    // Assignment occurs in Populate tree.
+    storeSessID, storeEvID, storeHtID: integer;
+
     procedure FreeTreeViewData;
     procedure PopulateTree;
     function CueTVtoSessionNum(ASessionNum: integer): boolean;
@@ -102,7 +108,7 @@ end;
 
 procedure TTreeViewDT.btnCloseClick(Sender: TObject);
 var
-node, nodeSess, nodeEv, nodeHt, nodeLane: TTreeNode;
+node, nodeSess, nodeEv, nodeHt: TTreeNode;
 obj : TTVDTData;
 begin
   FSelectedSessionNum := 0;
@@ -219,16 +225,24 @@ begin
   Result := False; // Initialize the result as False
   NodeSess := TV.Items.GetFirstNode; // Start with the first level 0 node
 
-  while NodeSess <> nil do
+  while (NodeSess <> nil) do
   begin
     NodeEv := NodeSess.GetFirstChild; // Get the first child of the current level 0 node
-    while NodeEv <> nil do
+    while (NodeEv <> nil) do
     begin
       obj := TTVDTData(NodeEv.Data);
-      if (obj <> nil) and (obj.FValue = AEventNum) then
+      if (obj <> nil) then
       begin
-        Result := True; // Found the node with the matching event number
-        Exit; // Exit the function immediately since we've found the match
+        if (obj.FValue = AEventNum) then
+        begin
+          // Expand the parent node if it's collapsed
+          if not NodeSess.Expanded then
+            NodeSess.Expanded := True;
+          TV.Selected := NodeEv;
+          NodeEv.Focused := true;
+          Result := True; // Found the node with the matching event number
+          Exit; // Exit the function immediately since we've found the match
+        end;
       end;
       NodeEv := NodeEv.GetNextSibling; // Move to the next sibling (level 1 node)
     end;
@@ -245,23 +259,31 @@ begin
   NodeSess := TV.Items.GetFirstNode; // Start with the first level 0 node
 
   // Iterate over all level 0 nodes (sessions)
-  while NodeSess <> nil do
+  while (NodeSess <> nil) do
   begin
     NodeEv := NodeSess.GetFirstChild; // Get the first child of the current level 0 node (events)
 
     // Iterate over all level 1 nodes (events) under the current level 0 node (session)
-    while NodeEv <> nil do
+    while (NodeEv <> nil) do
     begin
       NodeHt := NodeEv.GetFirstChild; // Get the first child of the current level 1 node (heats)
 
       // Iterate over all level 2 nodes (heats) under the current level 1 node (event)
-      while NodeHt <> nil do
+      while (NodeHt <> nil) do
       begin
         obj := TTVDTData(NodeHt.Data); // Cast the Data property to TTVDTData
-        if (obj <> nil) and (obj.FValue = AHeatNum) then // Check if the node data matches the target heat number
+        if (obj <> nil) then // Check if the node data matches the target heat number
         begin
-          Result := True; // Set the result to True if a matching node is found
-          Exit; // Exit the function immediately since we've found the match
+          if (obj.FValue = AHeatNum) then
+          begin
+            // Expand the parent node if it's collapsed
+            if not NodeEv.Expanded then
+              NodeEv.Expanded := True;
+            TV.Selected := NodeHt;
+            NodeHt.Focused := true;
+            Result := True; // Set the result to True if a matching node is found
+            Exit; // Exit the function immediately since we've found the match
+          end;
         end;
         NodeHt := NodeHt.GetNextSibling; // Move to the next sibling (level 2 node)
       end;
@@ -281,10 +303,13 @@ begin
   while (NodeSess <> nil) do
   begin
     obj := TTVDTData(NodeSess.Data);
-    if (obj <> nil) and (obj.FValue = ASessionNum) then
+    if (obj <> nil) then
     begin
-      Result := True; // Found the node with the matching session number
-      Break;
+      if (obj.FValue = ASessionNum)  then
+      begin
+        Result := True; // Found the node with the matching session number
+        Break;
+      end;
     end;
     NodeSess := NodeSess.GetNextSibling; // Iterate only over level 0 nodes
   end;
@@ -455,17 +480,20 @@ procedure TTreeViewDT.PopulateTree;
 var
   nodeSess, nodeEv, nodeHt: TTreeNode;
   s: string;
-  i, id: integer;
+  i, idsess, idev, idht: integer;
   ident: TTVDTData;
-
 begin
   { p o p u l a t e   t h e   T r e e V i e w . . .
-    TABLES HAVE MASTER-DETAIL RELATIONSHIP
+    TABLES HAVE MASTER-DETAIL RELATIONSHIPS ENABLED.
   }
-//  DTData.tblDTEntrant.DisableControls;
-//  DTData.tblDTHeat.DisableControls;
-//  DTData.tblDTEvent.DisableControls;
-//  DTData.tblDTSession.DisableControls;
+  DTData.tblDTEntrant.DisableControls;
+  DTData.tblDTHeat.DisableControls;
+  DTData.tblDTEvent.DisableControls;
+  DTData.tblDTSession.DisableControls;
+
+  storeSessID := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
+  storeEvID := DTData.tblDTEvent.FieldByName('EventID').AsInteger;
+  storeHtID := DTData.tblDTHeat.FieldByName('HeatID').AsInteger;
 
   // R O O T   N O D E    -   LEVEL 0 - S E S S I O N   . . .
   DTData.tblDTSession.First;
@@ -476,16 +504,16 @@ begin
       i := DTData.tblDTSession.FieldByName('fnSessionNum').AsInteger
     else
       i := DTData.tblDTSession.FieldByName('SessionNum').AsInteger;
-    id := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
+    idsess := DTData.tblDTSession.FieldByName('SessionID').AsInteger;
 
     { CREATE NodeSess : EventID, EventNum.}
-    ident := TTVDTData.Create(id, i); // object to hold event and even number.
+    ident := TTVDTData.Create(idsess, i); // object to hold event and even number.
     // Level 0 .
     NodeSess := TV.Items.AddObject(nil, s, ident); // assign data ptr.
 
     // ------------------------------------------------------------
     // Level 1  -   E V E N T S  ...  SESSION CHILD NODES.
-    DTData.tblDTEvent.First;
+    DTData.tblDTEvent.Refresh;
     while not DTData.tblDTEvent.Eof do
     begin
       s := DTData.tblDTEvent.FieldByName('Caption').AsString;
@@ -493,10 +521,10 @@ begin
         i := DTData.tblDTEvent.FieldByName('fnEventNum').AsInteger
       else
         i := DTData.tblDTEvent.FieldByName('EventNum').AsInteger;
-      id := DTData.tblDTEvent.FieldByName('EventID').AsInteger;
+      idEv := DTData.tblDTEvent.FieldByName('EventID').AsInteger;
 
       { CREATE nodeEv : EventID, EventNum.}
-      ident := TTVDTData.Create(id, i);
+      ident := TTVDTData.Create(idEv, i);
       nodeEv := TV.Items.AddChildObject(NodeSess, s, ident);
 
       // ICON ORDERED heat numbers ...
@@ -509,7 +537,7 @@ begin
 
       // ------------------------------------------------------------
       // Level 2  -   H E A T S  ...   EVENT CHILD NODES.
-      DTData.tblDTHeat.First;
+      DTData.tblDTHeat.Refresh;
       while not DTData.tblDTHeat.Eof do
       begin
         s := DTData.tblDTHeat.FieldByName('Caption').AsString;
@@ -517,10 +545,10 @@ begin
           i := DTData.tblDTHeat.FieldByName('fnHeatNum').AsInteger
         else
           i := DTData.tblDTHeat.FieldByName('HeatNum').AsInteger;
-        id := DTData.tblDTHeat.FieldByName('HeatID').AsInteger;
+        idHt := DTData.tblDTHeat.FieldByName('HeatID').AsInteger;
 
         { CREATE nodeHt : HeatID, HeatNum.}
-        ident := TTVDTData.Create(id, i);
+        ident := TTVDTData.Create(idht, i);
         nodeHt := TV.Items.AddChildObject(NodeEv, s, ident);
 
         // ICON ORDERED heat numbers ...
@@ -537,11 +565,16 @@ begin
     // ------------------------------------------------------------
     DTData.tblDTSession.Next;
   end;
+  // Master-Detail enabled - order is important ...
+  // Restore Record positions for DT tables.
+  if DTData.LocateDTSessionID(storeSessID) then
+    if DTData.LocateDTEventID(storeEvID) then
+      DTData.LocateDTHeatID(storeHtID);
 
-//  DTData.tblDTSession.EnableControls;
-//  DTData.tblDTEvent.EnableControls;
-//  DTData.tblDTHeat.EnableControls;
-//  DTData.tblDTEntrant.EnableControls;
+  DTData.tblDTSession.EnableControls;
+  DTData.tblDTEvent.EnableControls;
+  DTData.tblDTHeat.EnableControls;
+  DTData.tblDTEntrant.EnableControls;
 
 
 end;

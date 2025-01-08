@@ -522,10 +522,6 @@ begin
     DTData.tblDTSession.fieldbyName('SessionNum').AsInteger := sListHeaderSessionNum();
     // Derived from filename : Last three digits of SCM qrySession.SessionID.
     DTData.tblDTSession.fieldbyName('fnSessionNum').AsInteger := fn_SessionNum();
-    // Derived from filename : matches SCM qryEvent.EventNum.
-    DTData.tblDTSession.fieldbyName('fnEventNum').AsInteger := fn_EventNum();
-    // Derived from filename : matches SCM qryHeat.HeatNum.
-    DTData.tblDTSession.fieldbyName('fnHeatNum').AsInteger := fn_HeatNum();
     // Creation date of file - by Dolphin Timing system.
     DTData.tblDTSession.fieldbyName('SessionStart').AsDateTime := fCreationDT;
     // TimeStamp
@@ -664,9 +660,7 @@ end;
 
 procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
-  id, I, lane: integer;
-//  j: integer;
-//  TimeFieldName, TimeModeFieldName, TimeFieldNameErr, SplitFieldName: string;
+  id, I, j, lane: integer;
   s: string;
   Found: boolean;
 begin
@@ -674,12 +668,18 @@ begin
 
   Found := DTData.tblDTEntrant.Locate('HeatID', HeatID, []);
   if Found then
-    // This heat has been process of all it's lanes...
+    // This heat has been process of all it's lane data ...
     exit;
   // dtfrmExec has a grid linked to this datasource.
   DTData.tblDTEntrant.DisableControls;
   // ID isn't AutoInc - calc manually.
+  // NOTE: Master-Detail relationships have been disabled at this point.
   id := DTData.MaxID_Entrant + 1;
+  { TStringList FIRST LINE = HEADER INFO.
+   TStringList FIRST LINE + 1 to LAST LINE - 1 = LANES INFORMATION.
+   TStringList LAST LINE  = FOOTER - CHECKSUM.
+  }
+  // Process lanes...
   for I := 1 to (fSList.Count - 2) do
   begin
     lane := sListBodyLane(I);
@@ -700,6 +700,8 @@ begin
     DTData.tblDTEntrant.fieldbyName('CalcTime').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
+    // graphic used in column[?] - for Auto .. Manual
+    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 0;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodyTimeKeepers(I, fTimeKeepers);
@@ -717,63 +719,19 @@ begin
     else
       DTData.tblDTEntrant.FieldByName('Time3').Clear;
 
-
-
-
+    // gather up the timekeepers 1-3 recorded race times for this lane.
+    sListBodySplits(I, fSplits);
+    for j := low(fSplits)  to High(fSplits) do
+    begin
+      if (fSplits[j] > 0) then
+      begin
+        s := 'Split' + IntTostr((j+1));
+        DTData.tblDTEntrant.FieldByName(s).AsDateTime := TDateTime(fSplits[j]);
+      end;
+    end;
     DTData.tblDTEntrant.Post;
   end;
   DTData.tblDTEntrant.EnableControls;
-
-    {
-
-    for j := low(fTimeKeepers)  to High(fTimeKeepers) do
-    begin
-
-
-    end;
-
-      // Generate field names
-      TimeFieldName := Format('Time%d', [j + 1]);
-      TimeModeFieldName := Format('Time%d', [j + 1]) + 'Mode';
-      TimeFieldNameErr := Format('Time%d', [j + 1]) + 'Err';
-      // Set race-time and use flag based on TimeKeepers value
-      if fTimeKeepers[j] > 0 then
-      begin
-        DTData.tblDTEntrant.FieldByName(TimeFieldName).AsDateTime := TDateTime(fTimeKeepers[j]);
-        DTData.tblDTEntrant.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoEnabled);
-        DTData.tblDTEntrant.FieldByName(TimeFieldNameErr).Clear;
-      end
-      else
-      begin
-        DTData.tblDTEntrant.FieldByName(TimeFieldName).Clear;
-        DTData.tblDTEntrant.FieldByName(TimeModeFieldName).AsInteger := Ord(tmAutoDisabled);
-        DTData.tblDTEntrant.FieldByName(TimeFieldNameErr).AsInteger := Ord(tmeEmpty);
-      end;
-
-
-    //    sListBodySplits(I, fSplits);
-
-    // TODO -oBSA -cGeneral : Calculate deviation for each timekeeper?
-    DTData.tblDTEntrant.fieldbyName('Deviation1').Clear;
-    DTData.tblDTEntrant.fieldbyName('Deviation2').Clear;
-    DTData.tblDTEntrant.fieldbyName('Deviation3').Clear;
-
-
-    // Split Times
-
-    for j := 0 to High(fSplits) do
-    begin
-      // Generate field names
-      SplitFieldName := Format('Split%d', [j + 1]);
-      if fSplits[j] > 0 then
-        DTData.tblDTEntrant.fieldbyName(SplitFieldName).AsDateTime := TDateTime(fSplits[j])
-       else
-        DTData.tblDTEntrant.FieldByName(SplitFieldName).Clear;
-    end;
-
-}
-
-
 end;
 
 function TdtUtils.sListHeaderEventNum: integer;
@@ -921,70 +879,66 @@ end;
 function TdtUtils.sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
 var
   Fields: TArray<string>;
-  i, j: Integer;
+  i, SplitIndex: Integer;
   s: string;
   Found: boolean;
   ATimeValue: TDateTime;
-  fs: TFormatSettings;
 begin
-{
-  Number of Splits – (1-10) Enter 1 to use the first time as the final time.
-  A single length race would have only one split (i.e. the final time), and
-  multi length races would have one split for every lap.
+  {
+    Number of Splits – (1-10) Enter 1 to use the first time as the final time.
+    A single length race would have only one split (i.e. the final time), and
+    multi length races would have one split for every lap.
 
-  Example 1: A 25 yard race in a 25 yard pool would have a split count of 1
-  meaning only on one time is collected (i.e. the final time)
+    Example 1: A 25 yard race in a 25 yard pool would have a split count of 1
+    meaning only on one time is collected (i.e. the final time)
 
-  Example 2: A 100 meter race in a 50 meter pool would also have a split count
-  of 1 (i.e: the final time of the single lap.)
+    Example 2: A 100 meter race in a 50 meter pool would also have a split count
+    of 1 (i.e: the final time of the single lap.)
 
-  Example 3: A 200 yard race in a 25 yard pool would have a split count of 4.
-}
-  result := false;
-  Found := false;
-  // fSplits: array[0..9] of TTime;  -  Initialize splits.
-  for i := Low(ASplits) to High(ASplits) do ASplits[i] := 0;
-  // Only DO4 captures split data?
-  if not (fFileType = dtDO4) then exit;
+    Example 3: A 200 yard race in a 25 yard pool would have a split count of 4.
+  }
 
-  fs := TFormatSettings.Create;
-  fs.TimeSeparator := ':';
-  fs.DecimalSeparator := '.';
+  Result := False;
+  Found := False;
 
-  // Field[0] - lane number
-  // Field[1] ... [3] - timekeepers data.
-  // Fiels[4] ... [14] - split-time data.
+  // Initialize splits - zero indicates no race time recorded.
+  for i := Low(ASplits) to High(ASplits) do
+    ASplits[i] := 0;
 
-  // Split string by the ';' character
+  // Only DO4 captures split data
+  if fFileType <> dtDO4 then
+    Exit;
+
+  // Using LineIndex, get the TStringList[...] string and split it by the ';' character
   Fields := SplitString(fSList[LineIndex], ';');
-  // Extract split data.
-  if Length(Fields) > 4 then
+
+  // Check if there are splits available (Fields[4] and beyond are split-times)
+  if Length(Fields) <= 4 then
+    Exit; // NO SPLITS..
+
+  // Extract split data
+  for i := 4 to Length(Fields) - 1 do
   begin
-    for i := 4 to Length(Fields) - 1 do
+    s := Fields[i];
+    if s <> '' then
     begin
-      if Length(Fields[i]) > 0 then
+      // Try to parse the time
+      if TryParseCustomTime(s, ATimeValue) then
       begin
-          s := Fields[I];
-          if s <> '' then
-          begin
-            // Try to parse the time
-            if TryParseCustomTime(s, ATimeValue) then
-            begin
-              // Calculate the ASplit index.
-              j := i-4;
-              // trap array out-of-bounds error.
-              if (j >= Low(ASplits)) and (j <= High(ASplits)) then
-              begin
-                ASplits[j] := ATimeValue;
-                Found := true;
-              end;
-           end;
-          end
+        // Calculate the ASplit index
+        SplitIndex := i - 4;
+        // Ensure index is within bounds
+        if (SplitIndex >= Low(ASplits)) and (SplitIndex <= High(ASplits)) then
+        begin
+          ASplits[SplitIndex] := ATimeValue;
+          Found := True;
+        end;
       end;
     end;
   end;
+
   if Found then
-    result := true;
+    Result := True;
 end;
 
 function TdtUtils.sListBodyLane(LineIndex: integer): integer;
@@ -1020,7 +974,6 @@ begin
   result := false;
   Found := false;
 
-
   // Using LineIndex, get the TStringList[...] string.
   // Split string by the ';' character
   s := fSList[LineIndex];
@@ -1030,7 +983,6 @@ begin
     ATimeKeepers[I] := 0;
   // Extract timekeepers data.
   // Fields[4] and beyond are split-times.
-
   for I := 1 to 3 do
   begin
     if Length(Fields) > I then
@@ -1041,7 +993,6 @@ begin
           // Try to parse the time
           if TryParseCustomTime(s, ATimeValue) then
           begin
-//            DecodeTime(ATimeValue, Hour, Min, Sec, MSec);
             ATimeKeepers[I-1] := ATimeValue;
             Found := true;
           end;

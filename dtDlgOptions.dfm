@@ -8409,7 +8409,6 @@ object dlgOptions: TdlgOptions
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 432
     object btnClose: TButton
       Left = 574
       Top = 6
@@ -8428,7 +8427,6 @@ object dlgOptions: TdlgOptions
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 365
     object pgcntrl: TPageControl
       Left = 0
       Top = 0
@@ -8437,7 +8435,6 @@ object dlgOptions: TdlgOptions
       ActivePage = tabSettings
       Align = alClient
       TabOrder = 0
-      ExplicitHeight = 365
       object tabSettings: TTabSheet
         Caption = 'Settings'
         ImageIndex = 1
@@ -8456,14 +8453,13 @@ object dlgOptions: TdlgOptions
         end
         object rgrpMeanTimeMethod: TRadioGroup
           Left = 20
-          Top = 90
+          Top = 98
           Width = 337
-          Height = 121
+          Height = 95
           Caption = 'Auto calcuate mean time method ...'
           Items.Strings = (
             'DT default behaviour'
-            'SCM smart mean average'
-            'SCM advance smart mean average')
+            'SCM improved method')
           TabOrder = 2
         end
         object chkbxEnableManualMeanTime: TCheckBox
@@ -8478,7 +8474,7 @@ object dlgOptions: TdlgOptions
         end
         object chkbxRenameSession: TCheckBox
           Left = 20
-          Top = 224
+          Top = 216
           Width = 181
           Height = 25
           Caption = 'Auto rename DT files.'
@@ -8487,7 +8483,7 @@ object dlgOptions: TdlgOptions
         object rgrpPrecedence: TRadioGroup
           Left = 20
           Top = 255
-          Width = 573
+          Width = 613
           Height = 97
           Caption = 'Precedence '
           ItemIndex = 0
@@ -8606,7 +8602,7 @@ object dlgOptions: TdlgOptions
     FavoriteLinks = <>
     FileTypes = <>
     Options = [fdoPickFolders, fdoDontAddToRecent]
-    Left = 492
-    Top = 251
+    Left = 564
+    Top = 75
   end
 end
