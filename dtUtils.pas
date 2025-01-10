@@ -410,10 +410,14 @@ begin
 
   if Assigned(pBar) then pBar.Position := 0;
 
+  // NOTE: ProcessDirectory will disabled/enabled Master-Detail.
+  // Necessary to calculate table Primary keys, etc.
   ProcessDirectory(ADirectory, pBar);
 
   DTData.tblDTSession.First;
+  dtData.tblDTEvent.ApplyMaster;
   dtData.tblDTEvent.First;
+  dtData.tblDTHeat.ApplyMaster;
   dtData.tblDTHeat.First;
 
   DTData.tblDTSession.EnableControls;
@@ -446,9 +450,12 @@ by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
   DTData.tblDTHeat.EmptyDataSet;
   DTData.tblDTEntrant.EmptyDataSet;
   DTData.tblDTNoodle.EmptyDataSet;
+
+  // =====================================================
   // De-attach from Master-Detail. Create flat files.
-  // Necessary to calculate table Primary keys...
+  // Necessary to calculate table Primary keys.
   DTData.DisableDTMasterDetail;
+  // =====================================================
 
   try
     { For files use GetFiles method }
@@ -479,8 +486,11 @@ by any single character. This means it will match *.DO3, *.DO4, *.DO5, etc.
     MessageBox(0, PChar('Incorrect path or search mask'),
       PChar('Extract Dolphin .DO3 and .DO4 Files'), MB_ICONERROR or MB_OK);
   end;
+
+  // =====================================================
   // Re-attach Master-Detail.
   DTData.EnableDTMasterDetail;
+  // =====================================================
 
 end;
 
@@ -503,7 +513,7 @@ begin
   else
     i := sListHeaderSessionNum();
   // DOES THIS SESSION PK AREADY EXSIST?
-  Found := DTData.LocateDT_SessionNum(i, FPrecedence);
+  Found := DTData.LocateDTSessionNum(i, FPrecedence);
   if Found then
   begin
     // assign this id to ProcessEvent.
@@ -552,7 +562,7 @@ begin
     i := sListHeaderEventNum();
 
   // DOES THIS EVENT PK AREADY EXSIST?
-  Found := DTData.LocateDT_EventNum(SessionID, i, FPrecedence);
+  Found := DTData.LocateDTEventNum(SessionID, i, FPrecedence);
 
 
   if Found then
@@ -606,7 +616,7 @@ begin
     i := sListHeaderHeatNum();
 
   // HAS THIS HEAT AREADY been processed?
-  Found := DTData.LocateDT_HeatNum(EventID, i, FPrecedence);
+  Found := DTData.LocateDTHeatNum(EventID, i, FPrecedence);
   if Found then
     // use this id to call process entrant.
     id := DTData.tblDTHeat.FieldByName('HeatID').AsInteger
@@ -695,13 +705,13 @@ begin
     s := 'Lane: ' + IntToStr(lane);
     DTData.tblDTEntrant.fieldbyName('Caption').AsString := s;
     // Auto-Calc best racetime.
-    DTData.tblDTEntrant.fieldbyName('AutoTime').AsBoolean := true;
-    // Swimmers calculated racetime.
-    DTData.tblDTEntrant.fieldbyName('CalcTime').Clear;
+    DTData.tblDTEntrant.fieldbyName('UseAutoTime').AsBoolean := true;
+    // Swimmers calculated racetime. Average of 'enabled' Time[1..3]
+    DTData.tblDTEntrant.fieldbyName('RaceTime').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
     // graphic used in column[?] - for Auto .. Manual
-    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 0;
+    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 2;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodyTimeKeepers(I, fTimeKeepers);
@@ -718,6 +728,26 @@ begin
       DTData.tblDTEntrant.FieldByName('Time3').AsDateTime := TDateTime(fTimeKeepers[2])
     else
       DTData.tblDTEntrant.FieldByName('Time3').Clear;
+
+    if DTData.tblDTEntrant.FieldByName('Time1').IsNull and
+     DTData.tblDTEntrant.FieldByName('Time2').IsNull and
+     DTData.tblDTEntrant.FieldByName('Time3').IsNull then
+      // don't display a icon for Auto/Manual ...
+     DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := -1;
+
+
+    // Boolean assignment. Auto/Manual enable or disable TimeKeeper's Time[1..3]
+    DTData.tblDTEntrant.fieldbyName('Time1EnabledM').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('Time2EnabledM').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('Time3EnabledM').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('Time1EnabledA').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('Time2EnabledA').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('Time3EnabledA').AsBoolean := true;
+
+    // Initalize deviations
+    DTData.tblDTEntrant.fieldbyName('Deviation1').Clear;
+    DTData.tblDTEntrant.fieldbyName('Deviation2').Clear;
+    DTData.tblDTEntrant.fieldbyName('Deviation3').Clear;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodySplits(I, fSplits);

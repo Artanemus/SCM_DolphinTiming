@@ -11,7 +11,8 @@ uses
   System.ImageList, Vcl.ImgList, Vcl.VirtualImageList, Vcl.BaseImageCollection,
   Vcl.ImageCollection, SCMDefines, Windows, Winapi.Messages, vcl.Forms,
   FireDAC.Phys.SQLiteVDataSet, Datasnap.DBClient, FireDAC.Stan.StorageXML,
-  FireDAC.Stan.StorageBin, FireDAC.Stan.Storage, Datasnap.Provider;
+  FireDAC.Stan.StorageBin, FireDAC.Stan.Storage, Datasnap.Provider,
+  SVGIconImageCollection;
 
 type
   dtFileType = (dtUnknown, dtDO4, dtDO3, dtALL);
@@ -65,94 +66,80 @@ type
     vimglistStateImages: TVirtualImageList;
     tblDTEvent: TFDMemTable;
     dsDTEvent: TDataSource;
+    SVGIconImageCollection1: TSVGIconImageCollection;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private declarations }
     FConnection: TFDConnection;
+    fSCMDataIsActive: Boolean;
     fDTDataIsActive: Boolean;
+    fDTMasterDetailActive: Boolean;
     msgHandle: HWND;  // TForm.dtfrmExec ...
-    function GetActiveSessionID: integer;
-
+    function GetSCMActiveSessionID: integer;
   public
     { Public declarations }
-    procedure ActivateData();
+    procedure ActivateDataSCM();
     procedure ActivateDataDT();
     procedure BuildDTData;
     procedure BuildCSVEventData(AFileName: string);
-
-    procedure WriteToBinary(AFilePath:string);
     procedure ReadFromBinary(AFilePath:string);
-
+    procedure WriteToBinary(AFilePath:string);
     procedure EnableDTMasterDetail();
     procedure DisableDTMasterDetail();
-
-    // S P E C I A L  L O C A T E S  F O R  P R O C E S S  D T  F I L E .
+    // L O C A T E S   F O R   D T   D A T A.
     // .......................................................
-    // WARNING : DisableDTMasterDetail() before calling here.
-    // USED ONLY BY TdtUtils.ProcessSession.
-    function LocateDT_SessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    // WARNING : DisableDTMasterDetail() before calling here.
-    // USED ONLY BY TdtUtils.ProcessEvent.
-    function LocateDT_EventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    // WARNING : DisableDTMasterDetail() before calling here.
-    // USED ONLY BY TdtUtils.ProcessHeat.
-    function LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    // .......................................................
-
-
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected SwimClub if SCM SessionID is visible.
-    function LocateSession(ASessionID: integer): boolean;
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected session if SCM EventID is visible.
-    function LocateEvent(AEventID: integer): boolean;
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected event if SCM HeatID is visible.
-    function LocateHeat(AHeatID: integer): boolean;
-
     function LocateDTSessionID(ASessionID: integer): boolean;
     // WARNING : Master-Detail enabled... DT EventID may not be visible.
     function LocateDTEventID(AEventID: integer): boolean;
     // WARNING : Master-Detail enabled... DT HeatID may not be visible.
     function LocateDTHeatID(AHeatID: integer): boolean;
-
-    function LocateNearestSession(aDate: TDateTime): integer;
-
-    // Dependant on dtPrecedence setting.
-    // This is a clone of function LocateDT_SessionNum.
-    // Improves code readbility.
-    function CueDTtoSessionNum(SessionNum: integer; Aprecedence: dtPrecedence): boolean;
     // WARNING : Master-Detail enabled...
-    // Dependant on dtPrecedence setting.
-    // Dependant on selected session.
-    function CueDTtoEventNum(EventNum: integer; Aprecedence: dtPrecedence): boolean;
-    // WARNING : Master-Detail enabled...
-    // Dependant on dtPrecedence setting.
-    // Dependant on selected event.
-    function CueDTtoHeatNum(HeatNum: integer; Aprecedence: dtPrecedence): boolean;
-
-
+    // Use DisableDTMasterDetail() before calling here?
+    // USED BY TdtUtils.ProcessSession.
+    function LocateDTSessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+    function LocateDTEventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+    function LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+    // .......................................................
+    // FIND MAXIMUM IDENTIFIER VALUE IN DOLPHIN TIMING TABLES.
+    // These routines are needed as there is no AutoInc on Primary Key.
+    // .......................................................
     // WARNING : DisableDTMasterDetail() before calling MaxID routines.
     function MaxID_Session():integer;
     function MaxID_Event(): integer;
     function MaxID_Heat(): integer;
     function MaxID_Entrant: integer;
+    // .......................................................
 
-    function GetNumberOfHeats(AEventID: integer): integer;
-    function GetRoundABBREV(AEventID: integer): string;
+    // L O C A T E S   F O R   S W I M C L U B M E E T   D A T A.
+    // .......................................................
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected SwimClub if SCM SessionID is visible.
+    function LocateSCMSessionID(ASessionID: integer): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected session if SCM EventID is visible.
+    function LocateSCMEventID(AEventID: integer): boolean;
+    // WARNING : Master-Detail enabled...
+    // Dependant on selected event if SCM HeatID is visible.
+    function LocateSCMHeatID(AHeatID: integer): boolean;
+    // Uses SessionStart TDateTime...
+    function LocateSCMNearestSessionID(aDate: TDateTime): integer;
+    // MISC SCM ROUTINES/FUNCTIONS
+    function GetSCMNumberOfHeats(AEventID: integer): integer;
+    function GetSCMRoundABBREV(AEventID: integer): string;
 
-    property IsActive: Boolean read fDTDataIsActive write fDTDataIsActive;
-    property ActiveSessionID: integer read GetActiveSessionID;
+    procedure ToggleUseAutoTime(ADataSet: TDataSet);
+
+    property SCMDataIsActive: Boolean read fSCMDataIsActive;
+    property DTDataIsActive: Boolean read fDTDataIsActive;
+    property DTMasterDetailActive: Boolean read fDTMasterDetailActive;
+    property ActiveSessionID: integer read GetSCMActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
     property MSG_Handle: HWND read msgHandle write msgHandle;
-
-
   end;
-
 
 var
   DTData: TDTData;
@@ -165,142 +152,19 @@ implementation
 
 uses System.Variants, System.DateUtils;
 
-procedure TDTData.ActivateDataDT;
+procedure TDTData.DataModuleCreate(Sender: TObject);
 begin
-  tblDTSession.Active := true;
-  tblDTEvent.Active := true;
-  tblDTHeat.Active := true;
-  tblDTEntrant.Active := true;
-  tblDTNoodle.Active := true;
-
-  EnableDTMasterDetail;
-
-end;
-
-procedure TDTData.EnableDTMasterDetail();
-begin
-  // Master - index field.
-  tblDTSession.IndexFieldNames := 'SessionID';
-
-  // ASSERT Master - Detail
-  tblDTEvent.MasterSource := dsDTSession;
-  tblDTEvent.MasterFields := 'SessionID';
-  tblDTEvent.DetailFields := 'SessionID';
-  tblDTEvent.IndexFieldNames := 'SessionID';
-
-  tblDTHeat.MasterSource := dsDTEvent;
-  tblDTHeat.MasterFields := 'EventID';
-  tblDTHeat.DetailFields := 'EventID';
-  tblDTHeat.IndexFieldNames := 'EventID';
-
-  tblDTEntrant.MasterSource := dsDTHeat;
-  tblDTEntrant.MasterFields := 'HeatID';
-  tblDTEntrant.DetailFields := 'HeatID';
-  tblDTEntrant.IndexFieldNames := 'HeatID';
-
-
-  tblDTNoodle.MasterSource := dsDTHeat;
-  tblDTNoodle.MasterFields := 'HeatID';
-  tblDTNoodle.DetailFields := 'HeatID';
-  tblDTNoodle.IndexFieldNames := 'HeatID';
-
-  tblDTSession.First;
-end;
-
-procedure TDTData.DisableDTMasterDetail();
-begin
-  // ASSERT Master - Detail
-  tblDTEvent.MasterSource := nil;
-  tblDTEvent.MasterFields := '';
-  tblDTEvent.DetailFields := '';
-  tblDTEvent.IndexFieldNames := 'EventID';
-
-  tblDTHeat.MasterSource := nil;
-  tblDTHeat.MasterFields := '';
-  tblDTHeat.DetailFields := '';
-  tblDTHeat.IndexFieldNames := 'HeatID';
-
-  tblDTEntrant.MasterSource := nil;
-  tblDTEntrant.MasterFields := '';
-  tblDTEntrant.DetailFields := '';
-  tblDTEntrant.IndexFieldNames := 'EntrantID';
-
-
-  tblDTNoodle.MasterSource := nil;
-  tblDTNoodle.MasterFields := '';
-  tblDTNoodle.DetailFields := '';
-  tblDTNoodle.IndexFieldNames := 'NoodleID';
-
-  tblDTSession.First;
-  tblDTEvent.First;
-  tblDTHeat.First;
-  tblDTEntrant.First;
-  tblDTNoodle.First;
-end;
-
-
-procedure TDTData.BuildCSVEventData(AFileName: string);
-var
-  sl: TStringList;
-  s, s2, s3: string;
-  i, id: integer;
-begin
-{
-The Load button lets the user load all event data from an event file.
-This is a CSV file and can be hand typed or generated by meet
-management software. Each line of this file should be formatted as follows:
-Event Number,EventName,Number of Heats,Number of Splits,Round ...
-
-Example:
-1A,Boys 50 M Free,4,1,P
-1B,Girls 50 M Free,5,1,P
-2A,Boys 100 M Breaststroke,2,2,P
-2B,Girls 100 M Breaststroke,2,2,P …
-
-The first line will be event index 1, the second line will be event index 2 and so on. Events
-will always come up in event index order although this can be overridden and events and
-heats may be run in any order.
-
-}
-  sl := TStringlist.Create;
-  qryEvent.First();
-  while not qryEvent.Eof do
-  begin
-    s := '';
-    // Event Number – Up to 5 alpha-numeric characters. Example: 12B ...
-    i := qryEvent.FieldByName('EventNum').AsInteger;
-    s := s + IntToStr(i) + ',';
-    // Event Name – Up to 25 alpha-numeric characters. Example: Men’s 50 Meter Freestyle
-    s2 := qryDistance.FieldByName('Caption').AsString + ' ' +
-    qryStroke.FieldByName('Caption').AsString;
-    s3 := qryEvent.FieldByName('Caption').AsString;
-    if Length(s3) > 0 then
-      s2 := s2 + ' ' + s3;
-    s := s + s2 + ',';
-    // Get Number of Heats
-    // Number of Heats – (0-99) Number of expected heats for the given event
-    id := qryEvent.FieldByName('EventID').AsInteger;
-    i := GetNumberOfHeats(id);
-    s := s + IntToStr(i) + ',';
-    { TODO -oBSA : Implement Splits for Dolphin Timing }
-    // Number of Splits - NOT AVAILABLE IN THIS VERSION.
-    s := s + '0,';
-    { Round .... requires db v1.1.5.4.
-    * A: ALL  (CTS DOLPHIN - ref F912 ).
-    * P: Preliminary (DEFAULT)
-    * Q: Quarterfinals
-    * S: Semifinals
-    * F: Finals
-    }
-    // Round – “A” for all, “P” for prelim or “F” for final
-    s := s + 'P';
-    sl.Add(s);
-    qryEvent.Next;
-  end;
-  qryEvent.First();
-  if not sl.IsEmpty then
-    sl.SaveToFile(AFileName);
-  sl.free;
+  // Init params.
+  fDTDataIsActive := false;
+  fDTMasterDetailActive := false;
+  FConnection := nil;
+  fSCMDataIsActive := false; // activated later once FConnection is assigned.
+  // Assign all the params to create the Master-Detail relationships
+  // between Dolphin Timing memory tables.
+  EnableDTMasterDetail();
+  // Makes 'Active' the Dolphin Timing tables.
+  ActivateDataDT;
+  msgHandle := 0;
 end;
 
 procedure TDTData.DataModuleDestroy(Sender: TObject);
@@ -308,285 +172,34 @@ begin
   // clean-up.
 end;
 
-function TDTData.GetRoundABBREV(AEventID: integer): string;
-var
-SQL: string;
-v: variant;
-ARoundID: integer;
+procedure TDTData.ActivateDataDT;
 begin
-  {
-  SwimClubMeet.dbo.Round database version 1.1.5.4
-  SQL := 'SELECT [ABREV] FROM dbo.Round WHERE RoundID = :ID'
-  * P: Preliminary (DEFAULT)
-  * Q: Quarterfinals
-  * S: Semifinals
-  * F: Finals
-  }
-  result := 'P';
-  SQL := 'SELECT [RoundID] FROM dbo.Event WHERE EventID = :ID;';
-  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
-  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
-  ARoundID := v;
-
-  SQL := 'SELECT [ABREV] FROM dbo.Round WHERE RoundID = :ID;';
-  v := DTData.Connection.ExecSQLScalar(SQL, [ARoundID]);
-  if VarIsNull(v) or VarIsEmpty(v) then exit;
-  result := v;
-
-end;
-
-function TDTData.LocateDTEventID(AEventID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTHeat.Active then exit;
-  if (AEventID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
-  if result then
-    dsdtHeat.DataSet.Refresh;
-end;
-
-function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTHeat.Active then exit;
-  if (AHeatID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
-end;
-
-function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTSession.Active then exit;
-  if (ASessionID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
-  if result then
-  begin
-    dsdtEvent.DataSet.Refresh;
-    dsdtHeat.DataSet.Refresh;
+  fSCMDataIsActive := false;
+  // MAKE LIVE THE DOLPHIN TIMING TABLES
+  try
+    tblDTSession.Open;
+    if tblDTSession.Active then
+    begin
+      tblDTEvent.Open;
+      if tblDTEvent.Active then
+      begin
+        tblDTHeat.Open;
+        if tblDTHeat.Active then
+        begin
+          tblDTEntrant.Open;
+          tblDTNoodle.Open;
+          if tblDTEntrant.Active and tblDTNoodle.Active then
+            fSCMDataIsActive := true;
+        end;
+      end;
+    end;
+  except on E: Exception do
+    // failed to open memory table.
   end;
 end;
 
-function TDTData.LocateDT_EventNum(SessionID, AEventNum: integer; APrecedence:
-  dtPrecedence): boolean;
-var
-  indexStr: string;
+procedure TDTData.ActivateDataSCM;
 begin
-  // WARNING : DisableDTMasterDetail() before calling here.
-  // USED ONLY BY TdtUtils.ProcessEvent.
-  result := false;
-  // Exit if the table is not active or if AEventNum is 0
-  if not tbldtEvent.Active then exit;
-  if AEventNum = 0 then exit;
-  // Store the original index field names
-  indexStr := tbldtEvent.IndexFieldNames;
-  tbldtEvent.IndexFieldNames := 'EventID';
-  // Set the index based on the precedence
-  if APrecedence = dtPrecFileName then
-    result := tbldtEvent.Locate('SessionID;fnEventNum', VarArrayOf([SessionID,
-      AEventNum]), [])
-  else if APrecedence = dtPrecHeader then
-    result := tbldtEvent.Locate('SessionID;EventNum', VarArrayOf([SessionID,
-      AEventNum]), []);
-  // Restore the original index field names
-  tbldtEvent.IndexFieldNames := indexStr;
-end;
-
-function TDTData.LocateEvent(AEventID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fDTDataIsActive then exit;
-  if (aEventID = 0) then exit;
-  SearchOptions := [];
-  if dsEvent.DataSet.Active then
-      result := dsEvent.DataSet.Locate('EventID', aEventID, SearchOptions);
-end;
-
-function TDTData.LocateHeat(AHeatID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fDTDataIsActive then exit;
-  if (AHeatID = 0) then exit;
-  SearchOptions := [];
-  if dsHeat.DataSet.Active then
-      result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
-end;
-
-function TDTData.LocateDT_HeatNum(EventID, AHeatNum: integer; Aprecedence:
-    dtPrecedence): boolean;
-var
-  indexStr: string;
-begin
-  // WARNING : DisableDTMasterDetail() before calling here.
-  // USED ONLY BY TdtUtils.ProcessHeat.
-  result := false;
-  // Exit if the table is not active or if AHeatNum is 0
-  if not tbldtHeat.Active then exit;
-  if AHeatNum = 0 then exit;
-  // Store the original index field names
-  indexStr := tbldtHeat.IndexFieldNames;
-  tbldtHeat.IndexFieldNames := 'HeatID';
-  // Set the index based on the precedence
-  if APrecedence = dtPrecFileName then
-    result := tbldtHeat.Locate('EventID;fnHeatNum', VarArrayOf([EventID,
-      AHeatNum]), [])
-  else if APrecedence = dtPrecHeader then
-    result := tbldtHeat.Locate('EventID;HeatNum', VarArrayOf([EventID,
-      AHeatNum]), []);
-  // Restore the original index field names
-  tbldtHeat.IndexFieldNames := indexStr;
-end;
-
-function TDTData.LocateNearestSession(aDate: TDateTime): integer;
-begin
-  result := 0;
-  // find the session with 'aDate' or bestfit.
-  qryNearestSessionID.Connection := fConnection;
-  qryNearestSessionID.ParamByName('ADATE').AsDateTime := DateOf(aDate);
-  qryNearestSessionID.Prepare;
-  qryNearestSessionID.Open;
-  if not qryNearestSessionID.IsEmpty then
-   result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
-end;
-
-function TDTData.LocateDT_SessionNum(ASessionNum: integer; Aprecedence:
-    dtPrecedence): boolean;
-var
-  indexStr: string;
-begin
-  // WARNING : DisableDTMasterDetail() before calling here.
-  // USED ONLY BY TdtUtils.ProcessSession
-  result := false;
-  if not tbldtSession.Active then exit;
-  if ASessionNum = 0 then exit;
-  // Store the original index field names
-  indexStr := tbldtSession.IndexFieldNames;
-  if (ASessionNum = 0) then exit;
-  tbldtSession.IndexFieldNames := 'SessionID';
-  if (Aprecedence = dtPrecFileName) then
-    result := tbldtSession.Locate('fnSessionNum', ASessionNum, [])
-  else if (Aprecedence = dtPrecHeader) then
-    result := tbldtSession.Locate('SessionNum', ASessionNum, []);
-  // Restore the original index field names
-  tbldtSession.IndexFieldNames := indexStr;
-end;
-
-
-function TDTData.LocateSession(ASessionID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fDTDataIsActive then exit;
-  if (ASessionID = 0) then exit;
-  SearchOptions := [];
-  if dsSession.DataSet.Active then
-      result := dsSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
-end;
-
-function TDTData.MaxID_Entrant: integer;
-var
-max, id: integer;
-begin
-  // To function correctly disableDTMasterDetail.
-  max := 0;
-  tblDTEntrant.First;
-  while not tblDTEntrant.eof do
-  begin
-    id := tblDTEntrant.FieldByName('EntrantID').AsInteger;
-    if (id > max) then
-      max := id;
-    tblDTEntrant.Next;
-  end;
-  result := max;
-end;
-
-function TDTData.MaxID_Event: integer;
-var
-max, id: integer;
-begin
-  // To function correctly disableDTMasterDetail.
-  max := 0;
-  tblDTEvent.First;
-  while not tblDTEvent.eof do
-  begin
-    id := tblDTEvent.FieldByName('EventID').AsInteger;
-    if (id > max) then
-      max := id;
-    tblDTEvent.Next;
-  end;
-  result := max;
-end;
-
-function TDTData.MaxID_Heat: integer;
-var
-max, id: integer;
-begin
-  // To function correctly disableDTMasterDetail.
-  max := 0;
-  tblDTHeat.First;
-  while not tblDTHeat.eof do
-  begin
-    id := tblDTHeat.FieldByName('HeatID').AsInteger;
-    if (id > max) then
-      max := id;
-    tblDTHeat.Next;
-  end;
-  result := max;
-end;
-
-function TDTData.MaxID_Session: integer;
-var
-max, id: integer;
-begin
-  // To function correctly disableDTMasterDetail.
-  max := 0;
-  tblDTSession.First;
-  while not tblDTSession.eof do
-  begin
-    id := tblDTSession.FieldByName('SessionID').AsInteger;
-    if (id > max) then
-      max := id;
-    tblDTSession.Next;
-  end;
-  result := max;
-end;
-
-function TDTData.GetActiveSessionID: integer;
-begin
-  result := 0;
-  if not fDTDataIsActive then exit;
-  if qrySession.Active and not qrySession.IsEmpty then
-    result := qrySession.FieldByName('SessionID').AsInteger;
-end;
-
-function TDTData.GetNumberOfHeats(AEventID: integer): integer;
-var
-SQL: string;
-v: variant;
-begin
-  result := 0;
-  SQL := 'SELECT COUNT(HeatID) FROM dbo.HeatIndividual WHERE EventID = :ID;';
-  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
-  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
-  result := v;
-end;
-
-procedure TDTData.ActivateData;
-begin
-
   if Assigned(fConnection) and fConnection.Connected then
   begin
     // GRAND MASTER.
@@ -629,15 +242,143 @@ begin
       qryINDV.Open;
       qryTEAM.Open;
       qryTEAMEntrant.Open;
-      fDTDataIsActive := true;
+      fSCMDataIsActive := true;
     end;
 
   end;
 end;
 
+procedure TDTData.EnableDTMasterDetail();
+begin
+  // Master - index field.
+  tblDTSession.IndexFieldNames := 'SessionID';
+  // ASSERT Master - Detail
+  tblDTEvent.MasterSource := dsDTSession;
+  tblDTEvent.MasterFields := 'SessionID';
+  tblDTEvent.DetailFields := 'SessionID';
+  tblDTEvent.IndexFieldNames := 'SessionID';
+  tblDTHeat.MasterSource := dsDTEvent;
+  tblDTHeat.MasterFields := 'EventID';
+  tblDTHeat.DetailFields := 'EventID';
+  tblDTHeat.IndexFieldNames := 'EventID';
+  tblDTEntrant.MasterSource := dsDTHeat;
+  tblDTEntrant.MasterFields := 'HeatID';
+  tblDTEntrant.DetailFields := 'HeatID';
+  tblDTEntrant.IndexFieldNames := 'HeatID';
+  tblDTNoodle.MasterSource := dsDTHeat;
+  tblDTNoodle.MasterFields := 'HeatID';
+  tblDTNoodle.DetailFields := 'HeatID';
+  tblDTNoodle.IndexFieldNames := 'HeatID';
+  tblDTSession.First;
+  fDTMasterDetailActive := true;
+end;
+
+procedure TDTData.DisableDTMasterDetail();
+begin
+  // ASSERT Master - Detail
+  tblDTSession.IndexFieldNames := 'SessionID';
+  tblDTEvent.MasterSource := nil;
+  tblDTEvent.MasterFields := '';
+  tblDTEvent.DetailFields := '';
+  tblDTEvent.IndexFieldNames := 'EventID';
+  tblDTHeat.MasterSource := nil;
+  tblDTHeat.MasterFields := '';
+  tblDTHeat.DetailFields := '';
+  tblDTHeat.IndexFieldNames := 'HeatID';
+  tblDTEntrant.MasterSource := nil;
+  tblDTEntrant.MasterFields := '';
+  tblDTEntrant.DetailFields := '';
+  tblDTEntrant.IndexFieldNames := 'EntrantID';
+  tblDTNoodle.MasterSource := nil;
+  tblDTNoodle.MasterFields := '';
+  tblDTNoodle.DetailFields := '';
+  tblDTNoodle.IndexFieldNames := 'NoodleID';
+  tblDTSession.First;
+  {
+  Use the ApplyMaster method to synchronize this detail dataset with the
+  current master record.  This method is useful, when DisableControls was
+  called for the master dataset or when scrolling is disabled by
+  MasterLink.DisableScroll.
+  }
+  tblDTEvent.ApplyMaster;
+  tblDTEvent.First;
+  tblDTHeat.ApplyMaster;
+  tblDTHeat.First;
+  tblDTEntrant.ApplyMaster;
+  tblDTEntrant.First;
+  tblDTNoodle.ApplyMaster;
+  tblDTNoodle.First;
+
+  fDTMasterDetailActive := false;
+end;
+
+procedure TDTData.BuildCSVEventData(AFileName: string);
+var
+  sl: TStringList;
+  s, s2, s3: string;
+  i, id: integer;
+begin
+{
+The Load button lets the user load all event data from an event file.
+This is a CSV file and can be hand typed or generated by meet
+management software. Each line of this file should be formatted as follows:
+Event Number,EventName,Number of Heats,Number of Splits,Round ...
+
+Example:
+1A,Boys 50 M Free,4,1,P
+1B,Girls 50 M Free,5,1,P
+2A,Boys 100 M Breaststroke,2,2,P
+2B,Girls 100 M Breaststroke,2,2,P …
+
+The first line will be event index 1, the second line will be event index 2 and so on. Events
+will always come up in event index order although this can be overridden and events and
+heats may be run in any order.
+
+}
+  sl := TStringlist.Create;
+  qryEvent.First();
+  while not qryEvent.Eof do
+  begin
+    s := '';
+    // Event Number – Up to 5 alpha-numeric characters. Example: 12B ...
+    i := qryEvent.FieldByName('EventNum').AsInteger;
+    s := s + IntToStr(i) + ',';
+    // Event Name – Up to 25 alpha-numeric characters. Example: Men’s 50 Meter Freestyle
+    s2 := qryDistance.FieldByName('Caption').AsString + ' ' +
+    qryStroke.FieldByName('Caption').AsString;
+    s3 := qryEvent.FieldByName('Caption').AsString;
+    if Length(s3) > 0 then
+      s2 := s2 + ' ' + s3;
+    s := s + s2 + ',';
+    // Get Number of Heats
+    // Number of Heats – (0-99) Number of expected heats for the given event
+    id := qryEvent.FieldByName('EventID').AsInteger;
+    i := GetSCMNumberOfHeats(id);
+    s := s + IntToStr(i) + ',';
+    { TODO -oBSA : Implement Splits for Dolphin Timing }
+    // Number of Splits - NOT AVAILABLE IN THIS VERSION.
+    s := s + '0,';
+    { Round .... requires db v1.1.5.4.
+    * A: ALL  (CTS DOLPHIN - ref F912 ).
+    * P: Preliminary (DEFAULT)
+    * Q: Quarterfinals
+    * S: Semifinals
+    * F: Finals
+    }
+    // Round – “A” for all, “P” for prelim or “F” for final
+    s := s + 'P';
+    sl.Add(s);
+    qryEvent.Next;
+  end;
+  qryEvent.First();
+  if not sl.IsEmpty then
+    sl.SaveToFile(AFileName);
+  sl.free;
+end;
+
 procedure TDTData.BuildDTData;
 begin
-  fDTDataIsActive := false;
+  fSCMDataIsActive := false;
   tblDTSession.Active := false;
   tblDTEvent.Active := false;
   tblDTHeat.Active := false;
@@ -740,8 +481,13 @@ begin
   tblDTEntrant.FieldDefs.Add('Lane', ftInteger); // Lane Number.
   // Dolphin Timing Specific
   tblDTEntrant.FieldDefs.Add('Caption', ftString, 64); // Summary of status/mode
-  tblDTEntrant.FieldDefs.Add('AutoTime', ftBoolean); // Auto-Calc best racetime.
-  tblDTEntrant.FieldDefs.Add('CalcTime', ftTime); // Swimmers calculated racetime.
+  { TimeKeeper's MODE of operation - FLAG ...
+      TRUE : using Auto enabled/disable flags. (DEFAUT)
+      FALSE : using Manual enable/disable flags.
+  }
+  tblDTEntrant.FieldDefs.Add('UseAutoTime', ftBoolean); // default true.
+  // Swimmers calculated racetime. Average mean of enabled Times[1..3].
+  tblDTEntrant.FieldDefs.Add('RaceTime', ftTime);
   // NOODLE or PATCH cable .
   tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
   // User manually selecting TimeKeeper's race-times to use - OR - Auto
@@ -750,14 +496,15 @@ begin
   tblDTEntrant.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
   tblDTEntrant.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
   tblDTEntrant.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
-  // Time Mode = ENABLED - DISABLED - EMPTY?
-  tblDTEntrant.FieldDefs.Add('Time1Mode', ftInteger);
-  tblDTEntrant.FieldDefs.Add('Time2Mode', ftInteger);
-  tblDTEntrant.FieldDefs.Add('Time3Mode', ftInteger);
-  // Time Error = tmeUnknowErr, tmeBADTime, tmeExceedsDeviation, tmeEmpty.
-  tblDTEntrant.FieldDefs.Add('Time1Err', ftInteger);
-  tblDTEntrant.FieldDefs.Add('Time2Err', ftInteger);
-  tblDTEntrant.FieldDefs.Add('Time3Err', ftInteger);
+  // Manual mode - flag TimeKeeper's race-time ENABLED.DISABLED?
+  tblDTEntrant.FieldDefs.Add('Time1EnabledM', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('Time2EnabledM', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('Time3EnabledM', ftBoolean);
+  // Auto mode - flag TimeKeeper's race-time ENABLED.DISABLED?
+  // DEFAULT true: Time1 is enabled and will be used 'CalcTime'.
+  tblDTEntrant.FieldDefs.Add('Time1EnabledA', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('Time2EnabledA', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('Time3EnabledA', ftBoolean);
   // calculated deviation for each timekeeper's time - based on average
   tblDTEntrant.FieldDefs.Add('Deviation1', ftTime); // deviation from average time1
   tblDTEntrant.FieldDefs.Add('Deviation2', ftTime); // deviation from average time2
@@ -808,124 +555,280 @@ begin
 
 end;
 
-function TDTData.CueDTtoEventNum(EventNum: integer; Aprecedence: dtPrecedence): boolean;
+function TDTData.GetSCMRoundABBREV(AEventID: integer): string;
 var
-  indexStr: string;
-  ASessionID: integer;
+SQL: string;
+v: variant;
+ARoundID: integer;
+begin
+  {
+  SwimClubMeet.dbo.Round database version 1.1.5.4
+  SQL := 'SELECT [ABREV] FROM dbo.Round WHERE RoundID = :ID'
+  * P: Preliminary (DEFAULT)
+  * Q: Quarterfinals
+  * S: Semifinals
+  * F: Finals
+  }
+  result := 'P';
+  SQL := 'SELECT [RoundID] FROM dbo.Event WHERE EventID = :ID;';
+  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
+  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
+  ARoundID := v;
+
+  SQL := 'SELECT [ABREV] FROM dbo.Round WHERE RoundID = :ID;';
+  v := DTData.Connection.ExecSQLScalar(SQL, [ARoundID]);
+  if VarIsNull(v) or VarIsEmpty(v) then exit;
+  result := v;
+
+end;
+
+function TDTData.LocateDTEventID(AEventID: integer): boolean;
+var
   SearchOptions: TLocateOptions;
 begin
   result := false;
+  if not tblDTHeat.Active then exit;
+  if (AEventID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtEvent.DataSet.Locate('EventID', AEventID, SearchOptions);
+  if result then
+    dsdtHeat.DataSet.Refresh;
+end;
+
+function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not tblDTHeat.Active then exit;
+  if (AHeatID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not tblDTSession.Active then exit;
+  if (ASessionID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+  if result then
+  begin
+    dsdtEvent.DataSet.Refresh;
+    dsdtHeat.DataSet.Refresh;
+  end;
+end;
+
+function TDTData.LocateDTEventNum(SessionID, AEventNum: integer; APrecedence:
+  dtPrecedence): boolean;
+var
+  indexStr: string;
+begin
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessEvent.
+  result := false;
+  // Exit if the table is not active or if AEventNum is 0
   if not tbldtEvent.Active then exit;
-  if EventNum = 0 then exit;
+  if AEventNum = 0 then exit;
   // Store the original index field names
   indexStr := tbldtEvent.IndexFieldNames;
-  tbldtEvent.Refresh;
-  ASessionID := tbldtSession.FieldByName('SessionID').AsInteger;
-  // Master - Detail : IndexFieldNames = 'SessionID'
-  tbldtEvent.IndexFieldNames := 'sessId;EventID';
-  SearchOptions := [];
-  if (Aprecedence = dtPrecFileName) then
-    result := tbldtEvent.Locate('fnEventNum', EventNum, SearchOptions)
-  else
-    result := tbldtEvent.Locate('EventNum', EventNum, SearchOptions);
+  tbldtEvent.IndexFieldNames := 'EventID';
+  // Set the index based on the precedence
+  if APrecedence = dtPrecFileName then
+    result := tbldtEvent.Locate('SessionID;fnEventNum', VarArrayOf([SessionID,
+      AEventNum]), [])
+  else if APrecedence = dtPrecHeader then
+    result := tbldtEvent.Locate('SessionID;EventNum', VarArrayOf([SessionID,
+      AEventNum]), []);
   // Restore the original index field names
   tbldtEvent.IndexFieldNames := indexStr;
 end;
 
-function TDTData.CueDTtoHeatNum(HeatNum: integer; Aprecedence: dtPrecedence): boolean;
+function TDTData.LocateSCMEventID(AEventID: integer): boolean;
 var
-  indexStr: string;
   SearchOptions: TLocateOptions;
 begin
   result := false;
+  if not fSCMDataIsActive then exit;
+  if (aEventID = 0) then exit;
+  SearchOptions := [];
+  if dsEvent.DataSet.Active then
+      result := dsEvent.DataSet.Locate('EventID', aEventID, SearchOptions);
+end;
+
+function TDTData.LocateSCMHeatID(AHeatID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fSCMDataIsActive then exit;
+  if (AHeatID = 0) then exit;
+  SearchOptions := [];
+  if dsHeat.DataSet.Active then
+      result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence:
+    dtPrecedence): boolean;
+var
+  indexStr: string;
+begin
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessHeat.
+  result := false;
+  // Exit if the table is not active or if AHeatNum is 0
   if not tbldtHeat.Active then exit;
-  if HeatNum = 0 then exit;
+  if AHeatNum = 0 then exit;
   // Store the original index field names
   indexStr := tbldtHeat.IndexFieldNames;
-  // Master - Detail : IndexFieldNames = 'EventID'
   tbldtHeat.IndexFieldNames := 'HeatID';
-  SearchOptions := [];
-  if (Aprecedence = dtPrecFileName) then
-    result := tbldtHeat.Locate('fnHeatNum', HeatNum, SearchOptions)
-  else
-    result := tbldtHeat.Locate('HeatNum', HeatNum, SearchOptions);
+  // Set the index based on the precedence
+  if APrecedence = dtPrecFileName then
+    result := tbldtHeat.Locate('EventID;fnHeatNum', VarArrayOf([EventID,
+      AHeatNum]), [])
+  else if APrecedence = dtPrecHeader then
+    result := tbldtHeat.Locate('EventID;HeatNum', VarArrayOf([EventID,
+      AHeatNum]), []);
   // Restore the original index field names
   tbldtHeat.IndexFieldNames := indexStr;
 end;
 
-function TDTData.CueDTtoSessionNum(SessionNum: integer; Aprecedence: dtPrecedence): boolean;
+function TDTData.LocateSCMNearestSessionID(aDate: TDateTime): integer;
+begin
+  result := 0;
+  // find the session with 'aDate' or bestfit.
+  qryNearestSessionID.Connection := fConnection;
+  qryNearestSessionID.ParamByName('ADATE').AsDateTime := DateOf(aDate);
+  qryNearestSessionID.Prepare;
+  qryNearestSessionID.Open;
+  if not qryNearestSessionID.IsEmpty then
+   result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
+end;
+
+function TDTData.LocateDTSessionNum(ASessionNum: integer; Aprecedence:
+    dtPrecedence): boolean;
+var
+  indexStr: string;
+begin
+  // WARNING : DisableDTMasterDetail() before calling here.
+  // USED ONLY BY TdtUtils.ProcessSession
+  result := false;
+  if not tbldtSession.Active then exit;
+  if ASessionNum = 0 then exit;
+  // Store the original index field names
+  indexStr := tbldtSession.IndexFieldNames;
+  if (ASessionNum = 0) then exit;
+  tbldtSession.IndexFieldNames := 'SessionID';
+  if (Aprecedence = dtPrecFileName) then
+    result := tbldtSession.Locate('fnSessionNum', ASessionNum, [])
+  else if (Aprecedence = dtPrecHeader) then
+    result := tbldtSession.Locate('SessionNum', ASessionNum, []);
+  // Restore the original index field names
+  tbldtSession.IndexFieldNames := indexStr;
+end;
+
+
+function TDTData.LocateSCMSessionID(ASessionID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
 begin
   result := false;
-  if not tbldtSession.Active then exit;
-  if SessionNum = 0 then exit;
-  if (SessionNum = 0) then exit;
-  tbldtSession.IndexFieldNames := 'SessionID'; // ASSERT : DEFAULT
+  if not fSCMDataIsActive then exit;
+  if (ASessionID = 0) then exit;
   SearchOptions := [];
-  if (Aprecedence = dtPrecFileName) then
-    result := tbldtSession.Locate('fnSessionNum', SessionNum, SearchOptions)
-  else if (Aprecedence = dtPrecHeader) then
-    result := tbldtSession.Locate('SessionNum', SessionNum, SearchOptions);
+  if dsSession.DataSet.Active then
+      result := dsSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
 end;
 
-procedure TDTData.DataModuleCreate(Sender: TObject);
+function TDTData.MaxID_Entrant: integer;
+var
+max, id: integer;
 begin
-  // MAKE LIVE THE DOLPHIN TIMING TABLES
-  tblDTSession.Active := true;
-  tblDTSession.IndexFieldNames := 'SessionID';
-
-  // Master - Detail
-  tblDTEvent.Active := true;
-
-  if not Assigned(tblDTEvent.MasterSource) then
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTEntrant.First;
+  while not tblDTEntrant.eof do
   begin
-    tblDTEvent.MasterSource := dsDTSession;
-    tblDTEvent.MasterFields := 'SessionID';
-    tblDTEvent.DetailFields := 'SessionID';
-    tblDTEvent.IndexFieldNames := 'SessionID';
+    id := tblDTEntrant.FieldByName('EntrantID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTEntrant.Next;
   end;
+  result := max;
+end;
 
-  // Master - Detail
-  tblDTHeat.Active := true;
-
-  if not Assigned(tblDTHeat.MasterSource) then
+function TDTData.MaxID_Event: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTEvent.First;
+  while not tblDTEvent.eof do
   begin
-    tblDTHeat.Active := true;
-    tblDTHeat.MasterSource := dsDTEvent;
-    tblDTHeat.MasterFields := 'EventID';
-    tblDTHeat.DetailFields := 'EventID';
-    tblDTHeat.IndexFieldNames := 'EventID';
+    id := tblDTEvent.FieldByName('EventID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTEvent.Next;
   end;
+  result := max;
+end;
 
-  // Master - Detail
-  tblDTEntrant.Active := true;
-
-  if not Assigned(tblDTEntrant.MasterSource) then
+function TDTData.MaxID_Heat: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTHeat.First;
+  while not tblDTHeat.eof do
   begin
-    tblDTEntrant.Active := true;
-    tblDTEntrant.MasterSource := dsDTHeat;
-    tblDTEntrant.MasterFields := 'HeatID';
-    tblDTEntrant.DetailFields := 'HeatID';
-    tblDTEntrant.IndexFieldNames := 'HeatID';
+    id := tblDTHeat.FieldByName('HeatID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTHeat.Next;
   end;
+  result := max;
+end;
 
-  // Master - Detail
-  tblDTNoodle.Active := true;
-
-  if not Assigned(tblDTNoodle.MasterSource) then
+function TDTData.MaxID_Session: integer;
+var
+max, id: integer;
+begin
+  // To function correctly disableDTMasterDetail.
+  max := 0;
+  tblDTSession.First;
+  while not tblDTSession.eof do
   begin
-    tblDTNoodle.Active := true;
-    tblDTNoodle.MasterSource := dsDTHeat;
-    tblDTNoodle.MasterFields := 'HeatID';
-    tblDTNoodle.DetailFields := 'HeatID';
-    tblDTNoodle.IndexFieldNames := 'HeatID';
+    id := tblDTSession.FieldByName('SessionID').AsInteger;
+    if (id > max) then
+      max := id;
+    tblDTSession.Next;
   end;
+  result := max;
+end;
 
-  fDTDataIsActive := true;
+function TDTData.GetSCMActiveSessionID: integer;
+begin
+  result := 0;
+  if not fSCMDataIsActive then exit;
+  if qrySession.Active and not qrySession.IsEmpty then
+    result := qrySession.FieldByName('SessionID').AsInteger;
+end;
 
-  FConnection := nil;
-  msgHandle := 0;
+function TDTData.GetSCMNumberOfHeats(AEventID: integer): integer;
+var
+SQL: string;
+v: variant;
+begin
+  result := 0;
+  SQL := 'SELECT COUNT(HeatID) FROM dbo.HeatIndividual WHERE EventID = :ID;';
+  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
+  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
+  result := v;
 end;
 
 procedure TDTData.WriteToBinary(AFilePath:string);
@@ -960,7 +863,135 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
+procedure TDTData.ToggleUseAutoTime(ADataSet: TDataSet);
+var
+  b: boolean;
+  t1, t2, t3, avgt, d1, d2, d3: TTime;
+  count: integer;
+  AcceptedDeviation: TTime;
+begin
+  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
+  begin
+    // if there is no time-keeper data then it's pointless
+    // changing autotime.
+    t1 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
+    t2 := TimeOF(ADataSet.FieldByName('Time2').AsDateTime);
+    t3 := TimeOF(ADataSet.FieldByName('Time3').AsDateTime);
+    if (t1 = 0) and (t2 = 0) and (t3 = 0) then
+    begin
+      if ADataSet.fieldbyName('imgAuto').AsInteger <> -1 then
+      begin
+        try
+          ADataSet.edit;
+          ADataSet.fieldbyName('imgAuto').AsInteger := -1;
+          ADataSet.post;
+        except on E: Exception do
+          // handle eception
+        end;
+      end;
+      exit;
+    end;
 
+    b := ADataSet.FieldByName('UseAutoTime').AsBoolean;
+    b := not b;
+    try
+      ADataSet.edit;
+      ADataSet.FieldByName('UseAutoTime').AsBoolean := b;
+      if b then
+        // graphic used in column[?] - for Auto .. Manual
+        ADataSet.fieldbyName('imgAuto').AsInteger := 2
+      else
+        // graphic used in column[?] - for Auto .. Manual
+        ADataSet.fieldbyName('imgAuto').AsInteger := 3;
 
+      ADataSet.post;
+    except on E: Exception do
+        // handle arror.
+    end;
+
+    // MOVE ALL CODE BELOW TO AFTERPOST.
+    // CREATE PROCEDURE CALC RACETIME.
+    // CREATE PROCEDURE TEST FOR DEVIATION.
+    // OPTIMIZE - MAKE READABLE.
+
+    // todo : look at the setting JSON for deviation configuration
+    AcceptedDeviation := 0.3;
+    // calculate deviation for all valid timekeeper's times.
+    d1 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
+    d2 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
+    d3 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
+
+    // calculate the new racetime...
+    count := 0;
+    avgt := 0;
+    if b then // using AutoTime
+    begin
+      if (t1 > 0) and ADataSet.FieldByName('Time1EnabledA').AsBoolean then
+      begin
+        if d1 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t1;
+        end;
+      end;
+      if (t2 > 0) and ADataSet.FieldByName('Time2EnabledA').AsBoolean then
+      begin
+        if d2 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t2;
+        end;
+      end;
+      if (t3 > 0) and ADataSet.FieldByName('Time3EnabledA').AsBoolean then
+      begin
+        if d3 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t3;
+        end;
+      end;
+    end;
+    if not b then // using AutoTime
+    begin
+      if (t1 > 0) and ADataSet.FieldByName('Time1EnabledM').AsBoolean then
+      begin
+        if d1 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t1;
+        end;
+      end;
+      if (t2 > 0) and ADataSet.FieldByName('Time2EnabledM').AsBoolean then
+      begin
+        if d2 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t2;
+        end;
+      end;
+      if (t3 > 0) and ADataSet.FieldByName('Time3EnabledM').AsBoolean then
+      begin
+        if d3 <= AcceptedDeviation then
+        begin
+          inc(count); // found an active time...
+          avgt := avgt + t3;
+        end;
+      end;
+    end;
+
+    if (avgt > 0) then
+    begin
+      avgt := avgt / count;
+      try
+        ADataSet.edit;
+        ADataSet.FieldByName('RaceTime').AsDateTime := avgt;
+        ADataSet.post;
+      except on E: Exception do
+          // handle arror.
+      end;
+    end;
+
+  end;
+end;
 
 end.

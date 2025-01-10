@@ -34,6 +34,9 @@ type
     vimgDT: TVirtualImage;
     BrowseFolderDlg: TFileOpenDialog;
     rgrpPrecedence: TRadioGroup;
+    tabsheetWatchDTFolder: TTabSheet;
+    lbledtWatchInterval: TLabeledEdit;
+    chkbxEnableWatchAtBootUp: TCheckBox;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtEventCSVRightButtonClick(Sender: TObject);

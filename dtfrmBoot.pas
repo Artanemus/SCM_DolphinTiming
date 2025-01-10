@@ -185,7 +185,7 @@ begin
     if Assigned(DTData) then
     begin
       DTData.Connection := SCM.scmConnection;
-      DTData.ActivateData; // ... and cue-to most recent session.
+      DTData.ActivateDataSCM; // ... and cue-to most recent session.
       dlg := TdtExec.Create(Self);
       { Init connection.}
       dlg.Prepare(SCM.scmConnection);

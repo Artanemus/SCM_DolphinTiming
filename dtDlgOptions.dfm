@@ -8596,6 +8596,31 @@ object dlgOptions: TdlgOptions
           OnRightButtonClick = btnedtReConstructRightButtonClick
         end
       end
+      object tabsheetWatchDTFolder: TTabSheet
+        Caption = 'Watch'
+        ImageIndex = 2
+        object lbledtWatchInterval: TLabeledEdit
+          Left = 28
+          Top = 24
+          Width = 49
+          Height = 29
+          EditLabel.Width = 221
+          EditLabel.Height = 29
+          EditLabel.Caption = 'Watch interval given in seconds.'
+          LabelPosition = lpRight
+          LabelSpacing = 10
+          TabOrder = 0
+          Text = '60'
+        end
+        object chkbxEnableWatchAtBootUp: TCheckBox
+          Left = 28
+          Top = 88
+          Width = 285
+          Height = 17
+          Caption = 'Enable Watch on application boot up.'
+          TabOrder = 1
+        end
+      end
     end
   end
   object BrowseFolderDlg: TFileOpenDialog

@@ -7,33 +7,32 @@ object DataDebug: TDataDebug
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -12
+  Font.Height = -13
   Font.Name = 'Segoe UI'
   Font.Style = []
-  TextHeight = 15
+  Position = poDesktopCenter
+  TextHeight = 17
   object pgcntrlData: TPageControl
     Left = 0
     Top = 0
     Width = 971
     Height = 635
-    ActivePage = tabsheetNoodle
+    ActivePage = grid
     Align = alClient
     TabOrder = 0
-    ExplicitWidth = 624
-    ExplicitHeight = 441
     object grid: TTabSheet
       Caption = 'Session'
       object dbgridSession: TDBGrid
         Left = 0
         Top = 0
         Width = 963
-        Height = 605
+        Height = 603
         Align = alClient
         DataSource = DTData.dsDTSession
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -13
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
       end
@@ -51,7 +50,7 @@ object DataDebug: TDataDebug
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -13
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
       end
@@ -69,7 +68,7 @@ object DataDebug: TDataDebug
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -13
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
       end
@@ -87,7 +86,7 @@ object DataDebug: TDataDebug
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -13
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
       end
@@ -99,12 +98,12 @@ object DataDebug: TDataDebug
         Left = 0
         Top = 0
         Width = 963
-        Height = 605
+        Height = 603
         Align = alClient
         TabOrder = 0
         TitleFont.Charset = DEFAULT_CHARSET
         TitleFont.Color = clWindowText
-        TitleFont.Height = -12
+        TitleFont.Height = -13
         TitleFont.Name = 'Segoe UI'
         TitleFont.Style = []
       end

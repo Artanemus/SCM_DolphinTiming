@@ -29,6 +29,7 @@ type
     DolphinAppData: string;
     DolphinReConstruct: string;
     DolphinPrecedence: dtPrecedence;
+    DolphinAcceptedDeviation: double;
 
     constructor Create();
     function GetDefaultSettingsFilename(): string;
@@ -59,6 +60,7 @@ begin
   DolphinAppData := 'c:\CTSDolphin\AppData';
   DolphinReConstruct := 'c:\CTSDolphin\ReConstruct';
   DolphinPrecedence := dtPrecHeader;
+  DolphinAcceptedDeviation := 0.3;
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in

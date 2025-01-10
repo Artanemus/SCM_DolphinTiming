@@ -77,8 +77,8 @@ type
     actnPost: TAction;
     lblMetersRelay: TLabel;
     lblSessionStart: TLabel;
-    btnPickEvent: TButton;
-    btnPickDTFile: TButton;
+    btnPickSCMTreeView: TButton;
+    btnPickDTTreeView: TButton;
     actnSelectSwimClub: TAction;
     btnDataDebug: TButton;
     lblDTDetails: TLabel;
@@ -96,10 +96,13 @@ type
     procedure btnDataDebugClick(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
-    procedure btnPickDTFileClick(Sender: TObject);
-    procedure btnPickEventClick(Sender: TObject);
+    procedure btnPickDTTreeViewClick(Sender: TObject);
+    procedure btnPickSCMTreeViewClick(Sender: TObject);
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
+    procedure dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
+    procedure dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
+        string);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormHide(Sender: TObject);
@@ -390,7 +393,7 @@ begin
   if IsPositiveResult(mr) and (dlg.rtnSessionID > 0) then
   begin
     DTData.MSG_Handle := 0;
-    DTData.LocateSession(dlg.rtnSessionID);
+    DTData.LocateSCMSessionID(dlg.rtnSessionID);
     DTData.MSG_Handle := Self.Handle;
   end;
   dlg.Free;
@@ -412,12 +415,54 @@ begin
 end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
-//var
-//  ASessionID, AEventNum: integer;
+var
+  foundsess, foundev: boolean;
 begin
-{ SCM.sessionID <> DT.SessionID.
-  SCM.sessionID = DT.SessionNum or DT.fnSessionNum based on fPrecedence.
-}
+  DTGrid.BeginUpdate;
+  DTData.tblDTEvent.DisableControls;
+  DTData.tblDTHeat.DisableControls;
+  DTData.tblDTEntrant.DisableControls;
+  DTData.tblDTSession.DisableControls;
+  // SCM Sesssion ID = DT SessionNum.
+  foundsess :=
+  DTData.LocateDTSessionNum(DTData.qrySession.FieldByName('SessionID').AsInteger, fPrecedence);
+  DTData.tblDTEvent.ApplyMaster;
+//  DTData.tblDTEvent.First;
+
+  if foundsess then
+  begin
+    if fPrecedence = dtPrecFileName then
+      foundev := DTData.tbldtEvent.Locate('fnEventNum',
+        DTData.qryEvent.FieldByName('EventNum').AsInteger)
+    else if fPrecedence = dtPrecHeader then
+      foundev := DTData.tbldtEvent.Locate('EventNum',
+        DTData.qryEvent.FieldByName('EventNum').AsInteger);
+  end;
+
+  DTData.tblDTHeat.ApplyMaster;
+//  DTData.tblDTHeat.First;
+  if foundev then
+  begin
+    if fPrecedence = dtPrecFileName then
+      DTData.tbldtHeat.Locate('fnHeatNum',
+        DTData.qryHeat.FieldByName('HeatNum').AsInteger)
+    else if fPrecedence = dtPrecHeader then
+      DTData.tbldtHeat.Locate('HeatNum',
+        DTData.qryHeat.FieldByName('HeatNum').AsInteger);
+
+  end;
+
+  DTData.tblDTEntrant.ApplyMaster;
+//  DTData.tblDTEntrant.First;
+
+  DTData.tblDTSession.EnableControls;
+  DTData.tblDTEvent.EnableControls;
+  DTData.tblDTHeat.EnableControls;
+  DTData.tblDTEntrant.EnableControls;
+  DTGrid.EndUpdate;
+
+  UpdateDTDetailsLabel;
+
 end;
 
 procedure TdtExec.btnDataDebugClick(Sender: TObject);
@@ -431,53 +476,56 @@ end;
 
 procedure TdtExec.btnNextDTFileClick(Sender: TObject);
 var
-  sessNum, evNum, htNum: integer;
-  maxHtNum, maxEvNum, maxSessNum: integer;
+  lastHtID, lastEvID, IDht, IDev: integer;
+  found: boolean;
 begin
-  if fPrecedence = dtPrecFileName then
-  begin
-    sessNum := DTData.dsDTSession.DataSet.FieldByName('fnSessionNum').AsInteger;
-    evNum := DTData.dsDTEvent.DataSet.FieldByName('fnEventNum').AsInteger;
-    htNum := DTData.dsDTHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
-  end
-  else
-  begin
-    sessNum := DTData.dsDTSession.DataSet.FieldByName('SessionNum').AsInteger;
-    evNum := DTData.dsDTEvent.DataSet.FieldByName('EventNum').AsInteger;
-    htNum := DTData.dsDTHeat.DataSet.FieldByName('HeatNum').AsInteger;
-  end;
-
-  maxHtNum := 99;
-  maxEvNum := 99;
-  maxSessNum := 99;
+  DTGrid.BeginUpdate;
+  // this hack find the last event ID and last heat ID in the current
+  // Master-Detail linked Dolphin Timing data tables.
+  IDHt := DTData.tbldtHeat.fieldbyName('HeatID').AsInteger;
+  DTData.tbldtHeat.Last;
+  lastHtID := DTData.tbldtHeat.fieldbyName('HeatID').AsInteger;
+  IDEv := DTData.tbldtEvent.fieldbyName('EventID').AsInteger;
+  DTData.tbldtEvent.Last;
+  lastEvID := DTData.tbldtHeat.fieldbyName('EventID').AsInteger;
+  found := DTData.tbldtEvent.Locate('EventID', IDEv);
+  if found then
+    DTData.tbldtHeat.Locate('HeatID', IDHt);
+  DTGrid.EndUpdate;
 
   // CNTRL+SHIFT - quick key to move to NEXT S E S S I O N .
   if (GetKeyState(VK_CONTROL) < 0) and (GetKeyState(VK_SHIFT) < 0) then
   begin
-    // no other sessions.
-    if (sessNum = maxSessNum) then exit;
-
     DTData.dsDTSession.DataSet.next;
     DTData.dsDTEvent.DataSet.first;
     DTData.dsDTHeat.DataSet.first;
   end
-  // CNTRL- quick key to move to NEXT E V E N T .
+    // CNTRL- quick key to move to NEXT E V E N T .
   else if (GetKeyState(VK_CONTROL) < 0) then
   begin
-    { After reaching the last record a second click of btnNextDTFileClick is needed to
-      recieve a Eof. Checking for max event number removes this UI nonsence.}
-    if DTData.dsdtEvent.DataSet.Eof or  (evNum = maxEvNum) then
+    { After reaching the last event for the current session ...
+      a second click of btnNextDTFileClick is needed to recieve a Eof.
+      Checking for max eventID removes this UI nonscence.}
+    if ((DTData.dsdtEvent.DataSet.Eof) or
+      (DTData.tbldtEvent.fieldbyName('EventID').AsInteger = lastEvID)) then
+    begin
+      DTData.dsdtSession.DataSet.next;
+      DTData.dsdtHeat.DataSet.First;
+      DTData.dsDTHeat.DataSet.first;
+    end
+    else
     begin
       DTData.dsdtEvent.DataSet.next;
       DTData.dsdtHeat.DataSet.First;
     end;
   end
-  // move to N E X T   H E A T .
+    // move to N E X T   H E A T .
   else
   begin
     { After reaching the last record a second click of btnNextDTFileClick is needed to
-      recieve a Eof. Checking for max heat number removes this UI nonsence.}
-    if DTData.dsdtHeat.DataSet.Eof or (htNum = maxHtNum) then
+      recieve a Eof. Checking for max heatID removes this UI nonscence.}
+    if DTData.dsdtHeat.DataSet.Eof or
+      (DTData.tbldtHeat.fieldbyName('HeatID').AsInteger = lastHtID) then
     begin
       DTData.dsdtEvent.DataSet.next;
       DTData.dsdtHeat.DataSet.First;
@@ -487,6 +535,7 @@ begin
       DTData.dsdtHeat.DataSet.next;
     end;
   end;
+
   PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
 end;
 
@@ -523,32 +572,34 @@ begin
   PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
 end;
 
-procedure TdtExec.btnPickDTFileClick(Sender: TObject);
+procedure TdtExec.btnPickDTTreeViewClick(Sender: TObject);
 var
 dlg: TTreeViewDT;
-sessNum, evNum, htNum: integer;
+sessID, evID, htID: integer;
 mr: TModalResult;
 found: boolean;
+SearchOptions: TLocateOptions;
 begin
+  {
+  MANATORY HERE - ELSE IT DOESN'T WORK!
+  Use the ApplyMaster method to synchronize this detail dataset with the
+  current master record.  This method is useful, when DisableControls was
+  called for the master dataset or when scrolling is disabled by
+  MasterLink.DisableScroll.
+  }
+  dtGrid.BeginUpdate;
+
   // Open the SCM TreeView.
   dlg := TTreeViewDT.Create(Self);
+  SearchOptions := [];
   // Params to cue-to-record in DT TreeView.
-  if fPrecedence = dtPrecFileName then
-  begin
-    sessNum := DTData.dsdtSession.DataSet.FieldByName('fnSessionNum').AsInteger;
-    evNum := DTData.dsdtEvent.DataSet.FieldByName('fnEventNum').AsInteger;
-    htNum := DTData.dsdtHeat.DataSet.FieldByName('fnHeatNum').AsInteger;
-  end
-  else
-  begin
-    sessNum := DTData.dsdtSession.DataSet.FieldByName('SessionNum').AsInteger;
-    evNum := DTData.dsdtEvent.DataSet.FieldByName('EventNum').AsInteger;
-    htNum := DTData.dsdtHeat.DataSet.FieldByName('HeatNum').AsInteger;
-  end;
+    sessID := DTData.dsdtSession.DataSet.FieldByName('SessionID').AsInteger;
+    evID := DTData.dsdtEvent.DataSet.FieldByName('EventID').AsInteger;
+    htID := DTData.dsdtHeat.DataSet.FieldByName('HeatID').AsInteger;
 
   // DT TreeView will attemp to cue-to-node based on params.
 
-  dlg.Prepare(sessNum, evNum, htNum);
+  dlg.Prepare(sessID, evID, htID);
   mr := dlg.ShowModal;
   // A TreeView node was selected.
   if IsPositiveResult(mr) then
@@ -556,45 +607,56 @@ begin
     { NOTE: DT session pick by the user may differ from the current
       SCM session being operated on. }
 
+    DTData.dsdtEntrant.DataSet.DisableControls;
     DTData.dsdtHeat.DataSet.DisableControls;
     DTData.dsdtEvent.DataSet.DisableControls;
     DTData.dsdtSession.DataSet.DisableControls;
     // Attempt to cue-to-data in Dolphin Timing tables.
-    if (dlg.SelectedSessionNum <> 0) then
+    if (dlg.SelectedSessionID > 0) then
     begin
-      // CUE-TO-RECORD in Dolphin Timing data tables.
-      // Master-Detail enabled : Order of operation is important.
-      found := DTData.CueDTtoSessionNum(dlg.SelectedSessionNum, fPrecedence);
-      if found then
-      begin
-        if (dlg.SelectedEventNum <> 0) then
-        begin
-          // Master-Detail enabled.
-          found := DTData.CueDTtoEventNum(dlg.SelectedEventNum, fPrecedence);
-          if found then
-          begin
-            if (dlg.SelectedHeatNum <> 0) then
-              // Master-Detail enabled.
-              DTData.CueDTtoHeatNum(dlg.SelectedHeatNum, fPrecedence);
-              DTData.tblDTEntrant.First;
-          end;
-        end;
-      end;
-      // Update the Dolphin Timing TDBAdvGrid.
-      DTData.dsdtSession.DataSet.EnableControls;
-      DTData.dsEvent.DataSet.EnableControls;
-      DTData.dsHeat.DataSet.EnableControls;
+      found := DTData.LocateDTSessionID(dlg.SelectedSessionID);
+      if not found then
+        DTData.tblDTSession.First;
+      DTData.tblDTEvent.ApplyMaster;
+      DTData.tblDTEvent.First;
+      DTData.tblDTHeat.ApplyMaster;
+      DTData.tblDTHeat.First;
+    end;
+    if (dlg.SelectedEventID > 0) then
+    begin
+      found := DTData.LocateDTEventID(dlg.SelectedEventID);
+      if not found then
+        DTData.tblDTEvent.First;
+      DTData.tblDTHeat.ApplyMaster;
+      DTData.tblDTHeat.First;
+      DTData.tblDTEntrant.ApplyMaster;
+      DTData.tblDTEntrant.First;
 
-      // Update UI controls ...
-      PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+    end;
+    if (dlg.SelectedHeatID > 0) then
+    begin
+      found := DTData.LocateDTHeatID(dlg.SelectedHeatID);
+      if not found then
+        DTData.tblDTHeat.First;
     end;
 
-  end;
+    // Update the Dolphin Timing TDBAdvGrid.
+    DTData.dsdtSession.DataSet.EnableControls;
+    DTData.dsdtEvent.DataSet.EnableControls;
+    DTData.dsdtHeat.DataSet.EnableControls;
+    DTData.dsdtEntrant.DataSet.EnableControls;
+
+//    dtGrid.update
+
+    // Update UI controls ...
+    PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+    end;
   dlg.Free;
+  dtGrid.EndUpdate;
 
 end;
 
-procedure TdtExec.btnPickEventClick(Sender: TObject);
+procedure TdtExec.btnPickSCMTreeViewClick(Sender: TObject);
 var
 dlg: TTreeViewSCM;
 sess, ev, ht: integer;
@@ -617,13 +679,13 @@ begin
     DTData.dsHeat.DataSet.DisableControls;
     if (dlg.SelectedEventID <> 0) then
     begin
-      found := DTData.LocateEvent(dlg.SelectedEventID);
+      found := DTData.LocateSCMEventID(dlg.SelectedEventID);
       if found then
       begin
         DTData.dsHeat.DataSet.Close;
         DTData.dsHeat.DataSet.Open;
         if (dlg.SelectedHeatID <> 0) then
-          DTData.LocateHeat(dlg.SelectedHeatID);
+          DTData.LocateSCMHeatID(dlg.SelectedHeatID);
       end;
     end;
     DTData.dsEvent.DataSet.EnableControls;
@@ -713,6 +775,53 @@ begin
       end;
     end;
     PostMessage(Self.Handle, SCM_UPDATEUI, 0, 0);
+end;
+
+procedure TdtExec.dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
+var
+  Grid: TDBAdvGrid;
+begin
+  Grid := Sender as TDBAdvGrid;
+  // Check if we are dealing with the image column
+  if (ACol = 6) and (ARow >= DTgrid.FixedRows)  then
+  begin
+    if (Grid.DataSource.DataSet.FieldByName('imgAuto').AsInteger > -1) then
+    begin
+      // toggle the icon display indirectly by toggling UseAutoTime.
+      // should pass TDataSet ...
+      grid.BeginUpdate;
+      DTData.ToggleUseAutoTime(Grid.DataSource.DataSet);
+//      grid.RepaintRow(ARow);
+      grid.EndUpdate;
+    end;
+  end;
+
+end;
+
+procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
+    Value: string);
+var
+  Grid: TDBAdvGrid;
+//  TimeCol3, TimeCol4, TimeCol5: string;
+begin
+  Grid := Sender as TDBAdvGrid;
+{
+  // Check if we are dealing with the image column
+  if (ACol = 6) and (ARow >= DTgrid.FixedRows)  then
+  begin
+    // Retrieve the values of columns 3, 4, and 5
+    TimeCol3 := Grid.Cells[3, ARow];
+    TimeCol4 := Grid.Cells[4, ARow];
+    TimeCol5 := Grid.Cells[5, ARow];
+
+    // If all three columns are empty, hide the image
+    if (TimeCol3 = '') and (TimeCol4 = '') and (TimeCol5 = '') then
+    begin
+      // Set the image index to -1 to hide the image
+      Value := ''; // Clear the value to hide the image
+    end;
+  end;
+}
 end;
 
 procedure TdtExec.FormCreate(Sender: TObject);
@@ -835,7 +944,7 @@ var
 i: integer;
 begin
   // update HEATUI elements.
-  if Assigned(DTData) AND DTData.IsActive then
+  if Assigned(DTData) AND DTData.SCMDataIsActive then
   begin
     UpdateEventDetailsLabel; // append heat number to label
     UpdateSessionStartLabel; //
@@ -939,8 +1048,8 @@ begin
         ReConstructDO3(SessionID)
       else
         ReConstructDO4(SessionID);
-      DTData.LocateEvent(currEv);
-      DTData.LocateHeat(currHt);
+      DTData.LocateSCMEventID(currEv);
+      DTData.LocateSCMHeatID(currHt);
       scmGrid.DataSource.DataSet.EnableControls;
       scmGrid.EndUpdate;
       MessageBox(0,

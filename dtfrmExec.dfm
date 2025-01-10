@@ -4,7 +4,7 @@ object dtExec: TdtExec
   BorderStyle = bsSingle
   Caption = 'SwimClubMeet - Dolphin Timing.'
   ClientHeight = 801
-  ClientWidth = 1330
+  ClientWidth = 1444
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,7 +20,7 @@ object dtExec: TdtExec
   object actnMenuBar: TActionMainMenuBar
     Left = 0
     Top = 0
-    Width = 1330
+    Width = 1444
     Height = 25
     UseSystemFont = False
     ActionManager = actnManager
@@ -40,7 +40,7 @@ object dtExec: TdtExec
   object rpnlBody: TRelativePanel
     Left = 0
     Top = 25
-    Width = 1330
+    Width = 1444
     Height = 776
     ControlCollection = <
       item
@@ -85,9 +85,8 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 718
     DesignSize = (
-      1330
+      1444
       776)
     object pnlTool1: TPanel
       AlignWithMargins = True
@@ -744,7 +743,7 @@ object dtExec: TdtExec
           46
           46)
       end
-      object btnPickEvent: TButton
+      object btnPickSCMTreeView: TButton
         Left = 440
         Top = 98
         Width = 58
@@ -754,14 +753,14 @@ object dtExec: TdtExec
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 3
-        OnClick = btnPickEventClick
+        OnClick = btnPickSCMTreeViewClick
       end
     end
     object pnlDT: TPanel
       AlignWithMargins = True
       Left = 684
       Top = 3
-      Width = 482
+      Width = 613
       Height = 770
       BevelOuter = bvNone
       ParentBackground = False
@@ -769,7 +768,7 @@ object dtExec: TdtExec
       object dbtxtDTFileName: TDBText
         Left = 16
         Top = 19
-        Width = 449
+        Width = 553
         Height = 31
         Alignment = taCenter
         DataField = 'FileName'
@@ -784,7 +783,7 @@ object dtExec: TdtExec
       object lblDTDetails: TLabel
         Left = 16
         Top = 56
-        Width = 449
+        Width = 553
         Height = 36
         Alignment = taCenter
         AutoSize = False
@@ -800,7 +799,7 @@ object dtExec: TdtExec
       object btnPrevDTFile: TButton
         Left = 15
         Top = 99
-        Width = 385
+        Width = 490
         Height = 49
         Caption = 'PREVIOUS'
         TabOrder = 1
@@ -809,7 +808,7 @@ object dtExec: TdtExec
       object btnNextDTFile: TButton
         Left = 16
         Top = 683
-        Width = 449
+        Width = 553
         Height = 50
         Caption = 'NEXT'
         TabOrder = 0
@@ -818,14 +817,14 @@ object dtExec: TdtExec
       object dtGrid: TDBAdvGrid
         Left = 16
         Top = 154
-        Width = 449
+        Width = 553
         Height = 523
         Cursor = crDefault
         BevelInner = bvNone
         BevelKind = bkFlat
         BevelOuter = bvNone
         Color = 6445643
-        ColCount = 6
+        ColCount = 8
         Ctl3D = True
         DefaultRowHeight = 46
         DrawingStyle = gdsClassic
@@ -845,6 +844,8 @@ object dtExec: TdtExec
         TabOrder = 2
         StyleElements = [seFont, seBorder]
         HoverRowCells = [hcNormal, hcSelected]
+        OnGetDisplText = dtGridGetDisplText
+        OnClickCell = dtGridClickCell
         ActiveCellFont.Charset = DEFAULT_CHARSET
         ActiveCellFont.Color = 4474440
         ActiveCellFont.Height = -16
@@ -1043,6 +1044,7 @@ object dtExec: TdtExec
             Width = 44
           end
           item
+            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1071,6 +1073,7 @@ object dtExec: TdtExec
             Width = 94
           end
           item
+            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1099,6 +1102,7 @@ object dtExec: TdtExec
             Width = 94
           end
           item
+            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1122,6 +1126,63 @@ object dtExec: TdtExec
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
             PrintFont.Height = -12
+            PrintFont.Name = 'Segoe UI'
+            PrintFont.Style = []
+            Width = 94
+          end
+          item
+            Borders = []
+            BorderPen.Color = clSilver
+            ButtonHeight = 18
+            CheckFalse = 'N'
+            CheckTrue = 'Y'
+            Color = 6445643
+            DataImageField = True
+            FieldName = 'imgAuto'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -16
+            Font.Name = 'Segoe UI'
+            Font.Style = []
+            Header = ' '
+            HeaderFont.Charset = DEFAULT_CHARSET
+            HeaderFont.Color = clWindow
+            HeaderFont.Height = -16
+            HeaderFont.Name = 'Segoe UI'
+            HeaderFont.Style = []
+            Images = DTData.vimglistDTGrid
+            PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+            PrintFont.Charset = DEFAULT_CHARSET
+            PrintFont.Color = clWindowText
+            PrintFont.Height = -16
+            PrintFont.Name = 'Segoe UI'
+            PrintFont.Style = []
+            Width = 64
+          end
+          item
+            Alignment = taCenter
+            Borders = []
+            BorderPen.Color = clSilver
+            ButtonHeight = 18
+            CheckFalse = 'N'
+            CheckTrue = 'Y'
+            Color = 6445643
+            FieldName = 'RaceTime'
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindow
+            Font.Height = -16
+            Font.Name = 'Segoe UI'
+            Font.Style = []
+            Header = 'RaceTime'
+            HeaderFont.Charset = DEFAULT_CHARSET
+            HeaderFont.Color = clWindow
+            HeaderFont.Height = -16
+            HeaderFont.Name = 'Segoe UI'
+            HeaderFont.Style = []
+            PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
+            PrintFont.Charset = DEFAULT_CHARSET
+            PrintFont.Color = clWindowText
+            PrintFont.Height = -16
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
             Width = 94
@@ -1270,6 +1331,8 @@ object dtExec: TdtExec
           44
           94
           94
+          94
+          64
           94)
         RowHeights = (
           34
@@ -1278,7 +1341,7 @@ object dtExec: TdtExec
       object pBar: TProgressBar
         Left = 15
         Top = 739
-        Width = 449
+        Width = 554
         Height = 9
         Position = 50
         BarColor = clChartreuse
@@ -1288,8 +1351,8 @@ object dtExec: TdtExec
         Visible = False
         StyleElements = []
       end
-      object btnPickDTFile: TButton
-        Left = 406
+      object btnPickDTTreeView: TButton
+        Left = 511
         Top = 98
         Width = 58
         Height = 50
@@ -1298,12 +1361,12 @@ object dtExec: TdtExec
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
         TabOrder = 4
-        OnClick = btnPickDTFileClick
+        OnClick = btnPickDTTreeViewClick
       end
     end
     object pnlTool2: TPanel
       AlignWithMargins = True
-      Left = 1172
+      Left = 1303
       Top = 3
       Width = 144
       Height = 770

@@ -12,6 +12,9 @@
         <Projects Include="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="..\FES_FireEquimentServices\FireEquipmentServices.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
     <Target Name="SwimClubMeet:Make">
         <MSBuild Projects="..\SCM_SwimClubMeet-R\SwimClubMeet.dproj" Targets="Make"/>
     </Target>
+    <Target Name="FireEquipmentServices">
+        <MSBuild Projects="..\FES_FireEquimentServices\FireEquipmentServices.dproj"/>
+    </Target>
+    <Target Name="FireEquipmentServices:Clean">
+        <MSBuild Projects="..\FES_FireEquimentServices\FireEquipmentServices.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FireEquipmentServices:Make">
+        <MSBuild Projects="..\FES_FireEquimentServices\FireEquipmentServices.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="SCM_DolphinTiming;SCM_Member;SwimClubMeet"/>
+        <CallTarget Targets="SCM_DolphinTiming;SCM_Member;SwimClubMeet;FireEquipmentServices"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="SCM_DolphinTiming:Clean;SCM_Member:Clean;SwimClubMeet:Clean"/>
+        <CallTarget Targets="SCM_DolphinTiming:Clean;SCM_Member:Clean;SwimClubMeet:Clean;FireEquipmentServices:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="SCM_DolphinTiming:Make;SCM_Member:Make;SwimClubMeet:Make"/>
+        <CallTarget Targets="SCM_DolphinTiming:Make;SCM_Member:Make;SwimClubMeet:Make;FireEquipmentServices:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
