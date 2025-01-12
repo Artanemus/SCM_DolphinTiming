@@ -15,6 +15,44 @@ implementation
 var
 seed: integer = 1;
 
+function ConvertTimeToSecondsStr(ATime: TTime): string;
+var
+  Hours, Minutes, Seconds, Milliseconds: Word;
+  TotalSeconds: Double;
+begin
+  // Decode the TTime value into its components
+  DecodeTime(ATime, Hours, Minutes, Seconds, Milliseconds);
+
+  // Calculate the total number of seconds as a floating point value
+  TotalSeconds := Hours * 3600 + Minutes * 60 + Seconds + Milliseconds / 1000.0;
+
+  // Convert the floating point value to a string
+  Result := FloatToStr(TotalSeconds);
+end;
+
+{
+  function ConvertSecondsStrToTime(ASecondsStr: string): TTime;
+  var
+    TotalSeconds: Double;
+    Hours, Minutes, Seconds, Milliseconds: Word;
+  begin
+    // Convert the string representation of seconds to a floating point value
+    TotalSeconds := StrToFloat(ASecondsStr);
+
+    // Calculate the hours, minutes, seconds, and milliseconds components
+    Hours := Trunc(TotalSeconds) div 3600;
+    TotalSeconds := TotalSeconds - (Hours * 3600);
+    Minutes := Trunc(TotalSeconds) div 60;
+    TotalSeconds := TotalSeconds - (Minutes * 60);
+    Seconds := Trunc(TotalSeconds);
+    Milliseconds := Round(Frac(TotalSeconds) * 1000);
+
+    // Encode the components back into a TTime value
+    Result := EncodeTime(Hours, Minutes, Seconds, Milliseconds);
+  end;
+}
+
+
 function GetStringListChecksum(sl: TStringList; hashLength: Integer = 8): string;
 var
   fullHash: string;
@@ -166,15 +204,17 @@ begin
 
     if rt <> 0 then
     begin
-      // Use FormatDateTime to format the time string
-      dtstr := FormatDateTime(fs.ShortTimeFormat, rt, fs);
-      // Dolphin Timing time format is terse.
-      // Remove leading zeros from the formatted time string
-      if dtstr.StartsWith('00:') then
-        dtstr := Copy(dtstr, 4, Length(dtstr) - 3) // Remove '00:'
-      else if dtstr.StartsWith('0') then
-        dtstr := Copy(dtstr, 2, Length(dtstr) - 1); // Remove '0'
-
+      dtstr := ConvertTimeToSecondsStr(rt);
+{
+        // Use FormatDateTime to format the time string
+        dtstr := FormatDateTime(fs.ShortTimeFormat, rt, fs);
+        // Dolphin Timing time format is terse.
+        // Remove leading zeros from the formatted time string
+        if dtstr.StartsWith('00:') then
+          dtstr := Copy(dtstr, 4, Length(dtstr) - 3) // Remove '00:'
+        else if dtstr.StartsWith('0') then
+          dtstr := Copy(dtstr, 2, Length(dtstr) - 1); // Remove '0'
+}
       // indicates no time given by TimeKeepers 2 and 3.
       s := lane + ';' + dtstr + ';;'
     end

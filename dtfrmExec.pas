@@ -28,7 +28,7 @@ uses
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
-  System.Types, System.IOUtils, dtUtils;
+  System.Types, System.IOUtils, dtUtils, Math;
 
 type
   TdtExec = class(TForm)
@@ -41,7 +41,6 @@ type
     btnPrevDTFile: TButton;
     btnPrevEvent: TButton;
     btnRefresh: TButton;
-    btnClose: TButton;
     FileSaveDlgCSV: TFileSaveDialog;
     lblEventDetails: TLabel;
     lblHeatNum: TLabel;
@@ -60,8 +59,8 @@ type
     actnReConstructDO4: TAction;
     actnReConstructDO3: TAction;
     actnPreferences: TAction;
-    actnImportDO4: TAction;
-    actnImportDO3: TAction;
+    actnImportAppendDO: TAction;
+    actnClearReScanMeets: TAction;
     pnlSCM: TPanel;
     pnlDT: TPanel;
     actnSaveSession: TAction;
@@ -82,9 +81,15 @@ type
     actnSelectSwimClub: TAction;
     btnDataDebug: TButton;
     lblDTDetails: TLabel;
+    actnRefresh: TAction;
+    DTAppendFile: TFileOpenDialog;
+    actnReportSCMSession: TAction;
+    actnReportDT: TAction;
+    actnReportSCMEvent: TAction;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
-    procedure actnImportDO4Execute(Sender: TObject);
+    procedure actnClearReScanMeetsExecute(Sender: TObject);
+    procedure actnImportAppendDOExecute(Sender: TObject);
     procedure actnPreferencesExecute(Sender: TObject);
     procedure actnReConstructDO3Execute(Sender: TObject);
     procedure actnReConstructDO3Update(Sender: TObject);
@@ -101,6 +106,8 @@ type
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
+    procedure dtGridDrawCell(Sender: TObject; ACol, ARow: LongInt; Rect: TRect;
+        State: TGridDrawState);
     procedure dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
         string);
     procedure FormCreate(Sender: TObject);
@@ -212,25 +219,58 @@ begin
       TAction(Sender).Enabled := false;
 end;
 
-procedure TdtExec.actnImportDO4Execute(Sender: TObject);
+procedure TdtExec.actnClearReScanMeetsExecute(Sender: TObject);
 var
-s: string;
+  s: string;
+  mr: TModalResult;
 begin
-  if DirectoryExists(fDolphinMeetsFolder) then
+  s := '''
+    This will clear all patches. The dolphin meets folder will be re-scanned and the DT data tables will be rebuilt.
+    Any posted racetimes, made to SwimClubMeet, will remain intact. There is no undo.
+    (HINT: use ''Save SCM-DT Session'' to store all work prior to calling here.)
+    Do you really want to rescan?
+  ''';
+  mr := MessageBox(0, PChar(s), PChar('Clear and Rescan Meets Folder. '),
+    MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON2);
+  if IsPositiveResult(mr) then
   begin
-    pBar.Visible := true;
-//    ProcessDTFiles(fDolphinMeetsFolder, pBar);
-    pBar.Visible := false;
-    DTData.dsDTSession.DataSet.First;
-    // lblDTFileName.Caption := DTData.dsDT.DataSet.FieldByName('FileName').AsString;
-  end
-  else
+    // Test DT directory exists...
+    if DirectoryExists(Settings.DolphinMeetsFolder) then
+    begin
+        if dtUtils.DirectoryHasDTFiles(Settings.DolphinMeetsFolder) then
+        begin
+          dtUtils.PrepareDTData;
+          dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+          PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+        end;
+    end;
+  end;
+
+end;
+
+procedure TdtExec.actnImportAppendDOExecute(Sender: TObject);
+var
+  AFile: string;
+begin
+  if DTAppendFile.Execute() then
   begin
-    s := '''
-      The Dolphin Timing meets folder couldn''t be found.
-      Use the Edit|Preference menu to setup the folder''s location.
-    ''';
-    MessageBox(0, PChar(s), PChar('Missing meets folder.'), MB_ICONERROR or MB_OK);
+    // =====================================================
+    // De-attach from Master-Detail. Create flat files.
+    // Necessary to calculate table Primary keys.
+    DTData.DisableDTMasterDetail;
+    // =====================================================
+    try
+      for AFile in DTAppendFile.Files do
+      begin
+        { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
+        dtUtils.ProcessSession(AFile);
+      end;
+    finally
+      // =====================================================
+      // Re-attach Master-Detail.
+      DTData.EnableDTMasterDetail;
+      // =====================================================
+    end;
   end;
 end;
 
@@ -423,6 +463,9 @@ begin
   DTData.tblDTHeat.DisableControls;
   DTData.tblDTEntrant.DisableControls;
   DTData.tblDTSession.DisableControls;
+
+  foundev := false;
+
   // SCM Sesssion ID = DT SessionNum.
   foundsess :=
   DTData.LocateDTSessionNum(DTData.qrySession.FieldByName('SessionID').AsInteger, fPrecedence);
@@ -782,20 +825,78 @@ var
   Grid: TDBAdvGrid;
 begin
   Grid := Sender as TDBAdvGrid;
-  // Check if we are dealing with the image column
-  if (ACol = 6) and (ARow >= DTgrid.FixedRows)  then
+  if (ARow >= DTgrid.FixedRows) then
   begin
-    if (Grid.DataSource.DataSet.FieldByName('imgAuto').AsInteger > -1) then
-    begin
-      // toggle the icon display indirectly by toggling UseAutoTime.
-      // should pass TDataSet ...
-      grid.BeginUpdate;
-      DTData.ToggleUseAutoTime(Grid.DataSource.DataSet);
-//      grid.RepaintRow(ARow);
-      grid.EndUpdate;
+    case ACol of
+      6:
+        begin
+          if (Grid.DataSource.DataSet.FieldByName('imgAuto').AsInteger > -1)
+            then
+          begin
+            // toggle the icon display indirectly by toggling data
+            // field tblEntrant.UseAutoTime.
+            grid.BeginUpdate;
+            DTData.ToggleUseAutoTime(Grid.DataSource.DataSet);
+            grid.EndUpdate;
+          end;
+        end;
+      3, 4, 5:
+        begin
+          grid.BeginUpdate;
+          if (Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean) then
+            DTData.ToggleTimeEnabledA(Grid.DataSource.DataSet, (Acol-2))
+          else
+            DTData.ToggleTimeEnabledM(Grid.DataSource.DataSet, (Acol-2));
+          grid.EndUpdate;
+        end;
     end;
   end;
+end;
 
+procedure TdtExec.dtGridDrawCell(Sender: TObject; ACol, ARow: LongInt; Rect:
+  TRect; State: TGridDrawState);
+var
+  Grid: TDBAdvGrid;
+  b1, b2, b3, DoPaint: boolean;
+
+begin
+  Grid := Sender as TDBAdvGrid;
+  // Perform default drawing
+  //  Grid.DefaultDrawCell(ACol, ARow, Rect, State);
+
+
+  DOPaint := false;
+  if (ACol = 3) and (ARow >= DTgrid.FixedRows) and (gdSelected in State) then
+  begin
+    // CHECK IF CELL IS EMPTY OF TIMEKEEPER'S RACETIME.
+
+    // Move to the record corresponding to the current row
+//    Grid.DataSource.DataSet.RecNo := ARow + 2; // Adjust for 0-based index
+
+    // Check data variables
+
+    b1 := Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean;
+    b2 := Grid.DataSource.DataSet.FieldByName('Time1EnabledA').AsBoolean;
+    b3 := Grid.DataSource.DataSet.FieldByName('Time1EnabledM').AsBoolean;
+    if (b1 = true) and (b2 = false) then DoPaint := true;
+    if (b1 = false) and (b3 = false) then DoPaint := true;
+
+    if DoPaint then
+    begin
+      // Set the pen color and style
+      Grid.Canvas.Pen.Color := clRed; // You can use any color you prefer
+      Grid.Canvas.Pen.Style := psSolid;
+      Grid.Canvas.Pen.Width := 2;
+
+      // Draw the diagonal line from top-left to bottom-right
+      Grid.Canvas.MoveTo(Rect.Left, Rect.Top);
+      Grid.Canvas.LineTo(Rect.Right, Rect.Bottom);
+
+      // Draw the diagonal line from bottom-left to top-right (optional)
+      Grid.Canvas.MoveTo(Rect.Left, Rect.Bottom);
+      Grid.Canvas.LineTo(Rect.Right, Rect.Top);
+    end;
+  end;
 end;
 
 procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var

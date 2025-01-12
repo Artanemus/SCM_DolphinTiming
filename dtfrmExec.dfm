@@ -21,7 +21,7 @@ object dtExec: TdtExec
     Left = 0
     Top = 0
     Width = 1444
-    Height = 25
+    Height = 42
     UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
@@ -36,12 +36,13 @@ object dtExec: TdtExec
     Font.Name = 'Segoe UI'
     Font.Style = []
     Spacing = 0
+    ExplicitHeight = 25
   end
   object rpnlBody: TRelativePanel
     Left = 0
-    Top = 25
+    Top = 42
     Width = 1444
-    Height = 776
+    Height = 759
     ControlCollection = <
       item
         Control = pnlTool1
@@ -85,15 +86,17 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitTop = 25
+    ExplicitHeight = 776
     DesignSize = (
       1444
-      776)
+      759)
     object pnlTool1: TPanel
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 144
-      Height = 770
+      Height = 753
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 0
@@ -204,13 +207,24 @@ object dtExec: TdtExec
         Transparent = True
         WordWrap = True
       end
+      object btnRefresh: TButton
+        Left = 24
+        Top = 254
+        Width = 106
+        Height = 41
+        Caption = 'Refresh'
+        ImageIndex = 4
+        ImageName = 'Sync'
+        Images = DTData.vimglistMenu
+        TabOrder = 0
+      end
     end
     object pnlSCM: TPanel
       AlignWithMargins = True
       Left = 153
       Top = 3
       Width = 525
-      Height = 770
+      Height = 753
       BevelOuter = bvNone
       Color = 5988209
       ParentBackground = False
@@ -761,7 +775,7 @@ object dtExec: TdtExec
       Left = 684
       Top = 3
       Width = 613
-      Height = 770
+      Height = 753
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 2
@@ -843,6 +857,7 @@ object dtExec: TdtExec
         ScrollBars = ssVertical
         TabOrder = 2
         StyleElements = [seFont, seBorder]
+        OnDrawCell = dtGridDrawCell
         HoverRowCells = [hcNormal, hcSelected]
         OnGetDisplText = dtGridGetDisplText
         OnClickCell = dtGridClickCell
@@ -1369,7 +1384,7 @@ object dtExec: TdtExec
       Left = 1303
       Top = 3
       Width = 144
-      Height = 770
+      Height = 753
       Anchors = []
       BevelOuter = bvNone
       Color = clDimgray
@@ -1396,12 +1411,6 @@ object dtExec: TdtExec
             Control = ShapeSpacer
           end
           item
-            Control = btnRefresh
-          end
-          item
-            Control = btnClose
-          end
-          item
             Control = btnDataDebug
           end>
         HorizontalPositioning = sphpCenter
@@ -1413,7 +1422,6 @@ object dtExec: TdtExec
           Width = 128
           Height = 41
           Action = actnSyncDT
-          Caption = 'SYNC'
           Images = DTData.vimglistMenu
         end
         object spbtnPost: TSpeedButton
@@ -1422,7 +1430,6 @@ object dtExec: TdtExec
           Width = 128
           Height = 41
           Action = actnPost
-          Caption = 'POST'
           Images = DTData.vimglistMenu
         end
         object ShapeSpacer: TShape
@@ -1435,31 +1442,13 @@ object dtExec: TdtExec
           Margins.Bottom = 6
           Brush.Color = clTomato
         end
-        object btnRefresh: TButton
-          Left = 19
-          Top = 110
-          Width = 106
-          Height = 41
-          Caption = 'Refresh'
-          TabOrder = 0
-        end
-        object btnClose: TButton
-          Left = 19
-          Top = 155
-          Width = 106
-          Height = 41
-          Caption = 'Close'
-          ModalResult = 8
-          TabOrder = 1
-          Visible = False
-        end
         object btnDataDebug: TButton
           Left = 17
-          Top = 200
+          Top = 110
           Width = 109
           Height = 40
           Caption = 'Data Debug'
-          TabOrder = 2
+          TabOrder = 0
           OnClick = btnDataDebugClick
         end
       end
@@ -1471,6 +1460,15 @@ object dtExec: TdtExec
         Items = <
           item
             Items = <
+              item
+                Action = actnRefresh
+                Caption = '&Refresh'
+                ImageIndex = 4
+                ImageName = 'Sync'
+              end
+              item
+                Caption = '-'
+              end
               item
                 Action = actnSelectSwimClub
                 Caption = 'Sele&ct Swimming Club...'
@@ -1487,16 +1485,16 @@ object dtExec: TdtExec
                 Caption = '-'
               end
               item
-                Action = actnLoadSession
-                Caption = '&Load DT Session ...'
-                ImageIndex = 0
-                ImageName = 'file_open'
-              end
-              item
                 Action = actnSaveSession
-                Caption = 'S&ave DT Session ...'
+                Caption = 'S&ave SCM-DT Session ...'
                 ImageIndex = 1
                 ImageName = 'file_saveAlt'
+              end
+              item
+                Action = actnLoadSession
+                Caption = '&Load SCM-DT Session ...'
+                ImageIndex = 0
+                ImageName = 'file_open'
               end
               item
                 Caption = '-'
@@ -1504,12 +1502,16 @@ object dtExec: TdtExec
               item
                 Items = <
                   item
-                    Action = actnImportDO3
-                    Caption = 'I&mport DO3 files ...'
+                    Action = actnClearReScanMeets
+                    Caption = '&Clear and re-scan DT meets folder ...'
+                    ImageIndex = 10
+                    ImageName = 'scan'
                   end
                   item
-                    Action = actnImportDO4
-                    Caption = '&Import DO4 files ...'
+                    Action = actnImportAppendDO
+                    Caption = '&Import and append DO[3..4] file(s) ...'
+                    ImageIndex = 0
+                    ImageName = 'file_open'
                   end>
                 Caption = '&Import'
               end
@@ -1518,14 +1520,20 @@ object dtExec: TdtExec
                   item
                     Action = actnExportDTCSV
                     Caption = '&Export Dolphin Timing Event CSV ...'
+                    ImageIndex = 1
+                    ImageName = 'file_saveAlt'
                   end
                   item
                     Action = actnReConstructDO3
                     Caption = 'Re-&construct and export DO3 files ...'
+                    ImageIndex = 9
+                    ImageName = 'build'
                   end
                   item
                     Action = actnReConstructDO4
                     Caption = '&Re-construct and export DO4 files ...'
+                    ImageIndex = 9
+                    ImageName = 'build'
                   end>
                 Caption = '&Export'
               end>
@@ -1535,13 +1543,13 @@ object dtExec: TdtExec
             Items = <
               item
                 Action = actnSyncDT
-                Caption = '&Sync DT'
-                ImageIndex = 4
-                ImageName = 'Sync'
+                Caption = '&SYNC'
+                ImageIndex = 11
+                ImageName = 'arrow_back'
               end
               item
                 Action = actnPost
-                Caption = 'P&ost'
+                Caption = 'P&OST'
                 ImageIndex = 7
                 ImageName = 'checked_bar'
               end
@@ -1559,6 +1567,23 @@ object dtExec: TdtExec
           item
             Items = <
               item
+                Action = actnReportSCMSession
+                Caption = '&SwimClubMeet Session Report...'
+              end
+              item
+                Action = actnReportSCMEvent
+                Caption = 'S&wimClubMeet Event Report...'
+              end
+              item
+                Action = actnReportDT
+              end>
+            Caption = '&Reports'
+            ImageIndex = 0
+            ImageName = 'file_open'
+          end
+          item
+            Items = <
+              item
                 Action = actnAbout
                 Caption = '&About SCM Dolphin Timing ...'
                 ImageIndex = 8
@@ -1569,9 +1594,15 @@ object dtExec: TdtExec
         ActionBar = actnMenuBar
       end>
     Images = DTData.vimglistMenu
-    Left = 64
-    Top = 264
+    Left = 984
+    Top = 368
     StyleName = 'Platform Default'
+    object actnRefresh: TAction
+      Category = 'File'
+      Caption = 'Refresh'
+      ImageIndex = 4
+      ImageName = 'Sync'
+    end
     object actnSelectSwimClub: TAction
       Category = 'File'
       Caption = 'Select Swimming Club...'
@@ -1589,18 +1620,24 @@ object dtExec: TdtExec
     object actnExportDTCSV: TAction
       Category = 'Export'
       Caption = 'Export Dolphin Timing Event CSV ...'
+      ImageIndex = 1
+      ImageName = 'file_saveAlt'
       OnExecute = actnExportDTCSVExecute
       OnUpdate = actnExportDTCSVUpdate
     end
     object actnReConstructDO3: TAction
       Category = 'Export'
       Caption = 'Re-construct and export DO3 files ...'
+      ImageIndex = 9
+      ImageName = 'build'
       OnExecute = actnReConstructDO3Execute
       OnUpdate = actnReConstructDO3Update
     end
     object actnReConstructDO4: TAction
       Category = 'Export'
       Caption = 'Re-construct and export DO4 files ...'
+      ImageIndex = 9
+      ImageName = 'build'
       OnExecute = actnReConstructDO4Execute
       OnUpdate = actnReConstructDO4Update
     end
@@ -1611,27 +1648,30 @@ object dtExec: TdtExec
       ImageName = 'Settings'
       OnExecute = actnPreferencesExecute
     end
-    object actnImportDO4: TAction
+    object actnImportAppendDO: TAction
       Category = 'Import'
-      Caption = 'Import DO4 files ...'
-      Enabled = False
-      OnExecute = actnImportDO4Execute
+      Caption = 'Import and append DO[3..4] file(s) ...'
+      ImageIndex = 0
+      ImageName = 'file_open'
+      OnExecute = actnImportAppendDOExecute
     end
-    object actnImportDO3: TAction
+    object actnClearReScanMeets: TAction
       Category = 'Import'
-      Caption = 'Import DO3 files ...'
-      Enabled = False
+      Caption = 'Clear and re-scan DT meets folder ...'
+      ImageIndex = 10
+      ImageName = 'scan'
+      OnExecute = actnClearReScanMeetsExecute
     end
     object actnSaveSession: TAction
       Category = 'File'
-      Caption = 'Save DT Session ...'
+      Caption = 'Save SCM-DT Session ...'
       Enabled = False
       ImageIndex = 1
       ImageName = 'file_saveAlt'
     end
     object actnLoadSession: TAction
       Category = 'File'
-      Caption = 'Load DT Session ...'
+      Caption = 'Load SCM-DT Session ...'
       Enabled = False
       ImageIndex = 0
       ImageName = 'file_open'
@@ -1644,9 +1684,9 @@ object dtExec: TdtExec
     end
     object actnSyncDT: TAction
       Category = 'Edit'
-      Caption = 'Sync DT'
-      ImageIndex = 4
-      ImageName = 'Sync'
+      Caption = 'SYNC'
+      ImageIndex = 11
+      ImageName = 'arrow_back'
       OnExecute = actnSyncDTExecute
     end
     object actnConnect: TAction
@@ -1657,9 +1697,21 @@ object dtExec: TdtExec
     end
     object actnPost: TAction
       Category = 'Edit'
-      Caption = 'Post'
+      Caption = 'POST'
       ImageIndex = 7
       ImageName = 'checked_bar'
+    end
+    object actnReportSCMSession: TAction
+      Category = 'Reports'
+      Caption = 'SwimClubMeet Session Report...'
+    end
+    object actnReportSCMEvent: TAction
+      Category = 'Reports'
+      Caption = 'SwimClubMeet Event Report...'
+    end
+    object actnReportDT: TAction
+      Category = 'Reports'
+      Caption = 'Dolphin Timing Report...'
     end
   end
   object FileSaveDlgCSV: TFileSaveDialog
@@ -1678,8 +1730,8 @@ object dtExec: TdtExec
     OkButtonLabel = 'Save DT Event file'
     Options = []
     Title = 'Create a Dolphin Timing '#39'event setup'#39' csv file.'
-    Left = 64
-    Top = 376
+    Left = 984
+    Top = 480
   end
   object PickDTFolderDlg: TFileOpenDialog
     DefaultFolder = 'c:\Dolphin\Meets'
@@ -1688,7 +1740,29 @@ object dtExec: TdtExec
     OkButtonLabel = 'Select DT folder'
     Options = [fdoPickFolders]
     Title = 'Select the Dolphin Timing folder.'
-    Left = 64
-    Top = 320
+    Left = 984
+    Top = 424
+  end
+  object DTAppendFile: TFileOpenDialog
+    FavoriteLinks = <>
+    FileTypes = <
+      item
+        DisplayName = 'Dolphin Timing DO3 file.'
+        FileMask = '*.DO3'
+      end
+      item
+        DisplayName = 'Dolphin Timing DO4 file.'
+        FileMask = '*.DO4'
+      end
+      item
+        DisplayName = 'All Dolphin DO types.'
+        FileMask = '*.DO*'
+      end>
+    FileTypeIndex = 3
+    OkButtonLabel = 'Append DO file(s)'
+    Options = [fdoStrictFileTypes, fdoAllowMultiSelect, fdoPathMustExist, fdoFileMustExist]
+    Title = 'Append Dolphin Timing DO[3..4] files(s)...'
+    Left = 1343
+    Top = 524
   end
 end

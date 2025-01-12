@@ -132,6 +132,8 @@ type
     function GetSCMRoundABBREV(AEventID: integer): string;
 
     procedure ToggleUseAutoTime(ADataSet: TDataSet);
+    procedure ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
+    procedure ToggleTimeEnabledM(ADataSet: TDataSet; idx: integer);
 
     property SCMDataIsActive: Boolean read fSCMDataIsActive;
     property DTDataIsActive: Boolean read fDTDataIsActive;
@@ -861,6 +863,51 @@ begin
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
   tblDTEntrant.LoadFromFile(s + 'DTLane.fsBinary');
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
+end;
+
+procedure TDTData.ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
+begin
+  if not ADataSet.FieldByName('UseAutoTime').AsBoolean then exit;
+
+  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
+  begin
+    ADataSet.edit;
+    case idx of
+      1:
+        ADataSet.FieldByName('Time1EnabledA').AsBoolean := not
+          ADataSet.FieldByName('Time1EnabledA').AsBoolean;
+      2:
+        ADataSet.FieldByName('Time2EnabledA').AsBoolean := not
+          ADataSet.FieldByName('Time2EnabledA').AsBoolean;
+      3:
+        ADataSet.FieldByName('Time3EnabledA').AsBoolean := not
+          ADataSet.FieldByName('Time3EnabledA').AsBoolean;
+    end;
+    ADataSet.Post;
+  end;
+end;
+
+procedure TDTData.ToggleTimeEnabledM(ADataSet: TDataSet; idx: integer);
+begin
+  if ADataSet.FieldByName('UseAutoTime').AsBoolean then exit;
+
+  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
+  begin
+    ADataSet.edit;
+    case idx of
+      1:
+        ADataSet.FieldByName('Time1EnabledM').AsBoolean := not
+          ADataSet.FieldByName('Time1EnabledM').AsBoolean;
+      2:
+        ADataSet.FieldByName('Time2EnabledM').AsBoolean := not
+          ADataSet.FieldByName('Time2EnabledM').AsBoolean;
+      3:
+        ADataSet.FieldByName('Time3EnabledM').AsBoolean := not
+          ADataSet.FieldByName('Time3EnabledM').AsBoolean;
+    end;
+    ADataSet.Post;
+  end;
+
 end;
 
 procedure TDTData.ToggleUseAutoTime(ADataSet: TDataSet);

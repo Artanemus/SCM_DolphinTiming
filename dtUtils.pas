@@ -5,7 +5,6 @@ interface
 uses dmDTData, vcl.ComCtrls, Math, System.Types, System.IOUtils,
   SysUtils, Windows, StrUtils, System.Classes, SCMDefines;
 
-//function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
 function StripAlphaChars(const InputStr: string): string;
 
 type
@@ -55,16 +54,16 @@ type
     // Main Process entry points
     procedure ProcessDirectory(const ADirectory: string;
       pBar: TProgressBar);
-    // Sub-routines for Process
-    procedure ProcessSession(AFileName: TFileName);
     procedure ProcessEvent(SessionID: integer);
     procedure ProcessHeat(EventID: integer);
     procedure ProcessEntrant(HeatID: integer);
 
-    function TryParseCustomTime(const s: string; out ATimeValue: TDateTime): boolean;
-
+//    function TryParseCustomTime(const s: string; out ATimeValue: TDateTime): boolean;
+    function ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 
   public
+    // Sub-routines for Process
+    procedure ProcessSession(AFileName: TFileName);
     procedure PrepareDTData();
     procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
     procedure AppendDTData(const AFileName: string);
@@ -107,48 +106,38 @@ begin
       Result := Result + Achar;
 end;
 
-{
-function ConvertDTTimeToTime(const DTTimeStr: string): TTime;
+
+function TdtUtils.ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 var
-//  Seconds, Hundredths: integer;
-//  DotPos: integer;
-  TimeValue: TDateTime;
-  fs: TFormatSettings;
+  TotalSeconds: Double;
+  Hours, Minutes, Seconds, Milliseconds: Word;
 begin
+  Result := 0; // Initialize the result to zero
 
-  result := 0;
+  // Check if the input string is empty
+  if Trim(ASecondsStr) = '' then
+    Exit;
 
-  // Handle empty string (no time provided)
-//  if DTTimeStr = '' then
-//    Exit(0);
-
-  // Find the position of the dot
-  DotPos := Pos('.', DTTimeStr);
-
-  if DotPos > 0 then
-  begin
-    // Convert the part before the dot (seconds)
-    Seconds := StrToInt(Copy(DTTimeStr, 1, DotPos - 1));
-
-    // Convert the part after the dot (hundredths)
-    Hundredths := StrToInt(Copy(DTTimeStr, DotPos + 1, Length(DTTimeStr) - DotPos));
-
-    // Calculate the time as a fraction of a day (TTime uses days)
-    TimeValue := (Seconds + (Hundredths / 100)) / SecsPerDay;
-    // SecsPerDay is 86400 (seconds in a day)
-  end
-  else
-  begin
-    // If there's no dot, treat the string as whole seconds
-    Seconds := StrToInt(DTTimeStr);
-    TimeValue := Seconds / SecsPerDay;
+  // Attempt to convert the string to a floating point value
+  try
+    TotalSeconds := StrToFloat(ASecondsStr);
+  except
+    // If an error occurs, return zero
+    Exit;
   end;
 
-  fs := TFormatSettings.Create;
-  if TryStrToTime(DTTimeStr, TimeValue, fs) then
-    Result := TTime(TimeValue);
+  // Calculate the hours, minutes, seconds, and milliseconds components
+  Hours := Trunc(TotalSeconds) div 3600;
+  TotalSeconds := TotalSeconds - (Hours * 3600);
+  Minutes := Trunc(TotalSeconds) div 60;
+  TotalSeconds := TotalSeconds - (Minutes * 60);
+  Seconds := Trunc(TotalSeconds);
+  Milliseconds := Round(Frac(TotalSeconds) * 1000);
+
+  // Encode the components back into a TTime value
+  Result := EncodeTime(Hours, Minutes, Seconds, Milliseconds);
 end;
-}
+
 
 class operator TdtUtils.Finalize(var Dest: TdtUtils);
 begin
@@ -845,6 +834,7 @@ begin
   end;
 end;
 
+{
 function TdtUtils.TryParseCustomTime(const s: string; out ATimeValue: TDateTime): boolean;
 var
   Minutes, Seconds, Milliseconds: word;
@@ -905,6 +895,7 @@ begin
   ATimeValue := EncodeTime(0, Minutes, Seconds, Milliseconds);
   Result := True;
 end;
+}
 
 function TdtUtils.sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
 var
@@ -953,7 +944,9 @@ begin
     if s <> '' then
     begin
       // Try to parse the time
-      if TryParseCustomTime(s, ATimeValue) then
+      ATimeValue := ConvertSecondsStrToTime(s);
+//      if TryParseCustomTime(s, ATimeValue) then
+      if ATimeValue > 0 then
       begin
         // Calculate the ASplit index
         SplitIndex := i - 4;
@@ -988,14 +981,15 @@ begin
     result := StrToIntDef(s, 0); // Extract the lane as an integer
 end;
 
-function TdtUtils.sListBodyTimeKeepers(LineIndex: integer;var ATimeKeepers: array of double): boolean;
+function TdtUtils.sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers:
+  array of double): boolean;
 var
   Fields: TArray<string>;
   i: integer;
   ATimeValue: TDateTime;
   s: string;
   Found: boolean;
-//  Hour, Min, Sec, MSec: word;
+  //  Hour, Min, Sec, MSec: word;
 begin
   // Note: Dolphin Timing allows for three timekeepers.
   // Fields[0] = lane number.
@@ -1020,12 +1014,13 @@ begin
       s := Fields[I];
       if s <> '' then
       begin
-          // Try to parse the time
-          if TryParseCustomTime(s, ATimeValue) then
-          begin
-            ATimeKeepers[I-1] := ATimeValue;
-            Found := true;
-          end;
+        // Try to parse the time
+        ATimeValue := ConvertSecondsStrToTime(s);
+        if ATimeValue > 0 then
+        begin
+          ATimeKeepers[I - 1] := ATimeValue;
+          Found := true;
+        end;
       end
     end;
   end;
