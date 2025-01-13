@@ -17,10 +17,9 @@ uses
 type
   dtFileType = (dtUnknown, dtDO4, dtDO3, dtALL);
   // 5 x modes m-enabled, m-disabled, a-enabled, a-disabled, unknown (err or nil).
-  dtTimeMode = (tmUnknow, tmManualDisabled, tmMaualenabled, tmAutoDisabled,
-    tmAutoEnabled);
   dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
   dtPrecedence = (dtPrecHeader, dtPrecFileName);
+  dtTimeMode = (dtAutomatic, dtManual);
 
 type
   TDTData = class(TDataModule)
@@ -67,6 +66,7 @@ type
     tblDTEvent: TFDMemTable;
     dsDTEvent: TDataSource;
     SVGIconImageCollection1: TSVGIconImageCollection;
+    vimglistDTCell: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
   private
@@ -134,6 +134,13 @@ type
     procedure ToggleUseAutoTime(ADataSet: TDataSet);
     procedure ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
     procedure ToggleTimeEnabledM(ADataSet: TDataSet; idx: integer);
+    procedure SetAutoTime(ADataSet: TDataSet; ATimeMode: dtTimeMode);
+    procedure CalcRaceTime(ADataSet: TDataSet);
+    procedure CalcDeviation(ADataSet: TDataSet; TimeKeeperIndx: integer);
+    function CalcAverage(ADataSet: TDataSet): double;
+
+    function ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx: integer):
+        boolean;
 
     property SCMDataIsActive: Boolean read fSCMDataIsActive;
     property DTDataIsActive: Boolean read fDTDataIsActive;
@@ -557,6 +564,76 @@ begin
 
 end;
 
+function TDTData.CalcAverage(ADataSet: TDataSet): double;
+var
+  t1, t2, t3: TTime;
+  i: integer;
+  avg: double;
+begin
+  i := 3;
+
+  if (ValidateTimeKeeper(ADataSet, 1) = false) then
+  begin
+    t1 := 0;
+    DEC(i);
+  end
+  else
+    t1 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
+
+  if (ValidateTimeKeeper(ADataSet, 2) = false) then
+  begin
+    t2 := 0;
+    DEC(i);
+  end
+  else
+    t2 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
+
+  if (ValidateTimeKeeper(ADataSet, 3) = false) then
+  begin
+    t3 := 0;
+    DEC(i);
+  end
+  else
+    t3 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
+
+  // is this legal? Should TTime be cast-double before operation?
+  avg := (t1+t2+t3) / i;
+  result := avg;
+end;
+
+procedure TDTData.CalcDeviation(ADataSet: TDataSet; TimeKeeperIndx: integer);
+var
+  t, avg: TTime;
+  devation: double;
+begin
+  case TimeKeeperIndx of
+    1:
+      begin
+        avg := CalcAverage(ADataSet);
+        if (avg = 0) then
+        begin
+          ADataSet.Edit;
+          // indicates error
+          ADataSet.FieldByName('Deviation1').AsFloat := -1;
+          ADataSet.Post;
+          exit;
+        end;
+        t := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
+        devation := avg - t;
+        ADataSet.Edit;
+        ADataSet.FieldByName('Deviation1').AsFloat := devation;
+        ADataSet.Post;
+        exit;
+      end;
+  end;
+end;
+
+procedure TDTData.CalcRaceTime(ADataSet: TDataSet);
+begin
+  // if time is within deviation
+
+end;
+
 function TDTData.GetSCMRoundABBREV(AEventID: integer): string;
 var
 SQL: string;
@@ -865,6 +942,34 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
+procedure TDTData.SetAutoTime(ADataSet: TDataSet; ATimeMode: dtTimeMode);
+begin
+  // Test if field is already set to correct timemode.
+  if (ADataSet.FieldByName('UseAutoTime').AsBoolean = true) and (ATimeMode =
+    dtAutomatic) then exit;
+  if (ADataSet.FieldByName('UseAutoTime').AsBoolean = false) and (ATimeMode =
+    dtManual) then exit;
+  // Assign data fields to reflect new timemode.
+  try
+    ADataSet.edit;
+    case ATimeMode of
+      dtAutomatic:
+        begin
+          ADataSet.FieldByName('UseAutoTime').AsBoolean := True;
+          ADataSet.fieldbyName('imgAuto').AsInteger := 1
+        end;
+      dtManual:
+        begin
+          ADataSet.FieldByName('UseAutoTime').AsBoolean := false;
+          ADataSet.fieldbyName('imgAuto').AsInteger := 2;
+        end;
+    end;
+    ADataSet.post;
+  except on E: Exception do
+      // handle arror.
+  end;
+end;
+
 procedure TDTData.ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
 begin
   if not ADataSet.FieldByName('UseAutoTime').AsBoolean then exit;
@@ -912,15 +1017,13 @@ end;
 
 procedure TDTData.ToggleUseAutoTime(ADataSet: TDataSet);
 var
-  b: boolean;
-  t1, t2, t3, avgt, d1, d2, d3: TTime;
-  count: integer;
-  AcceptedDeviation: TTime;
+  ATimeMode: dtTimeMode;
+  t1, t2, t3: TTime;
 begin
   if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
   begin
     // if there is no time-keeper data then it's pointless
-    // changing autotime.
+    // changing TimeMode. Also the icon will be removed.
     t1 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
     t2 := TimeOF(ADataSet.FieldByName('Time2').AsDateTime);
     t3 := TimeOF(ADataSet.FieldByName('Time3').AsDateTime);
@@ -938,107 +1041,56 @@ begin
       end;
       exit;
     end;
+    // toogle boolean state.
+    if (ADataSet.FieldByName('UseAutoTime').AsBoolean = true) then
+      ATimeMode := dtManual
+    else
+      ATimeMode := dtAutomatic;
+    SetAutoTime(ADataSet, ATimeMode);
 
-    b := ADataSet.FieldByName('UseAutoTime').AsBoolean;
-    b := not b;
-    try
-      ADataSet.edit;
-      ADataSet.FieldByName('UseAutoTime').AsBoolean := b;
-      if b then
-        // graphic used in column[?] - for Auto .. Manual
-        ADataSet.fieldbyName('imgAuto').AsInteger := 2
-      else
-        // graphic used in column[?] - for Auto .. Manual
-        ADataSet.fieldbyName('imgAuto').AsInteger := 3;
+    CalcRaceTime(ADataSet);
 
-      ADataSet.post;
-    except on E: Exception do
-        // handle arror.
-    end;
-
-    // MOVE ALL CODE BELOW TO AFTERPOST.
-    // CREATE PROCEDURE CALC RACETIME.
-    // CREATE PROCEDURE TEST FOR DEVIATION.
-    // OPTIMIZE - MAKE READABLE.
-
-    // todo : look at the setting JSON for deviation configuration
-    AcceptedDeviation := 0.3;
-    // calculate deviation for all valid timekeeper's times.
-    d1 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
-    d2 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
-    d3 := TimeOF(ADataSet.FieldByName('Deviation1').AsDateTime);
-
-    // calculate the new racetime...
-    count := 0;
-    avgt := 0;
-    if b then // using AutoTime
-    begin
-      if (t1 > 0) and ADataSet.FieldByName('Time1EnabledA').AsBoolean then
-      begin
-        if d1 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t1;
-        end;
-      end;
-      if (t2 > 0) and ADataSet.FieldByName('Time2EnabledA').AsBoolean then
-      begin
-        if d2 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t2;
-        end;
-      end;
-      if (t3 > 0) and ADataSet.FieldByName('Time3EnabledA').AsBoolean then
-      begin
-        if d3 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t3;
-        end;
-      end;
-    end;
-    if not b then // using AutoTime
-    begin
-      if (t1 > 0) and ADataSet.FieldByName('Time1EnabledM').AsBoolean then
-      begin
-        if d1 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t1;
-        end;
-      end;
-      if (t2 > 0) and ADataSet.FieldByName('Time2EnabledM').AsBoolean then
-      begin
-        if d2 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t2;
-        end;
-      end;
-      if (t3 > 0) and ADataSet.FieldByName('Time3EnabledM').AsBoolean then
-      begin
-        if d3 <= AcceptedDeviation then
-        begin
-          inc(count); // found an active time...
-          avgt := avgt + t3;
-        end;
-      end;
-    end;
-
-    if (avgt > 0) then
-    begin
-      avgt := avgt / count;
-      try
-        ADataSet.edit;
-        ADataSet.FieldByName('RaceTime').AsDateTime := avgt;
-        ADataSet.post;
-      except on E: Exception do
-          // handle arror.
-      end;
-    end;
 
   end;
+end;
+
+function TDTData.ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx:
+  integer): boolean;
+var
+  UseAutomatic: boolean;
+begin
+  result := false;
+  UseAutomatic := ADataSet.FieldByName('UseAutoTime').AsBoolean;
+  case TimeKeeperIndx of
+    1:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time1').AsDateTime) = 0) then
+          exit;
+        // the user has disabled this TimeKeeper's data.
+        if not UseAutomatic then
+          if (ADataSet.FieldByName('Time1EnabledM').AsBoolean = false) then
+            exit;
+      end;
+    2:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time2').AsDateTime) = 0) then
+          exit;
+        // the user has disabled this TimeKeeper's data.
+        if (UseAutomatic = false) then
+          if (ADataSet.FieldByName('Time2EnabledM').AsBoolean = false) then
+            exit;
+      end;
+    3:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time3').AsDateTime) = 0) then
+          exit;
+        // the user has disabled this TimeKeeper's data.
+        if (UseAutomatic = true) then
+          if (ADataSet.FieldByName('Time3EnabledM').AsBoolean = false) then
+            exit;
+      end;
+  end;
+  result := true;
 end;
 
 end.

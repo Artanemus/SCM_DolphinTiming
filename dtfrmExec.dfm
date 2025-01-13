@@ -36,7 +36,6 @@ object dtExec: TdtExec
     Font.Name = 'Segoe UI'
     Font.Style = []
     Spacing = 0
-    ExplicitHeight = 25
   end
   object rpnlBody: TRelativePanel
     Left = 0
@@ -86,8 +85,6 @@ object dtExec: TdtExec
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 25
-    ExplicitHeight = 776
     DesignSize = (
       1444
       759)
@@ -857,7 +854,6 @@ object dtExec: TdtExec
         ScrollBars = ssVertical
         TabOrder = 2
         StyleElements = [seFont, seBorder]
-        OnDrawCell = dtGridDrawCell
         HoverRowCells = [hcNormal, hcSelected]
         OnGetDisplText = dtGridGetDisplText
         OnClickCell = dtGridClickCell
@@ -924,6 +920,7 @@ object dtExec: TdtExec
         FixedFont.Name = 'Segoe UI Semibold'
         FixedFont.Style = [fsBold]
         FloatFormat = '%.2f'
+        GridImages = DTData.vimglistDTCell
         HoverButtons.Buttons = <>
         HoverButtons.Position = hbLeftFromColumnLeft
         HTMLSettings.ImageFolder = 'images'
@@ -1165,7 +1162,7 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
-            Images = DTData.vimglistDTGrid
+            Images = DTData.vimglistDTCell
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
@@ -1576,6 +1573,7 @@ object dtExec: TdtExec
               end
               item
                 Action = actnReportDT
+                Caption = '&Dolphin Timing Report...'
               end>
             Caption = '&Reports'
             ImageIndex = 0

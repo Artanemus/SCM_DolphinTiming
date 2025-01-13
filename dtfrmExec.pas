@@ -106,8 +106,6 @@ type
     procedure btnPrevDTFileClick(Sender: TObject);
     procedure btnPrevEventClick(Sender: TObject);
     procedure dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
-    procedure dtGridDrawCell(Sender: TObject; ACol, ARow: LongInt; Rect: TRect;
-        State: TGridDrawState);
     procedure dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
         string);
     procedure FormCreate(Sender: TObject);
@@ -823,8 +821,14 @@ end;
 procedure TdtExec.dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
 var
   Grid: TDBAdvGrid;
+  b1, b2, b3: boolean;
+  DoAddShape: boolean;
+  aImgIndx: integer;
 begin
   Grid := Sender as TDBAdvGrid;
+  b2 := true;
+  b3 := true;
+  AImgIndx := 2;
   if (ARow >= DTgrid.FixedRows) then
   begin
     case ACol of
@@ -847,83 +851,71 @@ begin
             DTData.ToggleTimeEnabledA(Grid.DataSource.DataSet, (Acol-2))
           else
             DTData.ToggleTimeEnabledM(Grid.DataSource.DataSet, (Acol-2));
+
+          DoAddShape := false;
+          // UseAutoTime : ENABLED.
+          //    Validates the race-time given by the TimeKeeper{1..3] and
+          //    'flags' results into  database ... field(s) ...
+          //  ...  Time1EnabledA, Time2EnabledA, Time3EnabledA
+          // UseAutoTime : DISABLED. (wit. manual mode).
+          // The user will determine which race-time will be validated.
+          // User 'flags' database field(s) ...
+          //  ...  Time1EnabledM, Time2EnabledM, Time3EnabledM
+          b1 := Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean;
+          if (ACol = 3) then
+          begin
+            b2 := Grid.DataSource.DataSet.FieldByName('Time1EnabledA').AsBoolean;
+            b3 := Grid.DataSource.DataSet.FieldByName('Time1EnabledM').AsBoolean;
+          end;
+          if (ACol = 4) then
+          begin
+            b2 := Grid.DataSource.DataSet.FieldByName('Time2EnabledA').AsBoolean;
+            b3 := Grid.DataSource.DataSet.FieldByName('Time2EnabledM').AsBoolean;
+          end;
+          if (ACol = 5) then
+          begin
+            b2 := Grid.DataSource.DataSet.FieldByName('Time3EnabledA').AsBoolean;
+            b3 := Grid.DataSource.DataSet.FieldByName('Time3EnabledM').AsBoolean;
+          end;
+          // UseAutoTime enabled -
+          if (b1 = true) and (b2 = false) then DoAddShape := true;
+          // UseAutoTime disabled - ManualTime mode -
+          if (b1 = false) and (b3 = false) then DoAddShape := true;
+          if DoAddShape then
+          begin
+//              if not Grid.HasShape(Acol, ARow) then
+//                Grid.AddShape(ACol, ARow, TCellShape.csLineHorz, clRed, clRed, TCellHAlign.haFull, TCellVAlign.vaCenter);
+              if not Grid.GetImageIdx(ACol, ARow, AImgIndx) then
+                Grid.AddImageIdx(ACol, ARow, 0, TCellHAlign.haFull, TCellVAlign.vaFull);
+          end
+          else
+            begin
+//              if Grid.HasShape(Acol, ARow) then
+//                Grid.RemoveShape(Acol, ARow);
+              if Grid.GetImageIdx(ACol, ARow, AImgIndx) then
+                Grid.RemoveImageIdx(ACol, ARow);
+            end;
+
           grid.EndUpdate;
         end;
     end;
   end;
 end;
 
-procedure TdtExec.dtGridDrawCell(Sender: TObject; ACol, ARow: LongInt; Rect:
-  TRect; State: TGridDrawState);
-var
-  Grid: TDBAdvGrid;
-  b1, b2, b3, DoPaint: boolean;
-
+procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value: string);
 begin
-  Grid := Sender as TDBAdvGrid;
-  // Perform default drawing
-  //  Grid.DefaultDrawCell(ACol, ARow, Rect, State);
-
-
-  DOPaint := false;
-  if (ACol = 3) and (ARow >= DTgrid.FixedRows) and (gdSelected in State) then
-  begin
-    // CHECK IF CELL IS EMPTY OF TIMEKEEPER'S RACETIME.
-
-    // Move to the record corresponding to the current row
-//    Grid.DataSource.DataSet.RecNo := ARow + 2; // Adjust for 0-based index
-
-    // Check data variables
-
-    b1 := Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean;
-    b2 := Grid.DataSource.DataSet.FieldByName('Time1EnabledA').AsBoolean;
-    b3 := Grid.DataSource.DataSet.FieldByName('Time1EnabledM').AsBoolean;
-    if (b1 = true) and (b2 = false) then DoPaint := true;
-    if (b1 = false) and (b3 = false) then DoPaint := true;
-
-    if DoPaint then
-    begin
-      // Set the pen color and style
-      Grid.Canvas.Pen.Color := clRed; // You can use any color you prefer
-      Grid.Canvas.Pen.Style := psSolid;
-      Grid.Canvas.Pen.Width := 2;
-
-      // Draw the diagonal line from top-left to bottom-right
-      Grid.Canvas.MoveTo(Rect.Left, Rect.Top);
-      Grid.Canvas.LineTo(Rect.Right, Rect.Bottom);
-
-      // Draw the diagonal line from bottom-left to top-right (optional)
-      Grid.Canvas.MoveTo(Rect.Left, Rect.Bottom);
-      Grid.Canvas.LineTo(Rect.Right, Rect.Top);
-    end;
-  end;
+//  Grid := Sender as TDBAdvGrid;
 end;
 
-procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
-    Value: string);
+{procedure TdtExec.dtGridGetRecordCount(Sender: TObject; var Count: Integer);
 var
-  Grid: TDBAdvGrid;
-//  TimeCol3, TimeCol4, TimeCol5: string;
+  ds: TFDMemTable;
 begin
-  Grid := Sender as TDBAdvGrid;
-{
-  // Check if we are dealing with the image column
-  if (ACol = 6) and (ARow >= DTgrid.FixedRows)  then
-  begin
-    // Retrieve the values of columns 3, 4, and 5
-    TimeCol3 := Grid.Cells[3, ARow];
-    TimeCol4 := Grid.Cells[4, ARow];
-    TimeCol5 := Grid.Cells[5, ARow];
-
-    // If all three columns are empty, hide the image
-    if (TimeCol3 = '') and (TimeCol4 = '') and (TimeCol5 = '') then
-    begin
-      // Set the image index to -1 to hide the image
-      Value := ''; // Clear the value to hide the image
-    end;
-  end;
-}
-end;
+  ds := TFDMemTable(TDBAdvGrid(Sender).DataSource.DataSet);
+  ds.ApplyMaster; // TODO -oBSA -cGeneral : May not be required.
+  ds.Last;
+  count := ds.RecordCount;
+end;}
 
 procedure TdtExec.FormCreate(Sender: TObject);
 begin
