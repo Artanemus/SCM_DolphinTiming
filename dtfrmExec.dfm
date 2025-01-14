@@ -22,7 +22,6 @@ object dtExec: TdtExec
     Top = 0
     Width = 1444
     Height = 42
-    UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
     Color = clMenuBar
@@ -31,7 +30,7 @@ object dtExec: TdtExec
     ColorMap.BtnSelectedFont = clBlack
     ColorMap.UnusedColor = clWhite
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBlack
+    Font.Color = clWindowText
     Font.Height = -12
     Font.Name = 'Segoe UI'
     Font.Style = []
@@ -283,6 +282,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -847,6 +847,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -1000,6 +1001,7 @@ object dtExec: TdtExec
             Width = 20
           end
           item
+            Alignment = taRightJustify
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1056,7 +1058,6 @@ object dtExec: TdtExec
             Width = 44
           end
           item
-            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1085,7 +1086,6 @@ object dtExec: TdtExec
             Width = 94
           end
           item
-            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1114,7 +1114,6 @@ object dtExec: TdtExec
             Width = 94
           end
           item
-            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1143,6 +1142,7 @@ object dtExec: TdtExec
             Width = 94
           end
           item
+            Alignment = taRightJustify
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1172,7 +1172,6 @@ object dtExec: TdtExec
             Width = 64
           end
           item
-            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1566,18 +1565,22 @@ object dtExec: TdtExec
               item
                 Action = actnReportSCMSession
                 Caption = '&SwimClubMeet Session Report...'
+                ImageIndex = 12
+                ImageName = 'file_report'
               end
               item
                 Action = actnReportSCMEvent
                 Caption = 'S&wimClubMeet Event Report...'
+                ImageIndex = 12
+                ImageName = 'file_report'
               end
               item
                 Action = actnReportDT
                 Caption = '&Dolphin Timing Report...'
+                ImageIndex = 12
+                ImageName = 'file_report'
               end>
             Caption = '&Reports'
-            ImageIndex = 0
-            ImageName = 'file_open'
           end
           item
             Items = <
@@ -1702,14 +1705,20 @@ object dtExec: TdtExec
     object actnReportSCMSession: TAction
       Category = 'Reports'
       Caption = 'SwimClubMeet Session Report...'
+      ImageIndex = 12
+      ImageName = 'file_report'
     end
     object actnReportSCMEvent: TAction
       Category = 'Reports'
       Caption = 'SwimClubMeet Event Report...'
+      ImageIndex = 12
+      ImageName = 'file_report'
     end
     object actnReportDT: TAction
       Category = 'Reports'
       Caption = 'Dolphin Timing Report...'
+      ImageIndex = 12
+      ImageName = 'file_report'
     end
   end
   object FileSaveDlgCSV: TFileSaveDialog

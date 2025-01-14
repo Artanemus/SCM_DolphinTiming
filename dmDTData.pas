@@ -17,9 +17,9 @@ uses
 type
   dtFileType = (dtUnknown, dtDO4, dtDO3, dtALL);
   // 5 x modes m-enabled, m-disabled, a-enabled, a-disabled, unknown (err or nil).
-  dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
+  //  dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
   dtPrecedence = (dtPrecHeader, dtPrecFileName);
-  dtTimeMode = (dtAutomatic, dtManual);
+  dtTimeKeeperMode = (dtAutomatic, dtManual);
 
 type
   TDTData = class(TDataModule)
@@ -69,6 +69,7 @@ type
     vimglistDTCell: TVirtualImageList;
     procedure DataModuleDestroy(Sender: TObject);
     procedure DataModuleCreate(Sender: TObject);
+    procedure tblDTHeatAfterScroll(DataSet: TDataSet);
   private
     { Private declarations }
     FConnection: TFDConnection;
@@ -131,16 +132,23 @@ type
     function GetSCMNumberOfHeats(AEventID: integer): integer;
     function GetSCMRoundABBREV(AEventID: integer): string;
 
-    procedure ToggleUseAutoTime(ADataSet: TDataSet);
-    procedure ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
-    procedure ToggleTimeEnabledM(ADataSet: TDataSet; idx: integer);
-    procedure SetAutoTime(ADataSet: TDataSet; ATimeMode: dtTimeMode);
+    procedure ToggleTimeKeeperMode(ADataSet: TDataSet);
+    // Available only when in TimeKeeperMode - dtManual.
+    // returns true - Enabled ... false - Disabled.
+    function ToggleEnableTimeKeeper(ADataSet: TDataSet; idx: integer): Boolean;
+    procedure SetTimeKeeperMode(ADataSet: TDataSet; ATimeKeeperMode:
+        dtTimeKeeperMode);
+
+    // Routines ONLY for TimeKeeperMode = dtManual
+    // For dtAutomatic Racetime, Deviation and validation are perform on
+    // loading of the DO file.
+    // --------------------------------------------
     procedure CalcRaceTime(ADataSet: TDataSet);
     procedure CalcDeviation(ADataSet: TDataSet; TimeKeeperIndx: integer);
     function CalcAverage(ADataSet: TDataSet): double;
-
     function ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx: integer):
         boolean;
+    // --------------------------------------------
 
     property SCMDataIsActive: Boolean read fSCMDataIsActive;
     property DTDataIsActive: Boolean read fDTDataIsActive;
@@ -494,9 +502,10 @@ begin
       TRUE : using Auto enabled/disable flags. (DEFAUT)
       FALSE : using Manual enable/disable flags.
   }
-  tblDTEntrant.FieldDefs.Add('UseAutoTime', ftBoolean); // default true.
+  tblDTEntrant.FieldDefs.Add('TimeKeeperMode', ftInteger); // default true.
   // Swimmers calculated racetime. Average mean of enabled Times[1..3].
-  tblDTEntrant.FieldDefs.Add('RaceTime', ftTime);
+  tblDTEntrant.FieldDefs.Add('RaceTime', ftTime); // dtManual - calc in realtime.
+  tblDTEntrant.FieldDefs.Add('RaceTimeA', ftTime); // dtAutomatic - calc on load.
   // NOODLE or PATCH cable .
   tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
   // User manually selecting TimeKeeper's race-times to use - OR - Auto
@@ -942,27 +951,20 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
-procedure TDTData.SetAutoTime(ADataSet: TDataSet; ATimeMode: dtTimeMode);
+procedure TDTData.SetTimeKeeperMode(ADataSet: TDataSet; ATimeKeeperMode:
+    dtTimeKeeperMode);
 begin
-  // Test if field is already set to correct timemode.
-  if (ADataSet.FieldByName('UseAutoTime').AsBoolean = true) and (ATimeMode =
-    dtAutomatic) then exit;
-  if (ADataSet.FieldByName('UseAutoTime').AsBoolean = false) and (ATimeMode =
-    dtManual) then exit;
+  // Test: Field already set to this mode.
+  if (ADataSet.FieldByName('TimeKeeperMode').AsInteger = ORD(ATimeKeeperMode)) then exit;
   // Assign data fields to reflect new timemode.
   try
     ADataSet.edit;
-    case ATimeMode of
+    ADataSet.FieldByName('TimeKeeperMode').AsInteger := ORD(ATimeKeeperMode);
+    case ATimeKeeperMode of
       dtAutomatic:
-        begin
-          ADataSet.FieldByName('UseAutoTime').AsBoolean := True;
-          ADataSet.fieldbyName('imgAuto').AsInteger := 1
-        end;
+          ADataSet.fieldbyName('imgAuto').AsInteger := 1;
       dtManual:
-        begin
-          ADataSet.FieldByName('UseAutoTime').AsBoolean := false;
           ADataSet.fieldbyName('imgAuto').AsInteger := 2;
-        end;
     end;
     ADataSet.post;
   except on E: Exception do
@@ -970,54 +972,46 @@ begin
   end;
 end;
 
-procedure TDTData.ToggleTimeEnabledA(ADataSet: TDataSet; idx: integer);
+procedure TDTData.tblDTHeatAfterScroll(DataSet: TDataSet);
 begin
-  if not ADataSet.FieldByName('UseAutoTime').AsBoolean then exit;
-
-  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
-  begin
-    ADataSet.edit;
-    case idx of
-      1:
-        ADataSet.FieldByName('Time1EnabledA').AsBoolean := not
-          ADataSet.FieldByName('Time1EnabledA').AsBoolean;
-      2:
-        ADataSet.FieldByName('Time2EnabledA').AsBoolean := not
-          ADataSet.FieldByName('Time2EnabledA').AsBoolean;
-      3:
-        ADataSet.FieldByName('Time3EnabledA').AsBoolean := not
-          ADataSet.FieldByName('Time3EnabledA').AsBoolean;
-    end;
-    ADataSet.Post;
-  end;
+  if (msgHandle <> 0) then
+    PostMessage(msgHandle, SCM_UPDATEUI3, 0,0);
 end;
 
-procedure TDTData.ToggleTimeEnabledM(ADataSet: TDataSet; idx: integer);
-begin
-  if ADataSet.FieldByName('UseAutoTime').AsBoolean then exit;
-
-  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
-  begin
-    ADataSet.edit;
-    case idx of
-      1:
-        ADataSet.FieldByName('Time1EnabledM').AsBoolean := not
-          ADataSet.FieldByName('Time1EnabledM').AsBoolean;
-      2:
-        ADataSet.FieldByName('Time2EnabledM').AsBoolean := not
-          ADataSet.FieldByName('Time2EnabledM').AsBoolean;
-      3:
-        ADataSet.FieldByName('Time3EnabledM').AsBoolean := not
-          ADataSet.FieldByName('Time3EnabledM').AsBoolean;
-    end;
-    ADataSet.Post;
-  end;
-
-end;
-
-procedure TDTData.ToggleUseAutoTime(ADataSet: TDataSet);
+function TDTData.ToggleEnableTimeKeeper(ADataSet: TDataSet; idx: integer):
+    Boolean;
 var
-  ATimeMode: dtTimeMode;
+s: string;
+b: boolean;
+begin
+  // Available only when in TimeKeeperMode - dtManual.
+  // returns true - Enabled ... false - Disabled.
+  // RANGE : idx in [1..3].
+  result := false;
+  // Assert state ...
+  if not ADataSet.Active then exit;
+  if (ADataSet.Name <> 'tblDTEntrant') then exit;
+  if ADataSet.FieldByName('TimeKeeperMode').AsInteger <> ORD(dtManual) then
+    exit;
+  if not idx in [1,2,3] then exit;
+  // params ...
+  s := 'Time' + IntToStr(idx) + 'EnabledM';
+  b := ADataSet.FieldByName(s).AsBoolean;
+  b := not b; // Perform toggle;
+  try
+    ADataSet.edit;
+    ADataSet.FieldByName(s).AsBoolean := b;
+    ADataSet.Post;
+  finally
+    // hack : no error checking done here.
+    result := b; // Assign an optimistic result.
+  end;
+
+end;
+
+procedure TDTData.ToggleTimeKeeperMode(ADataSet: TDataSet);
+var
+  ATimeKeeperMode: dtTimeKeeperMode;
   t1, t2, t3: TTime;
 begin
   if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
@@ -1041,53 +1035,47 @@ begin
       end;
       exit;
     end;
-    // toogle boolean state.
-    if (ADataSet.FieldByName('UseAutoTime').AsBoolean = true) then
-      ATimeMode := dtManual
+    // toogle state.
+    if (ADataSet.FieldByName('TimeKeeperMode').AsInteger = ORD(dtAutomatic)) then
+      ATimeKeeperMode := dtManual
     else
-      ATimeMode := dtAutomatic;
-    SetAutoTime(ADataSet, ATimeMode);
-
-    CalcRaceTime(ADataSet);
-
-
+      ATimeKeeperMode := dtAutomatic;
+    SetTimeKeeperMode(ADataSet, ATimeKeeperMode);
+    if (ATimeKeeperMode = dtManual) then CalcRaceTime(ADataSet);
   end;
 end;
 
 function TDTData.ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx:
   integer): boolean;
 var
-  UseAutomatic: boolean;
+  ATimeKeeperMode: dtTimeKeeperMode;
 begin
   result := false;
-  UseAutomatic := ADataSet.FieldByName('UseAutoTime').AsBoolean;
+  // only TimeKeeperMode .. dtManual is accepted here.
+  ATimeKeeperMode := dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
+  if ATimeKeeperMode <> dtManual then exit;
+
   case TimeKeeperIndx of
     1:
       begin
         if (TimeOF(ADataSet.FieldByName('Time1').AsDateTime) = 0) then
           exit;
-        // the user has disabled this TimeKeeper's data.
-        if not UseAutomatic then
-          if (ADataSet.FieldByName('Time1EnabledM').AsBoolean = false) then
-            exit;
+        if (ADataSet.FieldByName('Time1EnabledM').AsBoolean = false) then
+          exit;
       end;
     2:
       begin
         if (TimeOF(ADataSet.FieldByName('Time2').AsDateTime) = 0) then
           exit;
-        // the user has disabled this TimeKeeper's data.
-        if (UseAutomatic = false) then
-          if (ADataSet.FieldByName('Time2EnabledM').AsBoolean = false) then
-            exit;
+        if (ADataSet.FieldByName('Time2EnabledM').AsBoolean = false) then
+          exit;
       end;
     3:
       begin
         if (TimeOF(ADataSet.FieldByName('Time3').AsDateTime) = 0) then
           exit;
-        // the user has disabled this TimeKeeper's data.
-        if (UseAutomatic = true) then
-          if (ADataSet.FieldByName('Time3EnabledM').AsBoolean = false) then
-            exit;
+        if (ADataSet.FieldByName('Time3EnabledM').AsBoolean = false) then
+          exit;
       end;
   end;
   result := true;

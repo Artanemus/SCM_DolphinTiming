@@ -169,8 +169,9 @@ procedure ReConstructLanes(sl: TStringList; adtFileType: dtFileType; ADataSet: T
 var
   laneValue: Variant;
   s, lane, dtstr: string;
-  rt: TDateTime;
+  rt, rtk: TDateTime;
   fs: TFormatSettings;
+  msec: integer;
 begin
   if ADataSet.IsEmpty then exit;
 
@@ -215,8 +216,21 @@ begin
         else if dtstr.StartsWith('0') then
           dtstr := Copy(dtstr, 2, Length(dtstr) - 1); // Remove '0'
 }
+{$IFDEF DEBUG}
+      // construct some dummy times for timekeeper 2 and 3
+      s := lane + ';' + dtstr + ';';
+      msec := random(400);
+      rtk := IncMilliSecond(rt,msec);
+      dtstr := ConvertTimeToSecondsStr(rtk);
+      s := s + dtstr + ';';
+      msec := random(600);
+      rtk := IncMilliSecond(rt,msec);
+      dtstr := ConvertTimeToSecondsStr(rtk);
+      s := s + dtstr;
+{$ELSE}
       // indicates no time given by TimeKeepers 2 and 3.
-      s := lane + ';' + dtstr + ';;'
+      s := lane + ';' + dtstr + ';;';
+{$ENDIF}
     end
     else
       // Dolphin Timing syntax -

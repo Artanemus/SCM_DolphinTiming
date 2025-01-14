@@ -142,6 +142,7 @@ type
   protected
     procedure MSG_UpdateUI(var Msg: TMessage); message SCM_UPDATEUI;
     procedure MSG_UpdateUI2(var Msg: TMessage); message SCM_UPDATEUI2;
+    procedure MSG_UpdateUI3(var Msg: TMessage); message SCM_UPDATEUI3;
     procedure MSG_SelectSession(var Msg: TMessage); message SCM_SELECTSESSION;
 
   public
@@ -821,84 +822,111 @@ end;
 procedure TdtExec.dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
 var
   Grid: TDBAdvGrid;
-  b1, b2, b3: boolean;
-  DoAddShape: boolean;
-  aImgIndx: integer;
+  ADataSet: TDataSet;
+  b: boolean;
+  s: string;
+  aImgIndx, I: integer;
+  ATimeKeeperMode: dtTimeKeeperMode;
+  t: TTime;
 begin
   Grid := Sender as TDBAdvGrid;
-  b2 := true;
-  b3 := true;
-  AImgIndx := 2;
+  ADataSet := Grid.DataSource.DataSet;
+  AImgIndx := 2; // GRID IMAGES : DTData.vimglistDTCell - tomatoe red cross.
+
   if (ARow >= DTgrid.FixedRows) then
   begin
     case ACol of
       6:
         begin
-          if (Grid.DataSource.DataSet.FieldByName('imgAuto').AsInteger > -1)
+          if (ADataSet.FieldByName('imgAuto').AsInteger > -1)
             then
           begin
-            // toggle the icon display indirectly by toggling data
-            // field tblEntrant.UseAutoTime.
+            // toggle the TimeKeeperMode ICON by indirectly toggling data
+            // field tblEntrant.TimeKeeperMode.
             grid.BeginUpdate;
-            DTData.ToggleUseAutoTime(Grid.DataSource.DataSet);
+            DTData.ToggleTimeKeeperMode(ADataSet);
+
+            ATimeKeeperMode :=
+            dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
+            if (ATimeKeeperMode = dtAutomatic) then
+            begin
+              for I := 3 to 5 do
+              begin
+                // clear image.
+//                if Grid.GetImageIdx(I, ARow, AImgIndx) then
+                  Grid.RemoveImageIdx(I, ARow); // Remove icon.
+              end;
+            end
+            else
+            begin
+              for I := 3 to 5 do
+              begin
+                s := 'Time' + IntToStr(I - 2) + 'EnabledM';
+                b := ADataSet.FieldByName(s).AsBoolean;
+                // update the cell's icon.
+                if (b) then // TimeKeeper is enabled.
+                begin
+//                  if Grid.GetImageIdx(I, ARow, AImgIndx) then
+                    Grid.RemoveImageIdx(I, ARow); // Remove icon.
+                end
+                else // TimKeeper is disabled.
+                begin
+                  if not Grid.GetImageIdx(I, ARow, AImgIndx) then
+                    // Add tomatoe red box with tomatoe red cross.
+                    Grid.AddImageIdx(I, ARow, 0, TCellHAlign.haFull,
+                      TCellVAlign.vaFull);
+                end;
+              end;
+            end;
+
             grid.EndUpdate;
           end;
         end;
       3, 4, 5:
         begin
-          grid.BeginUpdate;
-          if (Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean) then
-            DTData.ToggleTimeEnabledA(Grid.DataSource.DataSet, (Acol-2))
-          else
-            DTData.ToggleTimeEnabledM(Grid.DataSource.DataSet, (Acol-2));
+          ATimeKeeperMode :=
+          dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
+          // User can only toggle when TimeKeeperMode is in dtManual..
+          if ATimeKeeperMode <> dtManual then exit;
+          // the CNTRL key is required to perform toggle.
+          if (GetKeyState(VK_CONTROL) < 0) then
+          begin
 
-          DoAddShape := false;
-          // UseAutoTime : ENABLED.
-          //    Validates the race-time given by the TimeKeeper{1..3] and
-          //    'flags' results into  database ... field(s) ...
-          //  ...  Time1EnabledA, Time2EnabledA, Time3EnabledA
-          // UseAutoTime : DISABLED. (wit. manual mode).
-          // The user will determine which race-time will be validated.
-          // User 'flags' database field(s) ...
-          //  ...  Time1EnabledM, Time2EnabledM, Time3EnabledM
-          b1 := Grid.DataSource.DataSet.FieldByName('UseAutoTime').AsBoolean;
-          if (ACol = 3) then
-          begin
-            b2 := Grid.DataSource.DataSet.FieldByName('Time1EnabledA').AsBoolean;
-            b3 := Grid.DataSource.DataSet.FieldByName('Time1EnabledM').AsBoolean;
-          end;
-          if (ACol = 4) then
-          begin
-            b2 := Grid.DataSource.DataSet.FieldByName('Time2EnabledA').AsBoolean;
-            b3 := Grid.DataSource.DataSet.FieldByName('Time2EnabledM').AsBoolean;
-          end;
-          if (ACol = 5) then
-          begin
-            b2 := Grid.DataSource.DataSet.FieldByName('Time3EnabledA').AsBoolean;
-            b3 := Grid.DataSource.DataSet.FieldByName('Time3EnabledM').AsBoolean;
-          end;
-          // UseAutoTime enabled -
-          if (b1 = true) and (b2 = false) then DoAddShape := true;
-          // UseAutoTime disabled - ManualTime mode -
-          if (b1 = false) and (b3 = false) then DoAddShape := true;
-          if DoAddShape then
-          begin
-//              if not Grid.HasShape(Acol, ARow) then
-//                Grid.AddShape(ACol, ARow, TCellShape.csLineHorz, clRed, clRed, TCellHAlign.haFull, TCellVAlign.vaCenter);
-              if not Grid.GetImageIdx(ACol, ARow, AImgIndx) then
-                Grid.AddImageIdx(ACol, ARow, 0, TCellHAlign.haFull, TCellVAlign.vaFull);
-          end
-          else
+            s := 'Time' + IntToStr(ACol - 2);
+            // Can toggle an empty TimeKeeper's stopwatch time...
+            t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+            if (t = 0) then
             begin
-//              if Grid.HasShape(Acol, ARow) then
-//                Grid.RemoveShape(Acol, ARow);
+              grid.BeginUpdate;
+              // Check that no icons are shown in the empty cell.
               if Grid.GetImageIdx(ACol, ARow, AImgIndx) then
+                // Remove icon.
                 Grid.RemoveImageIdx(ACol, ARow);
+              grid.EndUpdate;
+              exit;
             end;
 
-          grid.EndUpdate;
+            grid.BeginUpdate;
+            // enable ~ disable TimeKeeper's stopwatch data.
+            // idx in [1..3]. Asserts : dtTimeKeeperMode = dtManual.
+            b := DTData.ToggleEnableTimeKeeper(ADataSet, (Acol - 2));
+            // update the cell's icon.
+            if (b) then // TimeKeeper is enabled.
+            begin
+              if Grid.GetImageIdx(ACol, ARow, AImgIndx) then
+                Grid.RemoveImageIdx(ACol, ARow); // Remove icon.
+            end
+            else // TimKeeper is disabled.
+            begin
+              if not Grid.GetImageIdx(ACol, ARow, AImgIndx) then
+                // Add tomatoe red box with tomatoe red cross.
+                Grid.AddImageIdx(ACol, ARow, 0, TCellHAlign.haFull,
+                  TCellVAlign.vaFull);
+            end;
+            grid.EndUpdate;
+          end;
         end;
-    end;
+          end;
   end;
 end;
 
@@ -1106,6 +1134,60 @@ end;
 procedure TdtExec.MSG_UpdateUI2(var Msg: TMessage);
 begin
     UpdateDTDetailsLabel;
+end;
+
+procedure TdtExec.MSG_UpdateUI3(var Msg: TMessage);
+var
+  I, J, AImgIndx: integer;
+  s: string;
+  b: boolean;
+begin
+  AImgIndx := 2;
+  // DTData.tblDTHeat - AfterScroll event.
+  // Clean up DTGrid.
+  DTGrid.BeginUpdate;
+//  DTGrid.Reload;
+  // clear out all images in col 3..5
+  for I := 3 to 5 do
+  begin
+    for j := DTgrid.FixedRows to DTGrid.RowCount do
+    begin
+      //      DTGrid.Cells[I, J];
+      DTGrid.RemoveImageIdx(I, J);
+    end;
+  end;
+  // iterate of data .. reassign Images
+  DTData.tblDTEntrant.First;
+  for j := DTgrid.FixedRows to DTGrid.RowCount do
+  begin
+    DTData.tblDTEntrant.RecNo := j;
+    if DTData.tblDTEntrant.FieldByName('TimeKeeperMode').AsInteger =
+    ORD(dtManual) then
+    begin
+      for I := 3 to 5 do
+      begin
+        s := 'Time' + IntToStr(I - 2) + 'EnabledM';
+        b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
+        // update the cell's icon.
+        if (b) then // TimeKeeper is enabled.
+        begin
+          //                  if Grid.GetImageIdx(I, ARow, AImgIndx) then
+          DTGrid.RemoveImageIdx(I, j); // Remove icon.
+        end
+        else // TimKeeper is disabled.
+        begin
+          if not DTGrid.GetImageIdx(I, j, AImgIndx) then
+            // Add tomatoe red box with tomatoe red cross.
+            DTGrid.AddImageIdx(I, j, 0, TCellHAlign.haFull,
+              TCellVAlign.vaFull);
+        end;
+      end;
+    end;
+//    DTData.tblDTEntrant.Next;
+  end;
+  DTData.tblDTEntrant.First;
+  DTGrid.EndUpdate;
+
 end;
 
 procedure TdtExec.Prepare(AConnection: TFDConnection);

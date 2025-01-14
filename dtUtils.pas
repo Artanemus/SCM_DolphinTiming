@@ -693,14 +693,15 @@ begin
     // Should read 'Lane: #Lane#'
     s := 'Lane: ' + IntToStr(lane);
     DTData.tblDTEntrant.fieldbyName('Caption').AsString := s;
-    // Auto-Calc best racetime.
-    DTData.tblDTEntrant.fieldbyName('UseAutoTime').AsBoolean := true;
+    // Automatic/Manual. DEFAULT : dtTimeKeeperMode = dtAutomatic.
+    DTData.tblDTEntrant.fieldbyName('TimeKeeperMode').AsInteger := ORD(dtAutoMatic);
+    // graphic used in column[6] - GRID IMAGES DTData.vimglistDTCell .
+    // image index 1 indicts - dtTimeKeeperMode = dtAutomatic.
+    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 1;
     // Swimmers calculated racetime. Average of 'enabled' Time[1..3]
     DTData.tblDTEntrant.fieldbyName('RaceTime').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
-    // graphic used in column[?] - for Auto .. Manual
-    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 2;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodyTimeKeepers(I, fTimeKeepers);
@@ -729,6 +730,7 @@ begin
     DTData.tblDTEntrant.fieldbyName('Time1EnabledM').AsBoolean := true;
     DTData.tblDTEntrant.fieldbyName('Time2EnabledM').AsBoolean := true;
     DTData.tblDTEntrant.fieldbyName('Time3EnabledM').AsBoolean := true;
+
     DTData.tblDTEntrant.fieldbyName('Time1EnabledA').AsBoolean := true;
     DTData.tblDTEntrant.fieldbyName('Time2EnabledA').AsBoolean := true;
     DTData.tblDTEntrant.fieldbyName('Time3EnabledA').AsBoolean := true;
