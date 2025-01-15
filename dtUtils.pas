@@ -662,6 +662,7 @@ var
   id, I, j, lane: integer;
   s: string;
   Found: boolean;
+  t: TTime;
 begin
   if HeatID = 0 then exit;
 
@@ -700,6 +701,7 @@ begin
     DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 1;
     // Swimmers calculated racetime. Average of 'enabled' Time[1..3]
     DTData.tblDTEntrant.fieldbyName('RaceTime').Clear;
+    DTData.tblDTEntrant.fieldbyName('RaceTimeA').Clear;
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
 
@@ -751,6 +753,21 @@ begin
       end;
     end;
     DTData.tblDTEntrant.Post;
+
+    // CALL CalcRaceTimeA to process RaceTimeA
+    // NEED AcceptedDeviation Value from settings.
+    DTData.CalcRaceTimeA(DTData.tblDTEntrant, 0.3);
+
+    // By default TmieKeeperMode is automatic for all entrant data
+    // Assign calculated Automatic racetime.
+    t := DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsDateTime;
+    if (t <> 0) then
+    begin
+      DTData.tblDTEntrant.Edit;
+      DTData.tblDTEntrant.fieldbyName('RaceTime').AsDateTime := t;
+      DTData.tblDTEntrant.Post;
+    end;
+
   end;
   DTData.tblDTEntrant.EnableControls;
 end;

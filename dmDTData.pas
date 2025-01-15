@@ -144,11 +144,13 @@ type
     // loading of the DO file.
     // --------------------------------------------
     procedure CalcRaceTime(ADataSet: TDataSet);
-    procedure CalcDeviation(ADataSet: TDataSet; TimeKeeperIndx: integer);
-    function CalcAverage(ADataSet: TDataSet): double;
     function ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx: integer):
         boolean;
     // --------------------------------------------
+    // Routines ONLY for TimeKeeperMode = dtAutomatic
+    procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
+    function ValidateTimeKeeperA(ADataSet: TDataSet; TimeKeeperIndx: integer):
+        boolean;
 
     property SCMDataIsActive: Boolean read fSCMDataIsActive;
     property DTDataIsActive: Boolean read fDTDataIsActive;
@@ -573,75 +575,137 @@ begin
 
 end;
 
-function TDTData.CalcAverage(ADataSet: TDataSet): double;
-var
-  t1, t2, t3: TTime;
-  i: integer;
-  avg: double;
-begin
-  i := 3;
-
-  if (ValidateTimeKeeper(ADataSet, 1) = false) then
-  begin
-    t1 := 0;
-    DEC(i);
-  end
-  else
-    t1 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
-
-  if (ValidateTimeKeeper(ADataSet, 2) = false) then
-  begin
-    t2 := 0;
-    DEC(i);
-  end
-  else
-    t2 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
-
-  if (ValidateTimeKeeper(ADataSet, 3) = false) then
-  begin
-    t3 := 0;
-    DEC(i);
-  end
-  else
-    t3 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
-
-  // is this legal? Should TTime be cast-double before operation?
-  avg := (t1+t2+t3) / i;
-  result := avg;
-end;
-
-procedure TDTData.CalcDeviation(ADataSet: TDataSet; TimeKeeperIndx: integer);
+procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
 var
   t, avg: TTime;
-  devation: double;
+  deviation: Array[1..3] of double;
+  isValidTime: Array[1..3] of boolean;
+  count, I: integer;
+  s: string;
 begin
-  case TimeKeeperIndx of
-    1:
-      begin
-        avg := CalcAverage(ADataSet);
-        if (avg = 0) then
-        begin
-          ADataSet.Edit;
-          // indicates error
-          ADataSet.FieldByName('Deviation1').AsFloat := -1;
-          ADataSet.Post;
-          exit;
-        end;
-        t := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
-        devation := avg - t;
-        ADataSet.Edit;
-        ADataSet.FieldByName('Deviation1').AsFloat := devation;
-        ADataSet.Post;
-        exit;
-      end;
+  t := 0;
+  count := 0;
+  avg := 0;
+
+  // Calculate the total from all the valid TimeKeeper stopwatch times.
+  for I := 1 to 3 do
+  begin
+    isValidTime[I] := ValidateTimeKeeperA(ADataSet, I);
+    if isValidTime[I] then
+    begin
+      s := 'Time' + IntToStr(I);
+      t := t + TimeOF(ADataSet.FieldByName(s).AsDateTime);
+      Inc(count);
+    end;
+  end;
+
+  // Calculate the average stopwatch time.
+  if count <> 0 then
+    avg := t / count;
+
+  // Populate the deviation array.
+  // Invalid times are assigned a deviation value of -1.
+  for I := 1 to 3 do
+  begin
+    if isValidTime[I] then
+    begin
+      s := 'Time' + IntToStr(I);
+      t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+      deviation[I] := Abs(avg - t);
+    end
+    else
+    begin
+      deviation[I] := -1; // Indicates error.
+    end;
+  end;
+
+  // Write out database values (tblDTEntrant)
+  // calculated deviation and if TimeKeeper's stopwatch time is to be enabled.
+  ADataSet.Edit;
+  try
+    for I := 1 to 3 do
+    begin
+      s := 'Deviation' + IntToStr(I);
+      ADataSet.FieldByName(s).AsFloat := deviation[I];
+      s := 'Time' + IntToStr(I) + 'EnabledA';
+      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]) and
+                                           (deviation[I] <> -1) and
+                                           (deviation[I] <= AcceptedDeviation);
+    end;
+    ADataSet.Post;
+  except
+    ADataSet.Cancel;
+    raise;
+  end;
+
+  // Re-evaluate the average. Gather values from stored data.
+  t := 0;
+  count := 0;
+  for I := 1 to 3 do
+  begin
+    s := 'Time' + IntToStr(I) + 'EnabledA';
+    if ADataSet.FieldByName(s).AsBoolean then
+    begin
+      s := 'Time' + IntToStr(I);
+      t := t + TimeOF(ADataSet.FieldByName(s).AsDateTime);
+      Inc(count);
+    end;
+  end;
+
+  // Calculate the average, ignoring invalid and unaccepted deviation values.
+  avg := 0;
+  if count <> 0 then
+    avg := t / count;
+
+  // Write out the race time for tblDTEntrant (lane) into special dtAutomatic database field.
+  ADataSet.Edit;
+  try
+    if avg = 0 then
+      ADataSet.FieldByName('RaceTimeA').Clear
+    else
+      ADataSet.FieldByName('RaceTimeA').AsDateTime := avg;
+    ADataSet.Post;
+  except
+    ADataSet.Cancel;
+    raise;
   end;
 end;
 
 procedure TDTData.CalcRaceTime(ADataSet: TDataSet);
+var
+  I: Integer;
+  s: string;
+  count: integer;
+  b: boolean;
+  t: TTime;
 begin
-  // if time is within deviation
-
+  t := 0;
+  count:= 0;
+  for I := 1 to 3 do
+  begin
+    b := ValidateTimeKeeper(ADataSet, I);
+    if b then
+    begin
+      s := 'Time' + IntToStr(I);
+      t := t + TimeOF(ADataSet.FieldByName(s).AsDateTime);
+      INC(count);
+    end;
+  end;
+  ADataSet.Edit;
+  if count = 0 then
+  begin
+    // If no valid times, clear the RaceTime field
+    ADataSet.FieldByName('RaceTime').Clear;
+  end
+  else
+  begin
+    // Calculate average time
+    t := t / count;
+    ADataSet.FieldByName('RaceTime').AsDateTime := t;
+  end;
+  ADataSet.Post;
 end;
+
 
 function TDTData.GetSCMRoundABBREV(AEventID: integer): string;
 var
@@ -1081,4 +1145,33 @@ begin
   result := true;
 end;
 
+function TDTData.ValidateTimeKeeperA(ADataSet: TDataSet; TimeKeeperIndx:
+  integer): boolean;
+var
+  ATimeKeeperMode: dtTimeKeeperMode;
+begin
+  result := false;
+  // only TimeKeeperMode .. dtManual is accepted here.
+  ATimeKeeperMode := dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
+  if ATimeKeeperMode <> dtAutoMatic then exit;
+
+  case TimeKeeperIndx of
+    1:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time1').AsDateTime) = 0) then
+          exit;
+      end;
+    2:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time2').AsDateTime) = 0) then
+          exit;
+      end;
+    3:
+      begin
+        if (TimeOF(ADataSet.FieldByName('Time3').AsDateTime) = 0) then
+          exit;
+      end;
+  end;
+  result := true;
+end;
 end.

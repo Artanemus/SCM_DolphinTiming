@@ -21,7 +21,8 @@ object dtExec: TdtExec
     Left = 0
     Top = 0
     Width = 1444
-    Height = 42
+    Height = 25
+    UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
     Color = clMenuBar
@@ -30,7 +31,7 @@ object dtExec: TdtExec
     ColorMap.BtnSelectedFont = clBlack
     ColorMap.UnusedColor = clWhite
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = clBlack
     Font.Height = -12
     Font.Name = 'Segoe UI'
     Font.Style = []
@@ -38,9 +39,9 @@ object dtExec: TdtExec
   end
   object rpnlBody: TRelativePanel
     Left = 0
-    Top = 42
+    Top = 25
     Width = 1444
-    Height = 759
+    Height = 776
     ControlCollection = <
       item
         Control = pnlTool1
@@ -86,13 +87,13 @@ object dtExec: TdtExec
     TabOrder = 1
     DesignSize = (
       1444
-      759)
+      776)
     object pnlTool1: TPanel
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 144
-      Height = 753
+      Height = 770
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 0
@@ -220,7 +221,7 @@ object dtExec: TdtExec
       Left = 153
       Top = 3
       Width = 525
-      Height = 753
+      Height = 770
       BevelOuter = bvNone
       Color = 5988209
       ParentBackground = False
@@ -278,11 +279,10 @@ object dtExec: TdtExec
         RowCount = 5
         FixedRows = 1
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
+        Font.Color = clWindow
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -397,7 +397,7 @@ object dtExec: TdtExec
         SearchFooter.HintHighlight = 'Highlight occurrences'
         SearchFooter.MatchCaseCaption = 'Match case'
         SearchFooter.ResultFormat = '(%d of %d)'
-        SelectionColor = 13744549
+        SelectionColor = 12228474
         SelectionTextColor = clWindowText
         SortSettings.DefaultFormat = ssAutomatic
         SortSettings.HeaderColor = clWhite
@@ -772,7 +772,7 @@ object dtExec: TdtExec
       Left = 684
       Top = 3
       Width = 613
-      Height = 753
+      Height = 770
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 2
@@ -843,11 +843,10 @@ object dtExec: TdtExec
         RowCount = 2
         FixedRows = 1
         Font.Charset = DEFAULT_CHARSET
-        Font.Color = clWindowText
+        Font.Color = clWindow
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -964,7 +963,7 @@ object dtExec: TdtExec
         SearchFooter.HintHighlight = 'Highlight occurrences'
         SearchFooter.MatchCaseCaption = 'Match case'
         SearchFooter.ResultFormat = '(%d of %d)'
-        SelectionColor = 13744549
+        SelectionColor = 12228474
         SelectionTextColor = clWindowText
         SortSettings.DefaultFormat = ssAutomatic
         SortSettings.HeaderColor = clWhite
@@ -1031,7 +1030,7 @@ object dtExec: TdtExec
             Width = 34
           end
           item
-            Alignment = taRightJustify
+            Alignment = taCenter
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1049,6 +1048,7 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
@@ -1380,7 +1380,7 @@ object dtExec: TdtExec
       Left = 1303
       Top = 3
       Width = 144
-      Height = 753
+      Height = 770
       Anchors = []
       BevelOuter = bvNone
       Color = clDimgray

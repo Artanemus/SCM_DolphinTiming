@@ -831,7 +831,9 @@ var
 begin
   Grid := Sender as TDBAdvGrid;
   ADataSet := Grid.DataSource.DataSet;
-  AImgIndx := 2; // GRID IMAGES : DTData.vimglistDTCell - tomatoe red cross.
+  // GRID IMAGES : DTData.vimglistDTCell -
+  // Image : A tomatoe colored red cross inside of a boxed frame.
+  AImgIndx := 2;
 
   if (ARow >= DTgrid.FixedRows) then
   begin
@@ -845,16 +847,33 @@ begin
             // field tblEntrant.TimeKeeperMode.
             grid.BeginUpdate;
             DTData.ToggleTimeKeeperMode(ADataSet);
-
             ATimeKeeperMode :=
             dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
             if (ATimeKeeperMode = dtAutomatic) then
             begin
               for I := 3 to 5 do
               begin
-                // clear image.
-//                if Grid.GetImageIdx(I, ARow, AImgIndx) then
-                  Grid.RemoveImageIdx(I, ARow); // Remove icon.
+                { Calling :
+
+                    if Grid.GetImageIdx(I, ARow, AImgIndx) then ...
+
+                  .. prior to removing ImageIdx would be more efficient in large
+                  multi-row grids. But here we have a maximum of 10 rows
+                  and there is not real performance impact by jumping
+                  straight to remove procedure.
+                }
+                // Remove icon.
+                Grid.RemoveImageIdx(I, ARow);
+                // Switch to the Auto-Calculated RaceTime.
+                // NOTE: this racetime was calculated when the DT file was
+                // and cannot be modified by the user.
+                ADataSet.Edit;
+                t := TimeOF(ADataSet.FieldByName('RaceTimeA').AsDateTime);
+                if (t = 0) then
+                  ADataSet.FieldByName('RaceTime').Clear
+                else
+                  ADataSet.FieldByName('RaceTime').AsDateTime := t ;
+                ADataSet.Post;
               end;
             end
             else
@@ -866,7 +885,7 @@ begin
                 // update the cell's icon.
                 if (b) then // TimeKeeper is enabled.
                 begin
-//                  if Grid.GetImageIdx(I, ARow, AImgIndx) then
+                    { if Grid.GetImageIdx(I, ARow, AImgIndx) then }
                     Grid.RemoveImageIdx(I, ARow); // Remove icon.
                 end
                 else // TimKeeper is disabled.
@@ -877,8 +896,9 @@ begin
                       TCellVAlign.vaFull);
                 end;
               end;
+              // The RaceTime needs to be recalculated...
+              DTData.CalcRaceTime(ADataset);
             end;
-
             grid.EndUpdate;
           end;
         end;
@@ -923,6 +943,8 @@ begin
                 Grid.AddImageIdx(ACol, ARow, 0, TCellHAlign.haFull,
                   TCellVAlign.vaFull);
             end;
+            // The RaceTime needs to be recalculated...
+            DTData.CalcRaceTime(ADataset);
             grid.EndUpdate;
           end;
         end;
@@ -931,8 +953,20 @@ begin
 end;
 
 procedure TdtExec.dtGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value: string);
+//var
+//c: TDBGridColumnItem;
+//Grid: TDBAdvGrid;
 begin
 //  Grid := Sender as TDBAdvGrid;
+//  if (Arow >= Grid.FixedRows) then
+//  begin
+//    if ACol in [3,4,5] then
+//    begin
+//      c := Grid.Columns[ACol];
+//      if (c.font.color <> clWindow) then
+//        c.font.color := clWindow;
+//    end;
+//  end;
 end;
 
 {procedure TdtExec.dtGridGetRecordCount(Sender: TObject; var Count: Integer);
@@ -1141,49 +1175,71 @@ var
   I, J, AImgIndx: integer;
   s: string;
   b: boolean;
+  ATimeKeeperMode: dtTimekeeperMode;
 begin
   AImgIndx := 2;
   // DTData.tblDTHeat - AfterScroll event.
-  // Clean up DTGrid.
+  // UI images in grid cells need to be re-assigned.
   DTGrid.BeginUpdate;
-//  DTGrid.Reload;
-  // clear out all images in col 3..5
+
+  { A DTData.OnAfterScroll event Posted Message.
+    A DTGrid.Reload isn't required at this execution point. }
+
+  // clear out all images in TimeKeepers columns [3..5]
   for I := 3 to 5 do
   begin
     for j := DTgrid.FixedRows to DTGrid.RowCount do
-    begin
-      //      DTGrid.Cells[I, J];
-      DTGrid.RemoveImageIdx(I, J);
-    end;
+          DTGrid.RemoveImageIdx(I, j); // Remove icon.
   end;
-  // iterate of data .. reassign Images
-  DTData.tblDTEntrant.First;
+
+  // iterate DTData and re-assign grid cell images if needed.
   for j := DTgrid.FixedRows to DTGrid.RowCount do
   begin
-    DTData.tblDTEntrant.RecNo := j;
-    if DTData.tblDTEntrant.FieldByName('TimeKeeperMode').AsInteger =
-    ORD(dtManual) then
-    begin
-      for I := 3 to 5 do
+    DTData.tblDTEntrant.RecNo := j; // cue-to-data.
+    ATimeKeeperMode :=
+      dtTimekeeperMode(DTData.tblDTEntrant.FieldByName('TimeKeeperMode').AsInteger);
+    case ATimeKeeperMode of
+      dtAutomatic:
       begin
-        s := 'Time' + IntToStr(I - 2) + 'EnabledM';
-        b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
-        // update the cell's icon.
-        if (b) then // TimeKeeper is enabled.
+        // Switch to the Auto-Calculated RaceTime.
+        // NOTE: this racetime was calculated when the DT file was
+        // and cannot be modified by the user.
+        { DEEMED SAFE TO  REMOVE }
+        {
+        var t: TTime;   // Delphi inline variable.
+        With DTData.tblDTEntrant do
+        Begin
+          Edit;
+          t := TimeOF(FieldByName('RaceTimeA').AsDateTime);
+          if (t = 0) then
+            FieldByName('RaceTime').Clear
+          else
+            FieldByName('RaceTime').AsDateTime := t ;
+          Post;
+        End;
+        }
+      end;
+      dtManual:
+      begin
+        for I := 3 to 5 do
         begin
-          //                  if Grid.GetImageIdx(I, ARow, AImgIndx) then
-          DTGrid.RemoveImageIdx(I, j); // Remove icon.
-        end
-        else // TimKeeper is disabled.
-        begin
-          if not DTGrid.GetImageIdx(I, j, AImgIndx) then
-            // Add tomatoe red box with tomatoe red cross.
-            DTGrid.AddImageIdx(I, j, 0, TCellHAlign.haFull,
-              TCellVAlign.vaFull);
+          s := 'Time' + IntToStr(I - 2) + 'EnabledM';
+          b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
+          // update the cell's icon.
+          if (not b) then // The TimeKeeper column is disabled.
+          begin
+            if not DTGrid.GetImageIdx(I, j, AImgIndx) then
+              // Add tomatoe red box with tomatoe red cross.
+              DTGrid.AddImageIdx(I, j, 0, TCellHAlign.haFull,
+                TCellVAlign.vaFull);
+          end;
         end;
+         { DEEMED SAFE TO  REMOVE }
+        // DTData.CalcRaceTime(DTData.tblDTEntrant);
+
       end;
     end;
-//    DTData.tblDTEntrant.Next;
+
   end;
   DTData.tblDTEntrant.First;
   DTGrid.EndUpdate;
