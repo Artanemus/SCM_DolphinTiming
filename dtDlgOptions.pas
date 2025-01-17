@@ -15,7 +15,6 @@ type
     btnedtEventCSV: TButtonedEdit;
     btnedtMeetFolder: TButtonedEdit;
     btnedtReConstruct: TButtonedEdit;
-    chkbxEnableManualMeanTime: TCheckBox;
     chkbxRenameSession: TCheckBox;
     lblAppCaption1: TLabel;
     lbledtDeviation: TLabeledEdit;

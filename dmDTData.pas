@@ -149,8 +149,6 @@ type
     // --------------------------------------------
     // Routines ONLY for TimeKeeperMode = dtAutomatic
     procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
-    function ValidateTimeKeeperA(ADataSet: TDataSet; TimeKeeperIndx: integer):
-        boolean;
 
     property SCMDataIsActive: Boolean read fSCMDataIsActive;
     property DTDataIsActive: Boolean read fDTDataIsActive;
@@ -505,9 +503,11 @@ begin
       FALSE : using Manual enable/disable flags.
   }
   tblDTEntrant.FieldDefs.Add('TimeKeeperMode', ftInteger); // default true.
-  // Swimmers calculated racetime. Average mean of enabled Times[1..3].
-  tblDTEntrant.FieldDefs.Add('RaceTime', ftTime); // dtManual - calc in realtime.
-  tblDTEntrant.FieldDefs.Add('RaceTimeA', ftTime); // dtAutomatic - calc on load.
+  // Swimmers calculated racetime - value that is posted after patching.
+  // May display dtManual (calc on demand). OR RaceTimeA (calc on load).
+  tblDTEntrant.FieldDefs.Add('RaceTime', ftTime);
+  // dtAutomatic - calc on load and switched 'in and out' on toggle Auto/Manual.
+  tblDTEntrant.FieldDefs.Add('RaceTimeA', ftTime);
   // NOODLE or PATCH cable .
   tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
   // User manually selecting TimeKeeper's race-times to use - OR - Auto
@@ -525,10 +525,8 @@ begin
   tblDTEntrant.FieldDefs.Add('Time1EnabledA', ftBoolean);
   tblDTEntrant.FieldDefs.Add('Time2EnabledA', ftBoolean);
   tblDTEntrant.FieldDefs.Add('Time3EnabledA', ftBoolean);
-  // calculated deviation for each timekeeper's time - based on average
-  tblDTEntrant.FieldDefs.Add('Deviation1', ftTime); // deviation from average time1
-  tblDTEntrant.FieldDefs.Add('Deviation2', ftTime); // deviation from average time2
-  tblDTEntrant.FieldDefs.Add('Deviation3', ftTime); // deviation from average time3
+
+  tblDTEntrant.FieldDefs.Add('UseFinalSplitAsRaceTime', ftBoolean); // DO4.
   // Dolphin timing (dtfiletype dtDO4) stores MAX 10 splits.
   tblDTEntrant.FieldDefs.Add('Split1', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split2', ftTime); // DO4.
@@ -577,98 +575,211 @@ end;
 
 procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
 var
-  t, avg: TTime;
-  deviation: Array[1..3] of double;
+  t, tot, avg, AcceptedDeviationAsTime: TTime;
   isValidTime: Array[1..3] of boolean;
-  count, I: integer;
+  count, I, J: integer;
   s: string;
-begin
-  t := 0;
-  count := 0;
-  avg := 0;
+  CalcRaceTime: TTime;
 
-  // Calculate the total from all the valid TimeKeeper stopwatch times.
+  indx1, indx2: Integer;
+  t1, t2: TTime;
+  dev: TTime;
+  validIndices: array[0..1] of Integer;
+  validTimes: array[0..1] of TTime;
+  found: Integer;
+
+
+begin
+  count := 0;
+  CalcRaceTime := 0;
+
+  // clear arrays
   for I := 1 to 3 do
   begin
-    isValidTime[I] := ValidateTimeKeeperA(ADataSet, I);
-    if isValidTime[I] then
-    begin
-      s := 'Time' + IntToStr(I);
-      t := t + TimeOF(ADataSet.FieldByName(s).AsDateTime);
-      Inc(count);
-    end;
+    isValidTime[i] := true;
   end;
 
-  // Calculate the average stopwatch time.
-  if count <> 0 then
-    avg := t / count;
+  { A TDateTime value is essentially a double, where the integer part is the
+      number of days and fraction is the time.
+    In a day there are 24*60*60 = 86400 seconds (SecsPerDay constant
+      declared in SysUtils) so to get AcceptedDeviation (given in seconds)
+      as TDateTime do:
+  }
+  AcceptedDeviationAsTime := AcceptedDeviation/(SecsPerDay);
 
-  // Populate the deviation array.
-  // Invalid times are assigned a deviation value of -1.
+  // Validate watch time. Count the number of valid watch times.
   for I := 1 to 3 do
   begin
-    if isValidTime[I] then
+    s := 'Time' + IntToStr(I);
+    if ADataSet.FieldByName(s).IsNull then
     begin
-      s := 'Time' + IntToStr(I);
-      t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-      deviation[I] := Abs(avg - t);
+      isValidTime[I] := false
     end
     else
     begin
-      deviation[I] := -1; // Indicates error.
+      t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+      if (t = 0) then
+        isValidTime[I] := false;
     end;
+    if isValidTime[I] then Inc(count);
+  end;
+
+  {
+
+- A. If there is one watch per lane, that time will also be placed in
+  'racetime'.
+
+- B. If there are two watches for a given lane, the average will be
+  computed and placed in 'racetime'.
+
+- C. If there are 3 watch times for a given lane, the middle time will be
+  placed in 'racetime'.
+
+
+  CASE B. NOTE:
+  If there is more than the 'Accepted Deviation' difference between the
+  two watch times, the average result time will NOT be computed and
+  warning icons will show for both watch times in this lane.
+  The 'RaceTime' will be empty.
+  Switch to manaul mode and select which time to use.
+  You are permitted to select both - in which case a average of the
+  two watch times is used in 'racetime' .
+  }
+
+ {
+  - one watch per lane: deviation is 0.
+  - two watches per lane: deviation is the difference between the two.
+  - three watch per lane: deviation is the difference between the average of
+    the three watch times.
+  }
+
+  if (count = 1) then
+  begin
+    // Cue-to-time
+    for I := 1 to 3 do
+    begin
+      if isValidTime[I] then
+      begin
+        s := 'Time' + IntToStr(I);
+        CalcRaceTime := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+        break;
+      end;
+    end;
+  end;
+
+if (count = 2) then
+begin
+  found := 0;
+  indx1 := 0;
+  t1 := 0;
+
+  // Loop through the times to find the valid ones and assign values immediately
+  for I := 1 to 3 do
+  begin
+    if isValidTime[I] then
+    begin
+      s := 'Time' + IntToStr(I);
+      if found = 0 then
+      begin
+        t1 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+        indx1 := I;
+      end
+      else if found = 1 then
+      begin
+        t2 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+        indx2 := I;
+
+        // Calculate deviation and update isValidTime and CalcRaceTime
+        dev := Abs(t1 - t2);
+
+        if dev >= AcceptedDeviationAsTime then
+        begin
+          isValidTime[indx1] := false;
+          isValidTime[indx2] := false;
+          CalcRaceTime := 0;
+        end
+        else
+        begin
+          CalcRaceTime := (t1 + t2) / 2;
+        end;
+
+        Break; // Exit loop after processing two valid times
+      end;
+      Inc(found);
+    end;
+  end;
+
+  if found < 2 then
+  begin
+    // Handle the case where there are not exactly two valid times
+    // Add your error handling logic here
+  end;
+end;
+
+  if (count = 3) then
+  begin
+    tot := 0;
+    var times: array[1..3] of TTime;
+    var UseSCMTimeMode: boolean;
+
+    UseSCMTimeMode := false;
+
+    // Add up all racetimes
+    for I := 1 to 3 do
+    begin
+      if isValidTime[I] then
+      begin
+        s := 'Time' + IntToStr(I);
+        t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+        times[i] := t;
+        tot := tot + t;
+      end;
+    end;
+
+    if UseSCMTimeMode then
+    begin
+      // Calculate the average stopwatch time.
+      CalcRaceTime := (tot / count);
+    end
+    else
+    begin
+      // Sort the times array
+      var temp: TTime;
+      for I := 1 to 2 do
+        for J := I + 1 to 3 do
+          if times[I] > times[J] then
+          begin
+            temp := times[I];
+            times[I] := times[J];
+            times[J] := temp;
+          end;
+
+      // The middle time is the second element in the sorted array
+      CalcRaceTime := times[2];
+    end;
+
   end;
 
   // Write out database values (tblDTEntrant)
   // calculated deviation and if TimeKeeper's stopwatch time is to be enabled.
   ADataSet.Edit;
   try
+    // Convert msec to TTime.
     for I := 1 to 3 do
     begin
-      s := 'Deviation' + IntToStr(I);
-      ADataSet.FieldByName(s).AsFloat := deviation[I];
       s := 'Time' + IntToStr(I) + 'EnabledA';
-      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]) and
-                                           (deviation[I] <> -1) and
-                                           (deviation[I] <= AcceptedDeviation);
+      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
     end;
-    ADataSet.Post;
-  except
-    ADataSet.Cancel;
-    raise;
-  end;
-
-  // Re-evaluate the average. Gather values from stored data.
-  t := 0;
-  count := 0;
-  for I := 1 to 3 do
-  begin
-    s := 'Time' + IntToStr(I) + 'EnabledA';
-    if ADataSet.FieldByName(s).AsBoolean then
-    begin
-      s := 'Time' + IntToStr(I);
-      t := t + TimeOF(ADataSet.FieldByName(s).AsDateTime);
-      Inc(count);
-    end;
-  end;
-
-  // Calculate the average, ignoring invalid and unaccepted deviation values.
-  avg := 0;
-  if count <> 0 then
-    avg := t / count;
-
-  // Write out the race time for tblDTEntrant (lane) into special dtAutomatic database field.
-  ADataSet.Edit;
-  try
-    if avg = 0 then
-      ADataSet.FieldByName('RaceTimeA').Clear
+    if (CalcRaceTime<>0) then
+      ADataSet.FieldByName('RaceTimeA').AsDateTime := CalcRaceTime
     else
-      ADataSet.FieldByName('RaceTimeA').AsDateTime := avg;
+      ADataSet.FieldByName('RaceTimeA').Clear;
     ADataSet.Post;
   except
     ADataSet.Cancel;
     raise;
   end;
+
 end;
 
 procedure TDTData.CalcRaceTime(ADataSet: TDataSet);
@@ -1145,33 +1256,5 @@ begin
   result := true;
 end;
 
-function TDTData.ValidateTimeKeeperA(ADataSet: TDataSet; TimeKeeperIndx:
-  integer): boolean;
-var
-  ATimeKeeperMode: dtTimeKeeperMode;
-begin
-  result := false;
-  // only TimeKeeperMode .. dtManual is accepted here.
-  ATimeKeeperMode := dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
-  if ATimeKeeperMode <> dtAutoMatic then exit;
 
-  case TimeKeeperIndx of
-    1:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time1').AsDateTime) = 0) then
-          exit;
-      end;
-    2:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time2').AsDateTime) = 0) then
-          exit;
-      end;
-    3:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time3').AsDateTime) = 0) then
-          exit;
-      end;
-  end;
-  result := true;
-end;
 end.

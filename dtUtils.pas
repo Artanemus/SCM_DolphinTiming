@@ -20,6 +20,7 @@ type
       fFileType: dtFileType; // dtUnknow,dtDO3, dtDO4
       fFileName: string; // Filename + EXTENSION. NO PATH.
       fCreatedDT: TDateTime;
+      fAcceptedDeviation: double;
 
     // --------------------------------------------
     { Routine to :
@@ -74,6 +75,8 @@ type
 
     class operator Initialize(out Dest: TdtUtils);
     class operator Finalize(var Dest: TdtUtils);
+
+    property AcceptedDeviation: double read FAcceptedDeviation write FAcceptedDeviation;
 
   end;
 
@@ -661,7 +664,7 @@ procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
   id, I, j, lane: integer;
   s: string;
-  Found: boolean;
+  Found, HasWatchTimes: boolean;
   t: TTime;
 begin
   if HeatID = 0 then exit;
@@ -670,6 +673,10 @@ begin
   if Found then
     // This heat has been process of all it's lane data ...
     exit;
+
+  // Init Flag.
+  HasWatchTimes := true;
+
   // dtfrmExec has a grid linked to this datasource.
   DTData.tblDTEntrant.DisableControls;
   // ID isn't AutoInc - calc manually.
@@ -724,8 +731,11 @@ begin
     if DTData.tblDTEntrant.FieldByName('Time1').IsNull and
      DTData.tblDTEntrant.FieldByName('Time2').IsNull and
      DTData.tblDTEntrant.FieldByName('Time3').IsNull then
-      // don't display a icon for Auto/Manual ...
-     DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := -1;
+     begin
+        // don't display a icon for Auto/Manual ...
+       DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := -1;
+       HasWatchTimes := false;
+     end;
 
 
     // Boolean assignment. Auto/Manual enable or disable TimeKeeper's Time[1..3]
@@ -737,10 +747,9 @@ begin
     DTData.tblDTEntrant.fieldbyName('Time2EnabledA').AsBoolean := true;
     DTData.tblDTEntrant.fieldbyName('Time3EnabledA').AsBoolean := true;
 
-    // Initalize deviations
-    DTData.tblDTEntrant.fieldbyName('Deviation1').Clear;
-    DTData.tblDTEntrant.fieldbyName('Deviation2').Clear;
-    DTData.tblDTEntrant.fieldbyName('Deviation3').Clear;
+
+    // S P L I T S .
+    DTData.tblDTEntrant.fieldbyName('UseFinalSplitAsRaceTime').AsBoolean := false;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodySplits(I, fSplits);
@@ -754,21 +763,28 @@ begin
     end;
     DTData.tblDTEntrant.Post;
 
-    // CALL CalcRaceTimeA to process RaceTimeA
-    // NEED AcceptedDeviation Value from settings.
-    DTData.CalcRaceTimeA(DTData.tblDTEntrant, 0.3);
+    if HasWatchTimes then
+    Begin
+      // Main form assigns value. ASSERT - avoid division by zero.
+      if fAcceptedDeviation = 0 then
+        fAcceptedDeviation := 0.3; // Dolphin Timing's default.
 
-    // By default TmieKeeperMode is automatic for all entrant data
-    // Assign calculated Automatic racetime.
-    t := DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsDateTime;
-    if (t <> 0) then
-    begin
-      DTData.tblDTEntrant.Edit;
-      DTData.tblDTEntrant.fieldbyName('RaceTime').AsDateTime := t;
-      DTData.tblDTEntrant.Post;
-    end;
+      // CALL CalcRaceTimeA to process RaceTimeA
+      // NEED AcceptedDeviation Value from settings.
+      DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation);
 
+      // IF Running in dtAutomatic
+      // - Assign calculated Automatic racetime.
+      t := DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsDateTime;
+      if (t <> 0) then
+      begin
+        DTData.tblDTEntrant.Edit;
+        DTData.tblDTEntrant.fieldbyName('RaceTime').AsDateTime := t;
+        DTData.tblDTEntrant.Post;
+      end;
+    End;
   end;
+
   DTData.tblDTEntrant.EnableControls;
 end;
 

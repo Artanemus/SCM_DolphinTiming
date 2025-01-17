@@ -1015,6 +1015,8 @@ begin
   vimgRelayBug.ImageIndex := -1;
   vimgStrokeBug.ImageIndex := -1;
 
+  dtUtils.AcceptedDeviation := Settings.DolphinAcceptedDeviation;
+
   // Test DT directory exists...
   if DirectoryExists(Settings.DolphinMeetsFolder) then
   begin
@@ -1177,7 +1179,6 @@ var
   b: boolean;
   ATimeKeeperMode: dtTimekeeperMode;
 begin
-  AImgIndx := 2;
   // DTData.tblDTHeat - AfterScroll event.
   // UI images in grid cells need to be re-assigned.
   DTGrid.BeginUpdate;
@@ -1203,8 +1204,13 @@ begin
       begin
         // Switch to the Auto-Calculated RaceTime.
         // NOTE: this racetime was calculated when the DT file was
-        // and cannot be modified by the user.
-        { DEEMED SAFE TO  REMOVE }
+        // first imported and there after, read-only.
+
+        { DEEMED SAFE TO REMOVE ...
+          - time is switch on toggle timekeepermode
+            (dtGrid.OnClickCell[6,AROW])
+        }
+
         {
         var t: TTime;   // Delphi inline variable.
         With DTData.tblDTEntrant do
@@ -1218,6 +1224,23 @@ begin
           Post;
         End;
         }
+        // Time[1..3]EnabledA
+        for I := 3 to 5 do
+        begin
+          s := 'Time' + IntToStr(I - 2) + 'EnabledA';
+          b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
+          // update the cell's icon.
+          if (not b) then // The TimeKeeper column is disabled.
+          begin
+            // On success rtns AImageIndx.
+            if not DTGrid.GetImageIdx(I, j, AImgIndx) then
+              // Sandy yellow box with cross.
+              DTGrid.AddImageIdx(I, j, 3, TCellHAlign.haFull,
+                TCellVAlign.vaFull);
+          end;
+
+        end;
+
       end;
       dtManual:
       begin
@@ -1228,8 +1251,9 @@ begin
           // update the cell's icon.
           if (not b) then // The TimeKeeper column is disabled.
           begin
+            // On success rtns AImageIndx.
             if not DTGrid.GetImageIdx(I, j, AImgIndx) then
-              // Add tomatoe red box with tomatoe red cross.
+              // Tomatoe red box with cross.
               DTGrid.AddImageIdx(I, j, 0, TCellHAlign.haFull,
                 TCellVAlign.vaFull);
           end;

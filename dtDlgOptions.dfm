@@ -8453,23 +8453,13 @@ object dlgOptions: TdlgOptions
         end
         object rgrpMeanTimeMethod: TRadioGroup
           Left = 20
-          Top = 98
-          Width = 337
+          Top = 66
+          Width = 269
           Height = 95
-          Caption = 'Auto calcuate mean time method ...'
+          Caption = 'Auto calcuate race-times ...'
           Items.Strings = (
             'DT default behaviour'
-            'SCM improved method')
-          TabOrder = 2
-        end
-        object chkbxEnableManualMeanTime: TCheckBox
-          Left = 20
-          Top = 59
-          Width = 277
-          Height = 25
-          Caption = 'Enable manual mean time selection.'
-          Checked = True
-          State = cbChecked
+            'SCM method')
           TabOrder = 1
         end
         object chkbxRenameSession: TCheckBox
@@ -8478,7 +8468,7 @@ object dlgOptions: TdlgOptions
           Width = 181
           Height = 25
           Caption = 'Auto rename DT files.'
-          TabOrder = 3
+          TabOrder = 2
         end
         object rgrpPrecedence: TRadioGroup
           Left = 20
@@ -8494,7 +8484,7 @@ object dlgOptions: TdlgOptions
             
               'Use the DT filename to extract Session, Event && Heat (DO4) data' +
               '.')
-          TabOrder = 4
+          TabOrder = 3
         end
       end
       object tabsheetPaths: TTabSheet
