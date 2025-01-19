@@ -810,7 +810,7 @@ object dtExec: TdtExec
       object btnPrevDTFile: TButton
         Left = 15
         Top = 99
-        Width = 490
+        Width = 534
         Height = 49
         Caption = 'PREVIOUS'
         TabOrder = 1
@@ -819,7 +819,7 @@ object dtExec: TdtExec
       object btnNextDTFile: TButton
         Left = 16
         Top = 683
-        Width = 553
+        Width = 597
         Height = 50
         Caption = 'NEXT'
         TabOrder = 0
@@ -828,7 +828,7 @@ object dtExec: TdtExec
       object dtGrid: TDBAdvGrid
         Left = 16
         Top = 154
-        Width = 553
+        Width = 597
         Height = 523
         Cursor = crDefault
         BevelInner = bvNone
@@ -1030,7 +1030,7 @@ object dtExec: TdtExec
             Width = 34
           end
           item
-            Alignment = taCenter
+            Alignment = taRightJustify
             Borders = []
             BorderPen.Color = clSilver
             ButtonHeight = 18
@@ -1190,13 +1190,14 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
             PrintFont.Height = -16
             PrintFont.Name = 'Segoe UI'
             PrintFont.Style = []
-            Width = 94
+            Width = 120
           end>
         DataSource = DTData.dsDTEntrant
         InvalidPicture.Data = {
@@ -1344,7 +1345,7 @@ object dtExec: TdtExec
           94
           94
           64
-          94)
+          120)
         RowHeights = (
           34
           46)
@@ -1352,7 +1353,7 @@ object dtExec: TdtExec
       object pBar: TProgressBar
         Left = 15
         Top = 739
-        Width = 554
+        Width = 598
         Height = 9
         Position = 50
         BarColor = clChartreuse
@@ -1363,7 +1364,7 @@ object dtExec: TdtExec
         StyleElements = []
       end
       object btnPickDTTreeView: TButton
-        Left = 511
+        Left = 555
         Top = 98
         Width = 58
         Height = 50

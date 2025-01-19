@@ -19,143 +19,140 @@ type
   // 5 x modes m-enabled, m-disabled, a-enabled, a-disabled, unknown (err or nil).
   //  dtTimeModeErr = (tmeUnknow, tmeBadTime, tmeExceedsDeviation, tmeEmpty);
   dtPrecedence = (dtPrecHeader, dtPrecFileName);
-  dtTimeKeeperMode = (dtAutomatic, dtManual);
+  dtActiveRT = (artAutomatic, artManual, artUser, artSplit, artNone);
 
 type
   TDTData = class(TDataModule)
-    qrySession: TFDQuery;
-    qryEvent: TFDQuery;
-    qryHeat: TFDQuery;
-    qryINDV: TFDQuery;
-    qryTEAM: TFDQuery;
-    qryTEAMEntrant: TFDQuery;
-    dsSession: TDataSource;
+    dsDTEntrant: TDataSource;
+    dsDTEvent: TDataSource;
+    dsDTHeat: TDataSource;
+    dsDTSession: TDataSource;
     dsEvent: TDataSource;
     dsHeat: TDataSource;
     dsINDV: TDataSource;
+    dsSession: TDataSource;
+    dsSessionList: TDataSource;
+    dsSwimClub: TDataSource;
     dsTEAM: TDataSource;
     dsTEAMEntrant: TDataSource;
-    imgcolDT: TImageCollection;
-    vimglistDTEvent: TVirtualImageList;
-    qryNearestSessionID: TFDQuery;
-    tblDTNoodle: TFDMemTable;
-    qryDistance: TFDQuery;
-    qryStroke: TFDQuery;
-    vimglistDTGrid: TVirtualImageList;
-    tblDTSession: TFDMemTable;
-    tblDTHeat: TFDMemTable;
-    dsDTSession: TDataSource;
-    FDStanStorageXMLLink1: TFDStanStorageXMLLink;
-    tblDTEntrant: TFDMemTable;
-    dsDTHeat: TDataSource;
-    dsDTEntrant: TDataSource;
-    qrySwimClub: TFDQuery;
-    dsSwimClub: TDataSource;
-    qrySessionList: TFDQuery;
-    dsSessionList: TDataSource;
     FDStanStorageBinLink1: TFDStanStorageBinLink;
-    vimglistMenu: TVirtualImageList;
-    qrySessionListSessionID: TFDAutoIncField;
+    FDStanStorageXMLLink1: TFDStanStorageXMLLink;
+    imgcolDT: TImageCollection;
+    qryDistance: TFDQuery;
+    qryEvent: TFDQuery;
+    qryHeat: TFDQuery;
+    qryINDV: TFDQuery;
+    qryNearestSessionID: TFDQuery;
+    qrySession: TFDQuery;
+    qrySessionList: TFDQuery;
     qrySessionListCaption: TWideStringField;
-    qrySessionListSessionStart: TSQLTimeStampField;
     qrySessionListClosedDT: TSQLTimeStampField;
-    qrySessionListSwimClubID: TIntegerField;
+    qrySessionListSessionID: TFDAutoIncField;
+    qrySessionListSessionStart: TSQLTimeStampField;
     qrySessionListSessionStatusID: TIntegerField;
-    vimglistTreeView: TVirtualImageList;
-    vimglistStateImages: TVirtualImageList;
-    tblDTEvent: TFDMemTable;
-    dsDTEvent: TDataSource;
+    qrySessionListSwimClubID: TIntegerField;
+    qryStroke: TFDQuery;
+    qrySwimClub: TFDQuery;
+    qryTEAM: TFDQuery;
+    qryTEAMEntrant: TFDQuery;
     SVGIconImageCollection1: TSVGIconImageCollection;
+    tblDTEntrant: TFDMemTable;
+    tblDTEvent: TFDMemTable;
+    tblDTHeat: TFDMemTable;
+    tblDTNoodle: TFDMemTable;
+    tblDTSession: TFDMemTable;
     vimglistDTCell: TVirtualImageList;
-    procedure DataModuleDestroy(Sender: TObject);
+    vimglistDTEvent: TVirtualImageList;
+    vimglistDTGrid: TVirtualImageList;
+    vimglistMenu: TVirtualImageList;
+    vimglistStateImages: TVirtualImageList;
+    vimglistTreeView: TVirtualImageList;
     procedure DataModuleCreate(Sender: TObject);
+    procedure DataModuleDestroy(Sender: TObject);
     procedure tblDTHeatAfterScroll(DataSet: TDataSet);
   private
-    { Private declarations }
     FConnection: TFDConnection;
-    fSCMDataIsActive: Boolean;
     fDTDataIsActive: Boolean;
     fDTMasterDetailActive: Boolean;
+    fSCMDataIsActive: Boolean;
     msgHandle: HWND;  // TForm.dtfrmExec ...
     function GetSCMActiveSessionID: integer;
   public
-    { Public declarations }
-    procedure ActivateDataSCM();
     procedure ActivateDataDT();
-    procedure BuildDTData;
+    procedure ActivateDataSCM();
     procedure BuildCSVEventData(AFileName: string);
-    procedure ReadFromBinary(AFilePath:string);
-    procedure WriteToBinary(AFilePath:string);
-    procedure EnableDTMasterDetail();
-    procedure DisableDTMasterDetail();
-    // L O C A T E S   F O R   D T   D A T A.
-    // .......................................................
-    function LocateDTSessionID(ASessionID: integer): boolean;
-    // WARNING : Master-Detail enabled... DT EventID may not be visible.
-    function LocateDTEventID(AEventID: integer): boolean;
-    // WARNING : Master-Detail enabled... DT HeatID may not be visible.
-    function LocateDTHeatID(AHeatID: integer): boolean;
-    // WARNING : Master-Detail enabled...
-    // Use DisableDTMasterDetail() before calling here?
-    // USED BY TdtUtils.ProcessSession.
-    function LocateDTSessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    function LocateDTEventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    function LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    // .......................................................
-    // FIND MAXIMUM IDENTIFIER VALUE IN DOLPHIN TIMING TABLES.
-    // These routines are needed as there is no AutoInc on Primary Key.
-    // .......................................................
-    // WARNING : DisableDTMasterDetail() before calling MaxID routines.
-    function MaxID_Session():integer;
-    function MaxID_Event(): integer;
-    function MaxID_Heat(): integer;
-    function MaxID_Entrant: integer;
-    // .......................................................
-
-    // L O C A T E S   F O R   S W I M C L U B M E E T   D A T A.
-    // .......................................................
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected SwimClub if SCM SessionID is visible.
-    function LocateSCMSessionID(ASessionID: integer): boolean;
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected session if SCM EventID is visible.
-    function LocateSCMEventID(AEventID: integer): boolean;
-    // WARNING : Master-Detail enabled...
-    // Dependant on selected event if SCM HeatID is visible.
-    function LocateSCMHeatID(AHeatID: integer): boolean;
-    // Uses SessionStart TDateTime...
-    function LocateSCMNearestSessionID(aDate: TDateTime): integer;
-    // MISC SCM ROUTINES/FUNCTIONS
-    function GetSCMNumberOfHeats(AEventID: integer): integer;
-    function GetSCMRoundABBREV(AEventID: integer): string;
-
-    procedure ToggleTimeKeeperMode(ADataSet: TDataSet);
-    // Available only when in TimeKeeperMode - dtManual.
-    // returns true - Enabled ... false - Disabled.
-    function ToggleEnableTimeKeeper(ADataSet: TDataSet; idx: integer): Boolean;
-    procedure SetTimeKeeperMode(ADataSet: TDataSet; ATimeKeeperMode:
-        dtTimeKeeperMode);
-
-    // Routines ONLY for TimeKeeperMode = dtManual
+    procedure BuildDTData;
+    // --------------------------------------------
+    // Routines ONLY for ActiveRT = dtAutomatic
+    // on called on loading of DT file ...
+    procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
+    // Routines ONLY for ActiveRT = dtManual
     // For dtAutomatic Racetime, Deviation and validation are perform on
     // loading of the DO file.
     // --------------------------------------------
-    procedure CalcRaceTime(ADataSet: TDataSet);
-    function ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx: integer):
+    procedure CalcRaceTimeM(ADataSet: TDataSet);
+    procedure DisableDTMasterDetail();
+    procedure EnableDTMasterDetail();
+    // MISC SCM ROUTINES/FUNCTIONS
+    function GetSCMNumberOfHeats(AEventID: integer): integer;
+    function GetSCMRoundABBREV(AEventID: integer): string;
+    // WARNING : Master-Detail enabled... DT EventID may not be visible.
+    function LocateDTEventID(AEventID: integer): boolean;
+    function LocateDTEventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
         boolean;
-    // --------------------------------------------
-    // Routines ONLY for TimeKeeperMode = dtAutomatic
-    procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
+    // WARNING : Master-Detail enabled... DT HeatID may not be visible.
+    function LocateDTHeatID(AHeatID: integer): boolean;
+    function LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
+        boolean;
 
-    property SCMDataIsActive: Boolean read fSCMDataIsActive;
-    property DTDataIsActive: Boolean read fDTDataIsActive;
-    property DTMasterDetailActive: Boolean read fDTMasterDetailActive;
+    // L O C A T E S   F O R   D T   D A T A.
+    // WARNING : Master-Detail enabled...
+    // Use DisableDTMasterDetail() before calling here?
+    // USED BY TdtUtils.ProcessSession.
+    // .......................................................
+    function LocateDTSessionID(ASessionID: integer): boolean;
+    function LocateDTSessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+
+    // L O C A T E S   F O R   S W I M C L U B M E E T   D A T A.
+    // WARNING : Master-Detail enabled...
+    // .......................................................
+    function LocateSCMEventID(AEventID: integer): boolean;
+    function LocateSCMHeatID(AHeatID: integer): boolean;
+    // Uses SessionStart TDateTime...
+    function LocateSCMNearestSessionID(aDate: TDateTime): integer;
+    function LocateSCMSessionID(ASessionID: integer): boolean;
+    // .......................................................
+
+    // .......................................................
+    // FIND MAXIMUM IDENTIFIER VALUE IN DOLPHIN TIMING TABLES.
+    // These routines are needed as there is no AutoInc on Primary Key.
+    // WARNING : DisableDTMasterDetail() before calling MaxID routines.
+    // .......................................................
+    function MaxID_Entrant: integer;
+    function MaxID_Event(): integer;
+    function MaxID_Heat(): integer;
+    function MaxID_Session():integer;
+
+    // Read/Write DTData State to file
+    procedure ReadFromBinary(AFilePath:string);
+    // SET dtActiveRT : artAutomatic, artManual, artUser, artSplit, artNone
+    procedure SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
+    function ToggleActiveRT(ADataSet: TDataSet): dtActiveRT;
+    // toggle [T1M .. T3M] [T1A .. T3A] - TimeKeeper's watch-time 'active state'.
+    function ToggleWatchTime(ADataSet: TDataSet; idx: integer; art: dtActiveRT): Boolean;
+    // Tests IsEmpty, IsNull, [T1M .. T3M] [T1A .. T3A] STATE.
+    function ValidateWatchTime(ADataSet: TDataSet; TimeKeeperIndx: integer; art:
+        dtActiveRT): boolean;
+    // Read/Write DTData State to file
+    procedure WriteToBinary(AFilePath:string);
+
     property ActiveSessionID: integer read GetSCMActiveSessionID;
     property Connection: TFDConnection read FConnection write FConnection;
+    property DTDataIsActive: Boolean read fDTDataIsActive;
+    property DTMasterDetailActive: Boolean read fDTMasterDetailActive;
     property MSG_Handle: HWND read msgHandle write msgHandle;
+    property SCMDataIsActive: Boolean read fSCMDataIsActive;
   end;
 
 var
@@ -168,26 +165,6 @@ implementation
 {$R *.dfm}
 
 uses System.Variants, System.DateUtils;
-
-procedure TDTData.DataModuleCreate(Sender: TObject);
-begin
-  // Init params.
-  fDTDataIsActive := false;
-  fDTMasterDetailActive := false;
-  FConnection := nil;
-  fSCMDataIsActive := false; // activated later once FConnection is assigned.
-  // Assign all the params to create the Master-Detail relationships
-  // between Dolphin Timing memory tables.
-  EnableDTMasterDetail();
-  // Makes 'Active' the Dolphin Timing tables.
-  ActivateDataDT;
-  msgHandle := 0;
-end;
-
-procedure TDTData.DataModuleDestroy(Sender: TObject);
-begin
-  // clean-up.
-end;
 
 procedure TDTData.ActivateDataDT;
 begin
@@ -263,70 +240,6 @@ begin
     end;
 
   end;
-end;
-
-procedure TDTData.EnableDTMasterDetail();
-begin
-  // Master - index field.
-  tblDTSession.IndexFieldNames := 'SessionID';
-  // ASSERT Master - Detail
-  tblDTEvent.MasterSource := dsDTSession;
-  tblDTEvent.MasterFields := 'SessionID';
-  tblDTEvent.DetailFields := 'SessionID';
-  tblDTEvent.IndexFieldNames := 'SessionID';
-  tblDTHeat.MasterSource := dsDTEvent;
-  tblDTHeat.MasterFields := 'EventID';
-  tblDTHeat.DetailFields := 'EventID';
-  tblDTHeat.IndexFieldNames := 'EventID';
-  tblDTEntrant.MasterSource := dsDTHeat;
-  tblDTEntrant.MasterFields := 'HeatID';
-  tblDTEntrant.DetailFields := 'HeatID';
-  tblDTEntrant.IndexFieldNames := 'HeatID';
-  tblDTNoodle.MasterSource := dsDTHeat;
-  tblDTNoodle.MasterFields := 'HeatID';
-  tblDTNoodle.DetailFields := 'HeatID';
-  tblDTNoodle.IndexFieldNames := 'HeatID';
-  tblDTSession.First;
-  fDTMasterDetailActive := true;
-end;
-
-procedure TDTData.DisableDTMasterDetail();
-begin
-  // ASSERT Master - Detail
-  tblDTSession.IndexFieldNames := 'SessionID';
-  tblDTEvent.MasterSource := nil;
-  tblDTEvent.MasterFields := '';
-  tblDTEvent.DetailFields := '';
-  tblDTEvent.IndexFieldNames := 'EventID';
-  tblDTHeat.MasterSource := nil;
-  tblDTHeat.MasterFields := '';
-  tblDTHeat.DetailFields := '';
-  tblDTHeat.IndexFieldNames := 'HeatID';
-  tblDTEntrant.MasterSource := nil;
-  tblDTEntrant.MasterFields := '';
-  tblDTEntrant.DetailFields := '';
-  tblDTEntrant.IndexFieldNames := 'EntrantID';
-  tblDTNoodle.MasterSource := nil;
-  tblDTNoodle.MasterFields := '';
-  tblDTNoodle.DetailFields := '';
-  tblDTNoodle.IndexFieldNames := 'NoodleID';
-  tblDTSession.First;
-  {
-  Use the ApplyMaster method to synchronize this detail dataset with the
-  current master record.  This method is useful, when DisableControls was
-  called for the master dataset or when scrolling is disabled by
-  MasterLink.DisableScroll.
-  }
-  tblDTEvent.ApplyMaster;
-  tblDTEvent.First;
-  tblDTHeat.ApplyMaster;
-  tblDTHeat.First;
-  tblDTEntrant.ApplyMaster;
-  tblDTEntrant.First;
-  tblDTNoodle.ApplyMaster;
-  tblDTNoodle.First;
-
-  fDTMasterDetailActive := false;
 end;
 
 procedure TDTData.BuildCSVEventData(AFileName: string);
@@ -498,35 +411,59 @@ begin
   tblDTEntrant.FieldDefs.Add('Lane', ftInteger); // Lane Number.
   // Dolphin Timing Specific
   tblDTEntrant.FieldDefs.Add('Caption', ftString, 64); // Summary of status/mode
-  { TimeKeeper's MODE of operation - FLAG ...
-      TRUE : using Auto enabled/disable flags. (DEFAUT)
-      FALSE : using Manual enable/disable flags.
-  }
-  tblDTEntrant.FieldDefs.Add('TimeKeeperMode', ftInteger); // default true.
-  // Swimmers calculated racetime - value that is posted after patching.
-  // May display dtManual (calc on demand). OR RaceTimeA (calc on load).
+
+  // If all timekeeper watch times are empty - then true;
+  // calculated during load of DT file. Read Only.
+  tblDTEntrant.FieldDefs.Add('LaneIsEmpty', ftBoolean);  //
+
+  // Race-Time that will be posted to SCM.
+  // Value shown here is dependant on ActiveRT.
   tblDTEntrant.FieldDefs.Add('RaceTime', ftTime);
-  // dtAutomatic - calc on load and switched 'in and out' on toggle Auto/Manual.
+
+  // A race-time entered manually by the user.
+  tblDTEntrant.FieldDefs.Add('RaceTimeUser', ftTime);
+
+  // dtAutomatic - calc on load. Read-Only.
   tblDTEntrant.FieldDefs.Add('RaceTimeA', ftTime);
-  // NOODLE or PATCH cable .
-  tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger); // index in DTData.vimglistDTGrid.
-  // User manually selecting TimeKeeper's race-times to use - OR - Auto
-  tblDTEntrant.FieldDefs.Add('imgAuto', ftInteger); // index in DTData.vimglistDTGrid.
+
+  // dtActiveRT = (artAutomatic, artManual, artUser, artSplit, artNone);
+  // ----------------------------------------------------------------
+  // artAutomatic ...
+  //  A race-time calculated when loading the DT file - read only.
+  // artManual ...
+  //  A race-time calculated on demand.
+  // artUser ...
+  //  The user must switch to manual mode and then CNTRL-LMB the race-time cell.
+  //  AND then will be prompted to enter a user race-time. An icon will
+  //  be displayed in the race-time cell. CNTRL-LMB to exit this mode.
+  // artSplit ...
+  // dtfiletype dtDO4 ONLY. Use the final split-time as race-time.
+  // artNone ...
+  // The lane is empty or data error.
+  tblDTEntrant.FieldDefs.Add('ActiveRT', ftInteger);
+
+  // CELL ICON - PATCH cable . index given in DTData.vimglistDTGrid.
+  tblDTEntrant.FieldDefs.Add('imgPatch', ftInteger);
+
+  // CELL ICON - ActiveRT.  index given in DTData.vimglistDTGrid.
+  tblDTEntrant.FieldDefs.Add('imgActiveRT', ftInteger);
+
   // TimeKeeper's RACE_TIMES - 1,2, 3  (DT allows for 3 TimeKeepers.)
   tblDTEntrant.FieldDefs.Add('Time1', ftTime); // timekeeper 1.
   tblDTEntrant.FieldDefs.Add('Time2', ftTime); // timekeeper 2.
   tblDTEntrant.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
-  // Manual mode - flag TimeKeeper's race-time ENABLED.DISABLED?
-  tblDTEntrant.FieldDefs.Add('Time1EnabledM', ftBoolean);
-  tblDTEntrant.FieldDefs.Add('Time2EnabledM', ftBoolean);
-  tblDTEntrant.FieldDefs.Add('Time3EnabledM', ftBoolean);
-  // Auto mode - flag TimeKeeper's race-time ENABLED.DISABLED?
-  // DEFAULT true: Time1 is enabled and will be used 'CalcTime'.
-  tblDTEntrant.FieldDefs.Add('Time1EnabledA', ftBoolean);
-  tblDTEntrant.FieldDefs.Add('Time2EnabledA', ftBoolean);
-  tblDTEntrant.FieldDefs.Add('Time3EnabledA', ftBoolean);
 
-  tblDTEntrant.FieldDefs.Add('UseFinalSplitAsRaceTime', ftBoolean); // DO4.
+  // dtManual - store flip/flop.
+  tblDTEntrant.FieldDefs.Add('T1M', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('T2M', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('T3M', ftBoolean);
+
+  // dtAutomatic - store flip/flop.
+  // SET on load of DT file (DO3 .. DO4). Read only.
+  tblDTEntrant.FieldDefs.Add('T1A', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('T2A', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('T3A', ftBoolean);
+
   // Dolphin timing (dtfiletype dtDO4) stores MAX 10 splits.
   tblDTEntrant.FieldDefs.Add('Split1', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split2', ftTime); // DO4.
@@ -537,8 +474,8 @@ begin
   tblDTEntrant.FieldDefs.Add('Split7', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split8', ftTime); // DO4.
   tblDTEntrant.FieldDefs.Add('Split9', ftTime); // DO4.
-  // Last split can also represent TimeKeeper 4.
   tblDTEntrant.FieldDefs.Add('Split10', ftTime); // DO4.
+
   tblDTEntrant.CreateDataSet;
 {$IFDEF DEBUG}
   // save schema ...
@@ -575,29 +512,21 @@ end;
 
 procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
 var
-  t, tot, avg, AcceptedDeviationAsTime: TTime;
-  isValidTime: Array[1..3] of boolean;
+  t, tot, AcceptedDeviationAsTime: TTime;
+  isValidTime: array[1..3] of boolean;
   count, I, J: integer;
   s: string;
-  CalcRaceTime: TTime;
+  CalcRaceTime: double;
 
   indx1, indx2: Integer;
   t1, t2: TTime;
   dev: TTime;
-  validIndices: array[0..1] of Integer;
-  validTimes: array[0..1] of TTime;
   found: Integer;
-
+  v: variant;
 
 begin
   count := 0;
-  CalcRaceTime := 0;
-
-  // clear arrays
-  for I := 1 to 3 do
-  begin
-    isValidTime[i] := true;
-  end;
+  CalcRaceTime := 0.0;
 
   { A TDateTime value is essentially a double, where the integer part is the
       number of days and fraction is the time.
@@ -605,23 +534,45 @@ begin
       declared in SysUtils) so to get AcceptedDeviation (given in seconds)
       as TDateTime do:
   }
-  AcceptedDeviationAsTime := AcceptedDeviation/(SecsPerDay);
+  AcceptedDeviationAsTime := AcceptedDeviation / (SecsPerDay);
 
+  // setup arrays
+  for I := 1 to 3 do isValidTime[i] := true;
   // Validate watch time. Count the number of valid watch times.
   for I := 1 to 3 do
   begin
     s := 'Time' + IntToStr(I);
-    if ADataSet.FieldByName(s).IsNull then
+    v := ADataSet.FieldByName(s).AsVariant;
+    if VarIsEmpty(v) then
     begin
-      isValidTime[I] := false
-    end
-    else
+      isValidTime[I] := false;
+      Continue;
+    end;
+    if VarIsNull(v) then
     begin
-      t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-      if (t = 0) then
-        isValidTime[I] := false;
+      isValidTime[I] := false;
+      Continue;
+    end;
+    if (v=0) then
+    begin
+      isValidTime[I] := false;
+      Continue;
     end;
     if isValidTime[I] then Inc(count);
+  end;
+
+  ADataset.Edit;
+  try
+    for I := 1 to 3 do
+    begin
+      s := 'T' + IntToStr(I) + 'A';
+      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
+    end;
+    ADataSet.FieldByName('IsEmptyLane').AsBoolean := false;
+    ADataSet.Post;
+  except
+      ADataSet.Cancel;
+      raise;
   end;
 
   {
@@ -634,7 +585,6 @@ begin
 
 - C. If there are 3 watch times for a given lane, the middle time will be
   placed in 'racetime'.
-
 
   CASE B. NOTE:
   If there is more than the 'Accepted Deviation' difference between the
@@ -653,111 +603,118 @@ begin
     the three watch times.
   }
 
-  if (count = 1) then
-  begin
-    // Cue-to-time
-    for I := 1 to 3 do
-    begin
-      if isValidTime[I] then
+  case count of
+    0:
       begin
-        s := 'Time' + IntToStr(I);
-        CalcRaceTime := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-        break;
+        ADataSet.Edit;
+        ADataSet.FieldByName('RaceTimeA').Clear;
+        ADataSet.FieldByName('IsEmptyLane').AsBoolean := true;
+        ADataSet.Post;
+        exit;
       end;
-    end;
-  end;
-
-if (count = 2) then
-begin
-  found := 0;
-  indx1 := 0;
-  t1 := 0;
-
-  // Loop through the times to find the valid ones and assign values immediately
-  for I := 1 to 3 do
-  begin
-    if isValidTime[I] then
-    begin
-      s := 'Time' + IntToStr(I);
-      if found = 0 then
+    1:
       begin
-        t1 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-        indx1 := I;
-      end
-      else if found = 1 then
-      begin
-        t2 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-        indx2 := I;
-
-        // Calculate deviation and update isValidTime and CalcRaceTime
-        dev := Abs(t1 - t2);
-
-        if dev >= AcceptedDeviationAsTime then
+        // Cue-to-time ...
+        for I := 1 to 3 do
         begin
-          isValidTime[indx1] := false;
-          isValidTime[indx2] := false;
-          CalcRaceTime := 0;
+          if (isValidTime[I] = true) then
+          begin
+            s := 'Time' + IntToStr(I);
+            CalcRaceTime := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+            break;
+          end;
+        end;
+      end;
+    2:
+      begin
+        found := 0;
+        indx1 := 0;
+        t1 := 0;
+
+        // Loop through the times to find the valid ones and assign values immediately
+        for I := 1 to 3 do
+        begin
+          if isValidTime[I] then
+          begin
+            s := 'Time' + IntToStr(I);
+            if found = 0 then
+            begin
+              t1 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+              indx1 := I;
+            end
+            else if found = 1 then
+            begin
+              t2 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+              indx2 := I;
+
+              // Calculate deviation and update isValidTime and CalcRaceTime
+              dev := Abs(t1 - t2);
+
+              if dev >= AcceptedDeviationAsTime then
+              begin
+                isValidTime[indx1] := false;
+                isValidTime[indx2] := false;
+                CalcRaceTime := 0;
+              end
+              else
+              begin
+                CalcRaceTime := (t1 + t2) / 2;
+              end;
+
+              Break; // Exit loop after processing two valid times
+            end;
+            Inc(found);
+          end;
+        end;
+
+        if found < 2 then
+        begin
+          // Handle the case where there are not exactly two valid times
+        end;
+
+      end;
+      3:
+      begin
+        tot := 0;
+        var times: array[1..3] of TTime;
+        var UseSCMTimeMode: boolean;
+
+        UseSCMTimeMode := false;
+
+        // Add up all racetimes
+        for I := 1 to 3 do
+        begin
+          if isValidTime[I] then
+          begin
+            s := 'Time' + IntToStr(I);
+            t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
+            times[i] := t;
+            tot := tot + t;
+          end;
+        end;
+
+        if UseSCMTimeMode then
+        begin
+          // Calculate the average stopwatch time.
+          CalcRaceTime := (tot / count);
         end
         else
         begin
-          CalcRaceTime := (t1 + t2) / 2;
+          // Sort the times array
+          var temp: TTime;
+          for I := 1 to 2 do
+            for J := I + 1 to 3 do
+              if times[I] > times[J] then
+              begin
+                temp := times[I];
+                times[I] := times[J];
+                times[J] := temp;
+              end;
+
+          // The middle time is the second element in the sorted array
+          CalcRaceTime := times[2];
         end;
-
-        Break; // Exit loop after processing two valid times
       end;
-      Inc(found);
-    end;
-  end;
-
-  if found < 2 then
-  begin
-    // Handle the case where there are not exactly two valid times
-    // Add your error handling logic here
-  end;
-end;
-
-  if (count = 3) then
-  begin
-    tot := 0;
-    var times: array[1..3] of TTime;
-    var UseSCMTimeMode: boolean;
-
-    UseSCMTimeMode := false;
-
-    // Add up all racetimes
-    for I := 1 to 3 do
-    begin
-      if isValidTime[I] then
-      begin
-        s := 'Time' + IntToStr(I);
-        t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-        times[i] := t;
-        tot := tot + t;
-      end;
-    end;
-
-    if UseSCMTimeMode then
-    begin
-      // Calculate the average stopwatch time.
-      CalcRaceTime := (tot / count);
-    end
-    else
-    begin
-      // Sort the times array
-      var temp: TTime;
-      for I := 1 to 2 do
-        for J := I + 1 to 3 do
-          if times[I] > times[J] then
-          begin
-            temp := times[I];
-            times[I] := times[J];
-            times[J] := temp;
-          end;
-
-      // The middle time is the second element in the sorted array
-      CalcRaceTime := times[2];
-    end;
-
   end;
 
   // Write out database values (tblDTEntrant)
@@ -765,12 +722,7 @@ end;
   ADataSet.Edit;
   try
     // Convert msec to TTime.
-    for I := 1 to 3 do
-    begin
-      s := 'Time' + IntToStr(I) + 'EnabledA';
-      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
-    end;
-    if (CalcRaceTime<>0) then
+    if (CalcRaceTime <> 0) then
       ADataSet.FieldByName('RaceTimeA').AsDateTime := CalcRaceTime
     else
       ADataSet.FieldByName('RaceTimeA').Clear;
@@ -782,7 +734,7 @@ end;
 
 end;
 
-procedure TDTData.CalcRaceTime(ADataSet: TDataSet);
+procedure TDTData.CalcRaceTimeM(ADataSet: TDataSet);
 var
   I: Integer;
   s: string;
@@ -792,9 +744,10 @@ var
 begin
   t := 0;
   count:= 0;
+  // check isnull, zero and T?M
   for I := 1 to 3 do
   begin
-    b := ValidateTimeKeeper(ADataSet, I);
+    b := ValidateWatchTime(ADataSet, I, artManual);
     if b then
     begin
       s := 'Time' + IntToStr(I);
@@ -802,6 +755,7 @@ begin
       INC(count);
     end;
   end;
+
   ADataSet.Edit;
   if count = 0 then
   begin
@@ -817,6 +771,109 @@ begin
   ADataSet.Post;
 end;
 
+procedure TDTData.DataModuleCreate(Sender: TObject);
+begin
+  // Init params.
+  fDTDataIsActive := false;
+  fDTMasterDetailActive := false;
+  FConnection := nil;
+  fSCMDataIsActive := false; // activated later once FConnection is assigned.
+  // Assign all the params to create the Master-Detail relationships
+  // between Dolphin Timing memory tables.
+  EnableDTMasterDetail();
+  // Makes 'Active' the Dolphin Timing tables.
+  ActivateDataDT;
+  msgHandle := 0;
+end;
+
+procedure TDTData.DataModuleDestroy(Sender: TObject);
+begin
+  // clean-up.
+end;
+
+procedure TDTData.DisableDTMasterDetail();
+begin
+  // ASSERT Master - Detail
+  tblDTSession.IndexFieldNames := 'SessionID';
+  tblDTEvent.MasterSource := nil;
+  tblDTEvent.MasterFields := '';
+  tblDTEvent.DetailFields := '';
+  tblDTEvent.IndexFieldNames := 'EventID';
+  tblDTHeat.MasterSource := nil;
+  tblDTHeat.MasterFields := '';
+  tblDTHeat.DetailFields := '';
+  tblDTHeat.IndexFieldNames := 'HeatID';
+  tblDTEntrant.MasterSource := nil;
+  tblDTEntrant.MasterFields := '';
+  tblDTEntrant.DetailFields := '';
+  tblDTEntrant.IndexFieldNames := 'EntrantID';
+  tblDTNoodle.MasterSource := nil;
+  tblDTNoodle.MasterFields := '';
+  tblDTNoodle.DetailFields := '';
+  tblDTNoodle.IndexFieldNames := 'NoodleID';
+  tblDTSession.First;
+  {
+  Use the ApplyMaster method to synchronize this detail dataset with the
+  current master record.  This method is useful, when DisableControls was
+  called for the master dataset or when scrolling is disabled by
+  MasterLink.DisableScroll.
+  }
+  tblDTEvent.ApplyMaster;
+  tblDTEvent.First;
+  tblDTHeat.ApplyMaster;
+  tblDTHeat.First;
+  tblDTEntrant.ApplyMaster;
+  tblDTEntrant.First;
+  tblDTNoodle.ApplyMaster;
+  tblDTNoodle.First;
+
+  fDTMasterDetailActive := false;
+end;
+
+procedure TDTData.EnableDTMasterDetail();
+begin
+  // Master - index field.
+  tblDTSession.IndexFieldNames := 'SessionID';
+  // ASSERT Master - Detail
+  tblDTEvent.MasterSource := dsDTSession;
+  tblDTEvent.MasterFields := 'SessionID';
+  tblDTEvent.DetailFields := 'SessionID';
+  tblDTEvent.IndexFieldNames := 'SessionID';
+  tblDTHeat.MasterSource := dsDTEvent;
+  tblDTHeat.MasterFields := 'EventID';
+  tblDTHeat.DetailFields := 'EventID';
+  tblDTHeat.IndexFieldNames := 'EventID';
+  tblDTEntrant.MasterSource := dsDTHeat;
+  tblDTEntrant.MasterFields := 'HeatID';
+  tblDTEntrant.DetailFields := 'HeatID';
+  tblDTEntrant.IndexFieldNames := 'HeatID';
+  tblDTNoodle.MasterSource := dsDTHeat;
+  tblDTNoodle.MasterFields := 'HeatID';
+  tblDTNoodle.DetailFields := 'HeatID';
+  tblDTNoodle.IndexFieldNames := 'HeatID';
+  tblDTSession.First;
+  fDTMasterDetailActive := true;
+end;
+
+function TDTData.GetSCMActiveSessionID: integer;
+begin
+  result := 0;
+  if not fSCMDataIsActive then exit;
+  if qrySession.Active and not qrySession.IsEmpty then
+    result := qrySession.FieldByName('SessionID').AsInteger;
+end;
+
+function TDTData.GetSCMNumberOfHeats(AEventID: integer): integer;
+var
+SQL: string;
+v: variant;
+begin
+  result := 0;
+  SQL := 'SELECT COUNT(HeatID) FROM dbo.HeatIndividual WHERE EventID = :ID;';
+  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
+  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
+  result := v;
+end;
 
 function TDTData.GetSCMRoundABBREV(AEventID: integer): string;
 var
@@ -858,33 +915,6 @@ begin
     dsdtHeat.DataSet.Refresh;
 end;
 
-function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTHeat.Active then exit;
-  if (AHeatID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
-end;
-
-function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not tblDTSession.Active then exit;
-  if (ASessionID = 0) then exit;
-  SearchOptions := [];
-  result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
-  if result then
-  begin
-    dsdtEvent.DataSet.Refresh;
-    dsdtHeat.DataSet.Refresh;
-  end;
-end;
-
 function TDTData.LocateDTEventNum(SessionID, AEventNum: integer; APrecedence:
   dtPrecedence): boolean;
 var
@@ -910,28 +940,15 @@ begin
   tbldtEvent.IndexFieldNames := indexStr;
 end;
 
-function TDTData.LocateSCMEventID(AEventID: integer): boolean;
+function TDTData.LocateDTHeatID(AHeatID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
 begin
   result := false;
-  if not fSCMDataIsActive then exit;
-  if (aEventID = 0) then exit;
-  SearchOptions := [];
-  if dsEvent.DataSet.Active then
-      result := dsEvent.DataSet.Locate('EventID', aEventID, SearchOptions);
-end;
-
-function TDTData.LocateSCMHeatID(AHeatID: integer): boolean;
-var
-  SearchOptions: TLocateOptions;
-begin
-  result := false;
-  if not fSCMDataIsActive then exit;
+  if not tblDTHeat.Active then exit;
   if (AHeatID = 0) then exit;
   SearchOptions := [];
-  if dsHeat.DataSet.Active then
-      result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+  result := dsdtHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
 end;
 
 function TDTData.LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence:
@@ -959,16 +976,20 @@ begin
   tbldtHeat.IndexFieldNames := indexStr;
 end;
 
-function TDTData.LocateSCMNearestSessionID(aDate: TDateTime): integer;
+function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
 begin
-  result := 0;
-  // find the session with 'aDate' or bestfit.
-  qryNearestSessionID.Connection := fConnection;
-  qryNearestSessionID.ParamByName('ADATE').AsDateTime := DateOf(aDate);
-  qryNearestSessionID.Prepare;
-  qryNearestSessionID.Open;
-  if not qryNearestSessionID.IsEmpty then
-   result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
+  result := false;
+  if not tblDTSession.Active then exit;
+  if (ASessionID = 0) then exit;
+  SearchOptions := [];
+  result := dsdtSession.DataSet.Locate('SessionID', ASessionID, SearchOptions);
+  if result then
+  begin
+    dsdtEvent.DataSet.Refresh;
+    dsdtHeat.DataSet.Refresh;
+  end;
 end;
 
 function TDTData.LocateDTSessionNum(ASessionNum: integer; Aprecedence:
@@ -993,6 +1014,41 @@ begin
   tbldtSession.IndexFieldNames := indexStr;
 end;
 
+function TDTData.LocateSCMEventID(AEventID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fSCMDataIsActive then exit;
+  if (aEventID = 0) then exit;
+  SearchOptions := [];
+  if dsEvent.DataSet.Active then
+      result := dsEvent.DataSet.Locate('EventID', aEventID, SearchOptions);
+end;
+
+function TDTData.LocateSCMHeatID(AHeatID: integer): boolean;
+var
+  SearchOptions: TLocateOptions;
+begin
+  result := false;
+  if not fSCMDataIsActive then exit;
+  if (AHeatID = 0) then exit;
+  SearchOptions := [];
+  if dsHeat.DataSet.Active then
+      result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateSCMNearestSessionID(aDate: TDateTime): integer;
+begin
+  result := 0;
+  // find the session with 'aDate' or bestfit.
+  qryNearestSessionID.Connection := fConnection;
+  qryNearestSessionID.ParamByName('ADATE').AsDateTime := DateOf(aDate);
+  qryNearestSessionID.Prepare;
+  qryNearestSessionID.Open;
+  if not qryNearestSessionID.IsEmpty then
+   result := qryNearestSessionID.FieldByName('SessionID').AsInteger;
+end;
 
 function TDTData.LocateSCMSessionID(ASessionID: integer): boolean;
 var
@@ -1074,42 +1130,6 @@ begin
   result := max;
 end;
 
-function TDTData.GetSCMActiveSessionID: integer;
-begin
-  result := 0;
-  if not fSCMDataIsActive then exit;
-  if qrySession.Active and not qrySession.IsEmpty then
-    result := qrySession.FieldByName('SessionID').AsInteger;
-end;
-
-function TDTData.GetSCMNumberOfHeats(AEventID: integer): integer;
-var
-SQL: string;
-v: variant;
-begin
-  result := 0;
-  SQL := 'SELECT COUNT(HeatID) FROM dbo.HeatIndividual WHERE EventID = :ID;';
-  v := DTData.Connection.ExecSQLScalar(SQL, [AEventID]);
-  if VarIsNull(v) or VarIsEmpty(v) or (v=0)  then exit;
-  result := v;
-end;
-
-procedure TDTData.WriteToBinary(AFilePath:string);
-var
-s: string;
-begin
-  if Length(AFilePath) > 0 then
-    // Assert that the end delimiter is attached
-    s := IncludeTrailingPathDelimiter(AFilePath)
-  else
-    s := ''; // or handle this case if the path is mandatory
-  tblDTSession.SaveToFile(s + 'DTMaster.fsBinary', sfXML);
-  tblDTEvent.SaveToFile(s + 'DTEvent.fsBinary', sfXML);
-  tblDTHeat.SaveToFile(s + 'DTHeat.fsBinary', sfXML);
-  tblDTEntrant.SaveToFile(s + 'DTLane.fsBinary', sfXML);
-  tblDTNoodle.SaveToFile(s + 'DTNoodle.fsBinary', sfXML);
-end;
-
 procedure TDTData.ReadFromBinary(AFilePath:string);
 var
 s: string;
@@ -1126,22 +1146,89 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
-procedure TDTData.SetTimeKeeperMode(ADataSet: TDataSet; ATimeKeeperMode:
-    dtTimeKeeperMode);
+procedure TDTData.SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
+var
+  t: TTime;
+  RaceTimeField: TField;
+  RaceTimeAField: TField;
 begin
   // Test: Field already set to this mode.
-  if (ADataSet.FieldByName('TimeKeeperMode').AsInteger = ORD(ATimeKeeperMode)) then exit;
-  // Assign data fields to reflect new timemode.
+  if (ADataSet.FieldByName('ActiveRT').AsInteger = ORD(aActiveRT))
+    then exit;
+
   try
-    ADataSet.edit;
-    ADataSet.FieldByName('TimeKeeperMode').AsInteger := ORD(ATimeKeeperMode);
-    case ATimeKeeperMode of
-      dtAutomatic:
-          ADataSet.fieldbyName('imgAuto').AsInteger := 1;
-      dtManual:
-          ADataSet.fieldbyName('imgAuto').AsInteger := 2;
+    case aActiveRT of
+
+      artAutomatic:
+        begin
+          with ADataSet do
+          begin
+            Edit;
+            try
+              RaceTimeField := FieldByName('RaceTime');
+              RaceTimeAField := FieldByName('RaceTimeA');
+
+              if RaceTimeAField.IsNull then
+                RaceTimeField.Clear
+              else
+                RaceTimeField.AsVariant := RaceTimeAField.AsVariant;
+
+              FieldByName('ActiveRT').AsInteger := Ord(artAutomatic);
+              FieldByName('imgActiveRT').AsInteger := 1;
+
+              Post;
+            except
+              on E: Exception do
+              begin
+                Cancel; // Cancel the changes if an exception occurs
+                raise; // Re-raise the exception to propagate it further
+              end;
+            end;
+          end;
+        end;
+
+      artManual:
+        begin
+          ADataSet.edit;
+          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artManual);
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 2;
+          CalcRaceTimeM(ADataSet);
+          ADataSet.post;
+        end;
+
+      artUser:
+        begin
+          ADataSet.edit;
+          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artUser);
+
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
+          if ADataSet.FieldByName('UserRaceTime').IsNull then
+            ADataSet.FieldByName('RaceTime').Clear
+          else
+            ADataSet.FieldByName('RaceTime').AsDateTime :=
+            TimeOf(ADataSet.FieldByName('UserRaceTime').AsDateTime);
+          ADataSet.post;
+        end;
+
+      artSplit:
+        begin
+          ADataSet.edit;
+          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artSplit);
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 4;
+          ADataSet.FieldByName('RaceTime').Clear;
+          ADataSet.post;
+        end;
+
+      artNone:
+        begin
+          ADataSet.edit;
+          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artNone);
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := -1;
+          ADataSet.FieldByName('RaceTime').Clear;
+          ADataSet.post;
+        end;
     end;
-    ADataSet.post;
+
   except on E: Exception do
       // handle arror.
   end;
@@ -1153,24 +1240,57 @@ begin
     PostMessage(msgHandle, SCM_UPDATEUI3, 0,0);
 end;
 
-function TDTData.ToggleEnableTimeKeeper(ADataSet: TDataSet; idx: integer):
-    Boolean;
+function TDTData.ToggleActiveRT(ADataSet: TDataSet): dtActiveRT;
 var
-s: string;
+  art: dtActiveRT;
+begin
+  result := artNone;
+  if not ADataSet.Active then exit;
+  if not (ADataSet.Name = 'tblDTEntrant') then exit;
+
+  // Assert state of empty lanes...
+  if ADataSet.fieldbyName('IsEmptyLane').AsBoolean then
+  begin
+    if (ADataSet.fieldbyName('ActiveRT').AsInteger <> ORD(artNone)) then
+    begin
+      SetActiveRT(ADataSet, artNone);
+      System.Sysutils.Beep;
+    end;
+    result := artNone;
+    exit;
+  end;
+
+  // Get the current ActiveRT value
+  art := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
+
+  // Toggle state using Succ and handling wrapping
+  if art = High(dtActiveRT) then
+    art := Low(dtActiveRT)
+  else
+    art := Succ(art);
+
+  // Set the new ActiveRT value
+  SetActiveRT(ADataSet, art);
+  result := art;
+end;
+
+function TDTData.ToggleWatchTime(ADataSet: TDataSet; idx: integer; art: dtActiveRT): Boolean;
+var
+s, s2: string;
 b: boolean;
 begin
-  // Available only when in TimeKeeperMode - dtManual.
-  // returns true - Enabled ... false - Disabled.
   // RANGE : idx in [1..3].
   result := false;
+
   // Assert state ...
   if not ADataSet.Active then exit;
   if (ADataSet.Name <> 'tblDTEntrant') then exit;
-  if ADataSet.FieldByName('TimeKeeperMode').AsInteger <> ORD(dtManual) then
-    exit;
-  if not idx in [1,2,3] then exit;
-  // params ...
-  s := 'Time' + IntToStr(idx) + 'EnabledM';
+  if not idx in [1..3] then exit;
+  if art = artManual  then
+    s2 := 'M'
+  else if art = artAutomatic  then
+    s2 := 'A';
+  s := 'T' + IntToStr(idx) + s2;
   b := ADataSet.FieldByName(s).AsBoolean;
   b := not b; // Perform toggle;
   try
@@ -1178,82 +1298,66 @@ begin
     ADataSet.FieldByName(s).AsBoolean := b;
     ADataSet.Post;
   finally
-    // hack : no error checking done here.
-    result := b; // Assign an optimistic result.
-  end;
-
-end;
-
-procedure TDTData.ToggleTimeKeeperMode(ADataSet: TDataSet);
-var
-  ATimeKeeperMode: dtTimeKeeperMode;
-  t1, t2, t3: TTime;
-begin
-  if ADataSet.Active and (ADataSet.Name = 'tblDTEntrant') then
-  begin
-    // if there is no time-keeper data then it's pointless
-    // changing TimeMode. Also the icon will be removed.
-    t1 := TimeOF(ADataSet.FieldByName('Time1').AsDateTime);
-    t2 := TimeOF(ADataSet.FieldByName('Time2').AsDateTime);
-    t3 := TimeOF(ADataSet.FieldByName('Time3').AsDateTime);
-    if (t1 = 0) and (t2 = 0) and (t3 = 0) then
-    begin
-      if ADataSet.fieldbyName('imgAuto').AsInteger <> -1 then
-      begin
-        try
-          ADataSet.edit;
-          ADataSet.fieldbyName('imgAuto').AsInteger := -1;
-          ADataSet.post;
-        except on E: Exception do
-          // handle eception
-        end;
-      end;
-      exit;
-    end;
-    // toogle state.
-    if (ADataSet.FieldByName('TimeKeeperMode').AsInteger = ORD(dtAutomatic)) then
-      ATimeKeeperMode := dtManual
-    else
-      ATimeKeeperMode := dtAutomatic;
-    SetTimeKeeperMode(ADataSet, ATimeKeeperMode);
-    if (ATimeKeeperMode = dtManual) then CalcRaceTime(ADataSet);
+    result := b;
   end;
 end;
 
-function TDTData.ValidateTimeKeeper(ADataSet: TDataSet; TimeKeeperIndx:
-  integer): boolean;
+function TDTData.ValidateWatchTime(ADataSet: TDataSet; TimeKeeperIndx: integer;
+    art: dtActiveRT): boolean;
 var
-  ATimeKeeperMode: dtTimeKeeperMode;
+  TimeField, EnabledField: TField;
 begin
   result := false;
-  // only TimeKeeperMode .. dtManual is accepted here.
-  ATimeKeeperMode := dtTimeKeeperMode(ADataSet.FieldByName('TimeKeeperMode').AsInteger);
-  if ATimeKeeperMode <> dtManual then exit;
 
-  case TimeKeeperIndx of
-    1:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time1').AsDateTime) = 0) then
-          exit;
-        if (ADataSet.FieldByName('Time1EnabledM').AsBoolean = false) then
-          exit;
-      end;
-    2:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time2').AsDateTime) = 0) then
-          exit;
-        if (ADataSet.FieldByName('Time2EnabledM').AsBoolean = false) then
-          exit;
-      end;
-    3:
-      begin
-        if (TimeOF(ADataSet.FieldByName('Time3').AsDateTime) = 0) then
-          exit;
-        if (ADataSet.FieldByName('Time3EnabledM').AsBoolean = false) then
-          exit;
-      end;
+  if ADataSet.FieldByName('IsEmptyLane').AsBoolean then exit;
+
+  // Check if TimeKeeperIndx is within the valid range
+  if (TimeKeeperIndx < 1) or (TimeKeeperIndx > 3) then
+    exit;
+
+  // Determine the field names based on the index
+  TimeField := ADataSet.FindField(Format('Time%d', [TimeKeeperIndx]));
+  if (art = artManual) then
+    EnabledField := ADataSet.FindField(Format('T%dM', [TimeKeeperIndx]))
+  else if (art = artAutomatic) then
+    EnabledField := ADataSet.FindField(Format('T%dA', [TimeKeeperIndx]));
+
+  // Check if fields are found
+  if (TimeField = nil) or (EnabledField = nil) then
+    exit;
+
+  try
+    // Validate - is the Time Active...
+    if not EnabledField.AsBoolean then
+      exit;
+    // Validate the TTime field value.
+    if TimeField.IsNull then
+      exit;
+    if TimeOf(TimeField.AsDateTime) = 0 then
+      exit;
+
+  except
+    on E: Exception do
+      exit; // Trap any unexpected errors
   end;
+
   result := true;
+end;
+
+procedure TDTData.WriteToBinary(AFilePath:string);
+var
+s: string;
+begin
+  if Length(AFilePath) > 0 then
+    // Assert that the end delimiter is attached
+    s := IncludeTrailingPathDelimiter(AFilePath)
+  else
+    s := ''; // or handle this case if the path is mandatory
+  tblDTSession.SaveToFile(s + 'DTMaster.fsBinary', sfXML);
+  tblDTEvent.SaveToFile(s + 'DTEvent.fsBinary', sfXML);
+  tblDTHeat.SaveToFile(s + 'DTHeat.fsBinary', sfXML);
+  tblDTEntrant.SaveToFile(s + 'DTLane.fsBinary', sfXML);
+  tblDTNoodle.SaveToFile(s + 'DTNoodle.fsBinary', sfXML);
 end;
 
 

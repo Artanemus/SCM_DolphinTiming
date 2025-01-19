@@ -97,7 +97,7 @@ Example:
 
 implementation
 
-uses System.Character, DateUtils;
+uses System.Character, DateUtils, Data.DB;
 
 function StripAlphaChars(const InputStr: string): string;
 var
@@ -108,7 +108,6 @@ begin
     if Achar.IsDigit then
       Result := Result + Achar;
 end;
-
 
 function TdtUtils.ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 var
@@ -140,7 +139,6 @@ begin
   // Encode the components back into a TTime value
   Result := EncodeTime(Hours, Minutes, Seconds, Milliseconds);
 end;
-
 
 class operator TdtUtils.Finalize(var Dest: TdtUtils);
 begin
@@ -662,10 +660,11 @@ end;
 
 procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
-  id, I, j, lane: integer;
+  id, I, j, k, lane: integer;
   s: string;
   Found, HasWatchTimes: boolean;
   t: TTime;
+  TimeField: TField;
 begin
   if HeatID = 0 then exit;
 
@@ -675,7 +674,7 @@ begin
     exit;
 
   // Init Flag.
-  HasWatchTimes := true;
+  HasWatchTimes := false;
 
   // dtfrmExec has a grid linked to this datasource.
   DTData.tblDTEntrant.DisableControls;
@@ -701,55 +700,48 @@ begin
     // Should read 'Lane: #Lane#'
     s := 'Lane: ' + IntToStr(lane);
     DTData.tblDTEntrant.fieldbyName('Caption').AsString := s;
-    // Automatic/Manual. DEFAULT : dtTimeKeeperMode = dtAutomatic.
-    DTData.tblDTEntrant.fieldbyName('TimeKeeperMode').AsInteger := ORD(dtAutoMatic);
+
+    DTData.tblDTEntrant.fieldbyName('LaneIsEmpty').AsBoolean := false;
+
+    // Swimmers calculated racetime for post.
+    DTData.tblDTEntrant.fieldbyName('RaceTime').Clear;
+    // A user entered race-time.
+    DTData.tblDTEntrant.fieldbyName('RaceTimeUser').Clear;
+    // The Automatic race-time. Calculated on load of DT file.
+    DTData.tblDTEntrant.fieldbyName('RaceTimeA').Clear;
+    // dtActiveRT = (artAutomatic, artManual, artUser, artSplit, artNone);
+    DTData.tblDTEntrant.fieldbyName('ActiveRT').AsInteger := ORD(artAutoMatic);
+
     // graphic used in column[6] - GRID IMAGES DTData.vimglistDTCell .
     // image index 1 indicts - dtTimeKeeperMode = dtAutomatic.
-    DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := 1;
-    // Swimmers calculated racetime. Average of 'enabled' Time[1..3]
-    DTData.tblDTEntrant.fieldbyName('RaceTime').Clear;
-    DTData.tblDTEntrant.fieldbyName('RaceTimeA').Clear;
+    DTData.tblDTEntrant.fieldbyName('imgActiveRT').AsInteger := 1;
+
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodyTimeKeepers(I, fTimeKeepers);
 
-    if (fTimeKeepers[0] > 0) then
-      DTData.tblDTEntrant.FieldByName('Time1').AsDateTime := TDateTime(fTimeKeepers[0])
-    else
-      DTData.tblDTEntrant.FieldByName('Time1').Clear;
-    if (fTimeKeepers[1] > 0) then
-      DTData.tblDTEntrant.FieldByName('Time2').AsDateTime := TDateTime(fTimeKeepers[1])
-    else
-      DTData.tblDTEntrant.FieldByName('Time2').Clear;
-    if (fTimeKeepers[2] > 0) then
-      DTData.tblDTEntrant.FieldByName('Time3').AsDateTime := TDateTime(fTimeKeepers[2])
-    else
-      DTData.tblDTEntrant.FieldByName('Time3').Clear;
+    for k := 0 to 2 do
+    begin
+      TimeField := DTData.tblDTEntrant.FindField(Format('Time%d', [k + 1]));
+      if Assigned(TimeField) then
+      begin
+        if fTimeKeepers[k] > 0 then
+          TimeField.AsDateTime := TDateTime(fTimeKeepers[k])
+        else
+          TimeField.Clear;
+      end;
+    end;
 
-    if DTData.tblDTEntrant.FieldByName('Time1').IsNull and
-     DTData.tblDTEntrant.FieldByName('Time2').IsNull and
-     DTData.tblDTEntrant.FieldByName('Time3').IsNull then
-     begin
-        // don't display a icon for Auto/Manual ...
-       DTData.tblDTEntrant.fieldbyName('imgAuto').AsInteger := -1;
-       HasWatchTimes := false;
-     end;
+    // dtManual - make Active.
+    DTData.tblDTEntrant.fieldbyName('T1M').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('T2M').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('T2M').AsBoolean := true;
 
-
-    // Boolean assignment. Auto/Manual enable or disable TimeKeeper's Time[1..3]
-    DTData.tblDTEntrant.fieldbyName('Time1EnabledM').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('Time2EnabledM').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('Time3EnabledM').AsBoolean := true;
-
-    DTData.tblDTEntrant.fieldbyName('Time1EnabledA').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('Time2EnabledA').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('Time3EnabledA').AsBoolean := true;
-
-
-    // S P L I T S .
-    DTData.tblDTEntrant.fieldbyName('UseFinalSplitAsRaceTime').AsBoolean := false;
+    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
+    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
+    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodySplits(I, fSplits);
@@ -763,28 +755,18 @@ begin
     end;
     DTData.tblDTEntrant.Post;
 
-    if HasWatchTimes then
-    Begin
-      // Main form assigns value. ASSERT - avoid division by zero.
-      if fAcceptedDeviation = 0 then
-        fAcceptedDeviation := 0.3; // Dolphin Timing's default.
+    // Main form assigns value. ASSERT - avoid division by zero.
+    if fAcceptedDeviation = 0 then
+      fAcceptedDeviation := 0.3; // Dolphin Timing's default.
 
-      // CALL CalcRaceTimeA to process RaceTimeA
-      // NEED AcceptedDeviation Value from settings.
-      DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation);
+    // ----- Calculate RaceTimeA -----
+    // + Assign IsEmptyLane
+    // + Assigns all T#A fields
+    DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation);
+    // SET TO AUTOMATIC RACETIME MODE.
+    DTData.SetActiveRT(DTData.tblDTEntrant, artAutomatic);
 
-      // IF Running in dtAutomatic
-      // - Assign calculated Automatic racetime.
-      t := DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsDateTime;
-      if (t <> 0) then
-      begin
-        DTData.tblDTEntrant.Edit;
-        DTData.tblDTEntrant.fieldbyName('RaceTime').AsDateTime := t;
-        DTData.tblDTEntrant.Post;
-      end;
-    End;
   end;
-
   DTData.tblDTEntrant.EnableControls;
 end;
 
@@ -980,7 +962,6 @@ begin
     begin
       // Try to parse the time
       ATimeValue := ConvertSecondsStrToTime(s);
-//      if TryParseCustomTime(s, ATimeValue) then
       if ATimeValue > 0 then
       begin
         // Calculate the ASplit index

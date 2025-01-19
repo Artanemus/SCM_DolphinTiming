@@ -22,7 +22,8 @@ uses
   Vcl.PlatformVclStylesActnCtrls in '..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas',
   dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM},
   dtTreeViewDT in 'dtTreeViewDT.pas' {TreeViewDT},
-  dlgDataDebug in 'dlgDataDebug.pas' {DataDebug};
+  dlgDataDebug in 'dlgDataDebug.pas' {DataDebug},
+  dlgUserRaceTime in 'dlgUserRaceTime.pas' {UserRaceTime};
 
 {$R *.res}
 

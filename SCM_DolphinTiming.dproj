@@ -181,6 +181,10 @@
             <Form>DataDebug</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="dlgUserRaceTime.pas">
+            <Form>UserRaceTime</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
