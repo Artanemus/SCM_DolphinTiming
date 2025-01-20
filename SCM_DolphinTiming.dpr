@@ -23,7 +23,7 @@ uses
   dtTreeViewSCM in 'dtTreeViewSCM.pas' {TreeViewSCM},
   dtTreeViewDT in 'dtTreeViewDT.pas' {TreeViewDT},
   dlgDataDebug in 'dlgDataDebug.pas' {DataDebug},
-  dlgUserRaceTime in 'dlgUserRaceTime.pas' {UserRaceTime};
+  dlgRaceTimeUser in 'dlgRaceTimeUser.pas' {RaceTimeUser};
 
 {$R *.res}
 

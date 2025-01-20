@@ -161,7 +161,7 @@ implementation
 {$R *.dfm}
 
 uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM,
-  dlgDataDebug, dtTreeViewDT, dlgUserRaceTime;
+  dlgDataDebug, dtTreeViewDT, dlgRaceTimeUser;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -828,7 +828,7 @@ var
   aImgIndx, I: integer;
   ActiveRT: dtActiveRT;
   t: TTime;
-  dlg: TUserRaceTime;
+  dlg: TRaceTimeUser;
   mr: TModalResult;
   EnabledField: TField;
 begin
@@ -841,72 +841,38 @@ begin
   if (ARow >= DTgrid.FixedRows) then
   begin
     case ACol of
-      7:
+      7: // C O L U M N   E N T E R   U S E R   R A C E T I M E  .
         begin
           if (GetKeyState(VK_CONTROL) < 0) then
           begin
-
-            if (ATimeKeeperMode = dtManual) then // MUST BE IN MANUAL MODE.
+            ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
+            if (ActiveRT = artUser) then // Enter a user race-time.
             begin
               grid.BeginUpdate;
-              b := ADataSet.FieldByName('UseUserRaceTime').AsBoolean;
-              if b then
+              // create the 'Enter Race-Time' dialogue.
+              dlg := TRaceTimeUser.Create(Self);
+              // Assign : Current displayed racetime.
+              dlg.RaceTime := ADataSet.FieldByName('RaceTime').AsDateTime;
+              // Assign : Store user racetime.
+              dlg.RaceTimeUser := ADataSet.FieldByName('RaceTimeUser').AsDateTime;
+              mr := dlg.ShowModal;
+              if IsPositiveResult(mr) then
               begin
-                // show the display dialogue to set a user race-time
-                dlg := TUserRaceTime.Create(Self);
-                dlg.ManualRaceTime := ADataSet.FieldByName('RaceTime').AsDateTime;
-                dlg.UserRaceTime := ADataSet.FieldByName('UserRaceTime').AsDateTime;
-                mr := dlg.ShowModal;
-                if IsPositiveResult(mr) then
-                begin
-                  t := dlg.UserRaceTime;
-                  if not Grid.GetImageIdx(7, ARow, AImgIndx) then
-                    // Add the warning icon in the race-time cell.
-                    Grid.AddImageIdx(7, ARow, 4, TCellHAlign.haAfterText,
-                      TCellVAlign.vaCenter);
-                  ADataSet.Edit;
-//                  t := TimeOF(ADataSet.FieldByName('UserRaceTime').AsDateTime);
-                  if (t = 0) then
-                    ADataSet.FieldByName('RaceTime').Clear
-                  else
-                    ADataSet.FieldByName('RaceTime').AsDateTime := t;
-
-                  ADataSet.FieldByName('UserRaceTime').AsDateTime := t;
-                  ADataSet.Post;
-                end
+                t := dlg.RaceTimeUser;
+                ADataSet.Edit;
+                if (t = 0) then
+                  ADataSet.FieldByName('RaceTime').Clear
                 else
-                begin
-                  // CANCEL ENTER USER MODE.
-                  ADataSet.Edit;
-                  ADataSet.FieldByName('UseUserRaceTime').AsBoolean := false;
-                  ADataSet.Post;
-                  Grid.RemoveImageIdx(7, ARow);
-                end;
-                dlg.Free;
-              end
-              else
-              begin
-                Grid.RemoveImageIdx(7, ARow);
-                // The RaceTime needs to be recalculated...
-                DTData.CalcRaceTime(ADataset);
+                  ADataSet.FieldByName('RaceTime').AsDateTime := t;
+                ADataSet.FieldByName('UserRaceTime').AsDateTime := t;
+                ADataSet.Post;
               end;
+              dlg.Free;
               grid.EndUpdate;
             end;
           end;
-          {
-          else
-          begin
-            ADataSet.Edit;
-            t := TimeOF(ADataSet.FieldByName('RaceTimeA').AsDateTime);
-            if (t = 0) then
-              ADataSet.FieldByName('RaceTime').Clear
-            else
-              ADataSet.FieldByName('RaceTime').AsDateTime := t;
-            ADataSet.Post;
-          end;
-          }
         end;
-      6:
+      6: // C O L U M N   T O G G L E   A C T I V E R T .
         begin
           grid.BeginUpdate;
           // deals with racetime, and image
@@ -915,18 +881,19 @@ begin
           case ActiveRT of
             artAutomatic:
             begin
-              for I := 1 to 3 do
+              // ReAssign Watch Time Icons
+              for I := 3 to 5 do
               begin
                 // Remove icon in WatchTimes.
-                if Grid.GetImageIdx(I+2, ARow, AImgIndx) then
-                  Grid.RemoveImageIdx(I+2, ARow);
+                if Grid.GetImageIdx(I, ARow, AImgIndx) then
+                  Grid.RemoveImageIdx(I, ARow);
                 // get enabled or disabled state
-                EnabledField := ADataSet.FindField(Format('T%dA', [I]));
+                EnabledField := ADataSet.FindField(Format('T%dA', [I-2]));
                 if Assigned(EnabledField) then
                 begin
                 // not enabled - then place an icon into the cell.
                 if not EnabledField.AsBoolean then
-                    Grid.AddImageIdx(I+2, ARow, 0, TCellHAlign.haFull,
+                    Grid.AddImageIdx(I, ARow, 0, TCellHAlign.haFull,
                       TCellVAlign.vaFull);
                 end;
               end;
@@ -952,7 +919,7 @@ begin
                 end;
               end;
               // The RaceTime needs to be recalculated...
-              DTData.CalcRaceTime(ADataset);
+              DTData.CalcRaceTimeM(ADataset);
 
             end;
             artUser: ;

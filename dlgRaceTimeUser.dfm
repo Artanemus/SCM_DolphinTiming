@@ -1,4 +1,4 @@
-object UserRaceTime: TUserRaceTime
+object RaceTimeUser: TRaceTimeUser
   Left = 0
   Top = 0
   BorderStyle = bsDialog
@@ -25,8 +25,6 @@ object UserRaceTime: TUserRaceTime
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 376
-    ExplicitWidth = 624
     object btnOk: TButton
       Left = 287
       Top = 24
@@ -54,11 +52,7 @@ object UserRaceTime: TUserRaceTime
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitLeft = 216
-    ExplicitTop = 152
-    ExplicitWidth = 185
-    ExplicitHeight = 41
-    object edtUserRaceTime: TEdit
+    object edtRaceTimeUser: TEdit
       Left = 120
       Top = 48
       Width = 169
