@@ -855,7 +855,6 @@ object dtExec: TdtExec
         TabOrder = 2
         StyleElements = [seFont, seBorder]
         HoverRowCells = [hcNormal, hcSelected]
-        OnGetDisplText = dtGridGetDisplText
         OnClickCell = dtGridClickCell
         ActiveCellFont.Charset = DEFAULT_CHARSET
         ActiveCellFont.Color = 4474440

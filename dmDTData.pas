@@ -1174,7 +1174,7 @@ begin
                 RaceTimeField.AsVariant := RaceTimeAField.AsVariant;
 
               FieldByName('ActiveRT').AsInteger := Ord(artAutomatic);
-              FieldByName('imgActiveRT').AsInteger := 1;
+              FieldByName('imgActiveRT').AsInteger := 0;
 
               Post;
             except
@@ -1191,7 +1191,7 @@ begin
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artManual);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 2;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 1;
           CalcRaceTimeM(ADataSet);
           ADataSet.post;
         end;
@@ -1201,7 +1201,7 @@ begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artUser);
 
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 2;
           if ADataSet.FieldByName('UserRaceTime').IsNull then
             ADataSet.FieldByName('RaceTime').Clear
           else
@@ -1214,7 +1214,7 @@ begin
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artSplit);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 4;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
           ADataSet.FieldByName('RaceTime').Clear;
           ADataSet.post;
         end;
@@ -1223,7 +1223,7 @@ begin
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artNone);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := -1;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 4;
           ADataSet.FieldByName('RaceTime').Clear;
           ADataSet.post;
         end;
