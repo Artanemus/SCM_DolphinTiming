@@ -862,7 +862,7 @@ begin
                   ADataSet.FieldByName('RaceTime').Clear
                 else
                   ADataSet.FieldByName('RaceTime').AsDateTime := t;
-                ADataSet.FieldByName('UserRaceTime').AsDateTime := t;
+                ADataSet.FieldByName('RaceTimeUser').AsDateTime := t;
                 ADataSet.Post;
               end;
               dlg.Free;
@@ -884,17 +884,22 @@ begin
               for I := 3 to 5 do
               begin
                 // Remove icon in WatchTimes.
-                if Grid.GetImageIdx(I, ARow, AImgIndx) then
-                  Grid.RemoveImageIdx(I, ARow);
+                Grid.RemoveImageIdx(I, ARow);
+
+                // NO WATCH-TIME ... skip
+                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
+                if not Assigned(EnabledField) OR  EnabledField.IsNull then
+                  continue;
+
                 // get state of watch time.
                 EnabledField := ADataSet.FindField(Format('T%dA', [I-2]));
-                if Assigned(EnabledField) then
-                begin
+                if not Assigned(EnabledField) OR EnabledField.IsNull then
+                  continue;
+
                 // not enabled - then place an icon into the cell.
-                if not EnabledField.AsBoolean then
-                    Grid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-                      TCellVAlign.vaFull);
-                end;
+                if (EnabledField.AsBoolean = false) then
+                    Grid.AddImageIdx(I, ARow, 5, TCellHAlign.haFull,
+                      TCellVAlign.vaCenter);
               end;
             end;
             artManual:
@@ -902,17 +907,22 @@ begin
               for I := 3 to 5 do
               begin
                 // Remove icon in WatchTimes.
-                if Grid.GetImageIdx(I, ARow, AImgIndx) then
-                  Grid.RemoveImageIdx(I, ARow);
+                Grid.RemoveImageIdx(I, ARow);
+
+                // NO WATCH-TIME ... skip
+                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
+                if not Assigned(EnabledField) OR EnabledField.IsNull then
+                  continue;
+
                 // get state of watch time.
                 EnabledField := ADataSet.FindField(Format('T%dM', [I-2]));
-                if Assigned(EnabledField) then
-                begin
+                if not Assigned(EnabledField) OR EnabledField.IsNull then
+                  continue;
+
                 // not enabled - then place an icon into the cell.
-                if not EnabledField.AsBoolean then
+                if (EnabledField.AsBoolean = false) then
                     Grid.AddImageIdx(I, ARow, 6, TCellHAlign.haFull,
-                      TCellVAlign.vaFull);
-                end;
+                      TCellVAlign.vaCenter);
               end;
               // The RaceTime needs to be recalculated...
               DTData.CalcRaceTimeM(ADataset);
@@ -922,23 +932,25 @@ begin
               for I := 3 to 5 do
               begin
                 Grid.RemoveImageIdx(I, ARow);
+
+                // NO WATCH-TIME ... skip
+                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
+                if not Assigned(EnabledField) OR EnabledField.IsNull then
+                  continue;
+
                 Grid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-                      TCellVAlign.vaFull);
+                      TCellVAlign.vaCenter);
               end;
             end;
             artSplit:
               for I := 3 to 5 do
               begin
                 Grid.RemoveImageIdx(I, ARow);
-                Grid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-                      TCellVAlign.vaFull);
               end;
             artNone:
               for I := 3 to 5 do
               begin
                 Grid.RemoveImageIdx(I, ARow);
-                Grid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-                      TCellVAlign.vaFull);
               end;
 
           end;
@@ -947,7 +959,8 @@ begin
         end;
       3, 4, 5:
         begin
-          if (ADataSet.FieldByName('IsEmptyLane').AsBoolean = true) then exit;
+
+          if ADataSet.FieldByName('LaneIsEmpty').AsBoolean then exit;
 
           ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
 
@@ -1089,6 +1102,10 @@ begin
     // Assert UI display is up-to-date.
     PostMessage(Self.Handle, SCM_UPDATEUI, 0 , 0 );
 
+  PostMessage(Self.Handle, SCM_UPDATEUI2, 0 , 0 );
+  PostMessage(Self.Handle, SCM_UPDATEUI3, 0 , 0 );
+
+
 end;
 
 procedure TdtExec.LoadFromSettings;
@@ -1191,18 +1208,20 @@ end;
 
 procedure TdtExec.MSG_UpdateUI3(var Msg: TMessage);
 var
-  I, J, AImgIndx: integer;
+  I, J: integer;
   s: string;
-  b, found: boolean;
+  b: boolean;
   ActiveRT: dtActiveRT;
-  v: variant;
-  t: TTime;
+  ADataSet: TDataSet;
 begin
   // DTData.tblDTHeat - AfterScroll event.
   // UI images in grid cells need to be re-assigned.
   DTGrid.BeginUpdate;
+  // improve code readability ...
+  ADataSet := DTGrid.DataSource.DataSet;
 
-  { A DTData.OnAfterScroll event Posted Message.
+  { Typically this routine is call when
+    a DTData.OnAfterScroll occurs..
     A DTGrid.Reload isn't required at this execution point. }
 
   // clear out all images in TimeKeepers columns [3..5]
@@ -1213,122 +1232,106 @@ begin
     begin
       DTGrid.RemoveImageIdx(I, j); // Remove icon.
     end;
-    // remove ActiveRT icon.
-    DTGrid.RemoveImageIdx(6, j);
-    // remove UseUserRaceTime icon.
+    // Remove UseUserRaceTime icon. depreciated?
     DTGrid.RemoveImageIdx(7, j);
-
   end;
 
   // iterate DTData and assign a cell images if needed.
   // --------------------------------------------------
   for j := DTgrid.FixedRows to DTGrid.RowCount do
   begin
-    DTData.tblDTEntrant.RecNo := j; // cue-to-data.
-    ActiveRT := dtActiveRT(DTData.tblDTEntrant.FieldByName('AvtiveRT').AsInteger);
+    // SYNC DTData record to DTGrid row.
+    ADataSet.RecNo := j;
+
+    // HOW EMPTY LANES ARE HANDLED.
+    {
+      Calling DTData.UpdateActiveRT
+      Checks for empty lane.
+      Nn true ...
+      - assigns imgActiveRT -1
+      - clears race-time.
+    }
+
+    // A C T I V E R T .
+    ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
     case ActiveRT of
+      // A U T O M A T I C .
       artAutomatic:
       begin
         // Switch to the Auto-Calculated RaceTime.
-        // NOTE: this racetime was calculated when the DT file was
-        // first imported and there after, read-only.
-        Found := false;
-
+        // RacetimeA was calculated when the DT file was
+        // first imported.
+        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
+        // Update watch time : cell's icon.
         for I := 3 to 5 do
         begin
           s := 'Time' + IntToStr(I - 2);
-          t := TimeOF(DTData.tblDTEntrant.FieldByName(s).AsDateTime);
-          if (t<>0) then
+          if ADataSet.FieldByName(s).IsNull then
+            continue
+          else
           begin
-            found := true;
-            break;
+            s := 'T' + IntToStr(I - 2) + 'A';
+            b := ADataSet.FieldByName(s).AsBoolean;
+            if not b then // disabled - place a cell icon.
+            begin
+                DTGrid.AddImageIdx(I, j, 7, TCellHAlign.haFull,
+                  TCellVAlign.vaFull);
+            end;
           end;
         end;
-
-        if Found then
-          DTData.(DTData.tblDTEntrant, dtAutomatic);
-
-        for I := 3 to 5 do
-        begin
-          s := 'Time' + IntToStr(I - 2);
-          v := DTData.tblDTEntrant.FieldByName(s).AsVariant;
-          if varIsNull(v) then
-          begin
-            DTGrid.RemoveImageIdx(I, j); // Remove icon.
-          end
-          else
-            begin
-              s := 'Time' + IntToStr(I - 2) + 'EnabledA';
-              b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
-              // update the cell's icon.
-              if (not b) then // The TimeKeeper column is disabled.
-              begin
-                // On success rtns AImageIndx.
-                if not DTGrid.GetImageIdx(I, j, AImgIndx) then
-                  // Sandy yellow box with cross.
-                  DTGrid.AddImageIdx(I, j, 3, TCellHAlign.haFull,
-                    TCellVAlign.vaFull);
-              end;
-            end;
-        end;
       end;
-      dtManual:
+
+      // M A N U A L .
+      artManual:
       begin
 
-        Found := false;
+        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
         for I := 3 to 5 do
         begin
           s := 'Time' + IntToStr(I - 2);
-          t := TimeOF(DTData.tblDTEntrant.FieldByName(s).AsDateTime);
-          if (t<>0) then
-          begin
-            found := true;
-            break;
-          end;
-        end;
-        if Found then
-          DTData.SetTimeKeeperMode(DTData.tblDTEntrant, dtManual);
-
-        // An image that indicates the race-time has been manually entered by
-        // the user and isn't the 'manual' caculated race-time.
-        if (DTData.tblDTEntrant.FieldByName('UseUserRaceTime').AsBoolean = true) then
-        begin
-          // On success rtns AImageIndx.
-          if not DTGrid.GetImageIdx(7, j, AImgIndx) then
-            // display - warning icon in racetime cell.
-            DTGrid.AddImageIdx(7, j, 4, TCellHAlign.haAfterText, TCellVAlign.vaCenter)
-        end
-        else
-            DTGrid.RemoveImageIdx(7, j);
-
-        for I := 3 to 5 do
-        begin
-          s := 'Time' + IntToStr(I - 2);
-          v := DTData.tblDTEntrant.FieldByName(s).AsVariant;
-          if varIsNull(v) then
-          begin
-            DTGrid.RemoveImageIdx(I, j); // Remove icon.
-          end
+          if ADataSet.FieldByName(s).IsNull then
+            continue
           else
             begin
-              s := 'Time' + IntToStr(I - 2) + 'EnabledM';
-              b := DTData.tblDTEntrant.FieldByName(s).AsBoolean;
-              // update the cell's icon.
-              if (not b) then // The TimeKeeper column is disabled.
-              begin
-                // On success rtns AImageIndx.
-                if not DTGrid.GetImageIdx(I, j, AImgIndx) then
-                  // Tomatoe red box with cross.
-                  DTGrid.AddImageIdx(I, j, 0, TCellHAlign.haFull,
+              s := 'T' + IntToStr(I - 2) + 'M';
+              b := ADataSet.FieldByName(s).AsBoolean;
+              if (not b) then // disabled - place a cell icon.
+              begin  // update the cell's icon.
+                  DTGrid.AddImageIdx(I, j, 6, TCellHAlign.haFull,
                     TCellVAlign.vaFull);
               end;
             end;
         end;
       end;
+
+      artUser:
+      begin
+        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
+        for I := 3 to 5 do
+        begin
+          s := 'Time' + IntToStr(I - 2);
+          if ADataSet.FieldByName(s).IsNull then
+            continue
+          else
+            DTGrid.AddImageIdx(I, j, 10, TCellHAlign.haFull,
+              TCellVAlign.vaFull);
+        end;
+        {
+        // USER MODE : display - additional warning icon in racetime cell?
+        DTGrid.AddImageIdx(7, j, 4, TCellHAlign.haAfterText, TCellVAlign.vaCenter)
+        }
+      end;
+
+      artSplit, artNone:
+      begin
+        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
+      end;
+
+
     end;
 
   end;
-  DTData.tblDTEntrant.First;
+  ADataSet.First;
   DTGrid.EndUpdate;
 
 end;

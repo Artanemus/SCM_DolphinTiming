@@ -144,6 +144,8 @@ type
     // Tests IsEmpty, IsNull, [T1M .. T3M] [T1A .. T3A] STATE.
     function ValidateWatchTime(ADataSet: TDataSet; TimeKeeperIndx: integer; art:
         dtActiveRT): boolean;
+    // Re-Calculates Automatic/Manual race-time. For the current ActiveRT.
+    procedure UpdateActiveRT(ADataSet: TDataSet; AAcceptedDeviation: double);
     // Read/Write DTData State to file
     procedure WriteToBinary(AFilePath:string);
 
@@ -568,7 +570,7 @@ begin
       s := 'T' + IntToStr(I) + 'A';
       ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
     end;
-    ADataSet.FieldByName('IsEmptyLane').AsBoolean := false;
+    ADataSet.FieldByName('LaneIsEmpty').AsBoolean := false;
     ADataSet.Post;
   except
       ADataSet.Cancel;
@@ -608,7 +610,7 @@ begin
       begin
         ADataSet.Edit;
         ADataSet.FieldByName('RaceTimeA').Clear;
-        ADataSet.FieldByName('IsEmptyLane').AsBoolean := true;
+        ADataSet.FieldByName('LaneIsEmpty').AsBoolean := true;
         ADataSet.Post;
         exit;
       end;
@@ -1146,67 +1148,91 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
+procedure TDTData.UpdateActiveRT(ADataSet: TDataSet; AAcceptedDeviation:
+    double);
+var
+aActiveRT: dtActiveRT;
+begin
+  aActiveRT :=  dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
+  case aActiveRT of
+    artAutomatic:
+      CalcRaceTimeA(ADataSet, AAcceptedDeviation);
+    artManual:
+      CalcRaceTimeM(ADataSet);
+    artUser: ;
+    artSplit: ;
+    artNone: ;
+  end;
+  // ASSERT ActiveRT State.
+  DTData.SetActiveRT(ADataSet, aActiveRT);
+end;
+
+
+
 procedure TDTData.SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
 var
-  t: TTime;
   RaceTimeField: TField;
+  RaceTimeUField: TField;
   RaceTimeAField: TField;
 begin
-  // Test: Field already set to this mode.
-  if (ADataSet.FieldByName('ActiveRT').AsInteger = ORD(aActiveRT))
-    then exit;
+
+  if ADataSet.FieldByName('LaneIsEmpty').AsBoolean then
+  begin
+    ADataSet.edit;
+    ADataSet.fieldbyName('imgActiveRT').AsInteger := -1;
+    ADataSet.FieldByName('RaceTime').Clear;
+    ADataSet.post;
+    exit;
+  end;
 
   try
     case aActiveRT of
-
       artAutomatic:
         begin
-          with ADataSet do
-          begin
-            Edit;
-            try
-              RaceTimeField := FieldByName('RaceTime');
-              RaceTimeAField := FieldByName('RaceTimeA');
-
-              if RaceTimeAField.IsNull then
-                RaceTimeField.Clear
-              else
-                RaceTimeField.AsVariant := RaceTimeAField.AsVariant;
-
-              FieldByName('ActiveRT').AsInteger := Ord(artAutomatic);
-              FieldByName('imgActiveRT').AsInteger := 0;
-
-              Post;
-            except
-              on E: Exception do
-              begin
-                Cancel; // Cancel the changes if an exception occurs
-                raise; // Re-raise the exception to propagate it further
-              end;
+          ADataSet.edit;
+          try
+            ADataSet.FieldByName('ActiveRT').AsInteger := Ord(artAutomatic);
+            ADataSet.fieldbyName('imgActiveRT').AsInteger := 2;
+            if ADataSet.FieldByName('RaceTimeA').IsNull then
+              ADataSet.FieldByName('RaceTime').Clear
+            else
+              ADataSet.FieldByName('RaceTime').AsVariant :=
+              ADataSet.FieldByName('RaceTimeA').AsVariant;
+            ADataSet.post;
+          except on E: Exception do
+            begin
+              ADataSet.Cancel; // Cancel the changes if an exception occurs
+              raise; // Re-raise the exception to propagate it further
             end;
           end;
+          { to re-calculate CalcRaceTimeA(ADataSet); use UpdateActiveRT}
         end;
 
       artManual:
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artManual);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 1;
-          CalcRaceTimeM(ADataSet);
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
           ADataSet.post;
+          { to re-calculate CalcRaceTimeM(ADataSet); use UpdateActiveRT}
         end;
 
       artUser:
         begin
           ADataSet.edit;
-          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artUser);
 
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 2;
-          if ADataSet.FieldByName('UserRaceTime').IsNull then
-            ADataSet.FieldByName('RaceTime').Clear
-          else
-            ADataSet.FieldByName('RaceTime').AsDateTime :=
-            TimeOf(ADataSet.FieldByName('UserRaceTime').AsDateTime);
+          RaceTimeField := ADataSet.FieldByName('RaceTime');
+          RaceTimeUField := ADataSet.FieldByName('RaceTimeUser');
+          RaceTimeAField := ADataSet.FieldByName('RaceTimeA');
+
+          ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artUser);
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 4;
+
+          if RaceTimeUField.IsNull then
+            RaceTimeUField.AsVariant := RaceTimeAField.AsVariant;
+
+          RaceTimeField.AsVariant := RaceTimeUField.AsVariant;
+
           ADataSet.post;
         end;
 
@@ -1214,7 +1240,7 @@ begin
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artSplit);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 5;
           ADataSet.FieldByName('RaceTime').Clear;
           ADataSet.post;
         end;
@@ -1223,7 +1249,7 @@ begin
         begin
           ADataSet.edit;
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artNone);
-          ADataSet.fieldbyName('imgActiveRT').AsInteger := 4;
+          ADataSet.fieldbyName('imgActiveRT').AsInteger := 6;
           ADataSet.FieldByName('RaceTime').Clear;
           ADataSet.post;
         end;
@@ -1247,29 +1273,15 @@ begin
   result := artNone;
   if not ADataSet.Active then exit;
   if not (ADataSet.Name = 'tblDTEntrant') then exit;
-
-  // Assert state of empty lanes...
-  if ADataSet.fieldbyName('IsEmptyLane').AsBoolean then
-  begin
-    if (ADataSet.fieldbyName('ActiveRT').AsInteger <> ORD(artNone)) then
-    begin
-      SetActiveRT(ADataSet, artNone);
-      System.Sysutils.Beep;
-    end;
-    result := artNone;
-    exit;
-  end;
-
   // Get the current ActiveRT value
   art := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
-
   // Toggle state using Succ and handling wrapping
   if art = High(dtActiveRT) then
     art := Low(dtActiveRT)
   else
     art := Succ(art);
-
-  // Set the new ActiveRT value
+  // Set the new ActiveRT value - Deals with 'LaneIsEmpty'.
+  // DOES NOT RECALCULATE race-time. Consider using UpdateActiveRT.
   SetActiveRT(ADataSet, art);
   result := art;
 end;
@@ -1308,8 +1320,9 @@ var
   TimeField, EnabledField: TField;
 begin
   result := false;
+  EnabledField := nil;
 
-  if ADataSet.FieldByName('IsEmptyLane').AsBoolean then exit;
+  if ADataSet.FieldByName('LaneIsEmpty').AsBoolean then exit;
 
   // Check if TimeKeeperIndx is within the valid range
   if (TimeKeeperIndx < 1) or (TimeKeeperIndx > 3) then

@@ -662,8 +662,7 @@ procedure TdtUtils.ProcessEntrant(HeatID: integer);
 var
   id, I, j, k, lane: integer;
   s: string;
-  Found, HasWatchTimes: boolean;
-  t: TTime;
+  Found: boolean;
   TimeField: TField;
 begin
   if HeatID = 0 then exit;
@@ -672,9 +671,6 @@ begin
   if Found then
     // This heat has been process of all it's lane data ...
     exit;
-
-  // Init Flag.
-  HasWatchTimes := false;
 
   // dtfrmExec has a grid linked to this datasource.
   DTData.tblDTEntrant.DisableControls;
@@ -690,6 +686,7 @@ begin
   begin
     lane := sListBodyLane(I);
     id := id + 1;
+
     DTData.tblDTEntrant.Append;
     // primary key
     DTData.tblDTEntrant.fieldbyName('EntrantID').AsInteger := id;
@@ -714,7 +711,7 @@ begin
 
     // graphic used in column[6] - GRID IMAGES DTData.vimglistDTCell .
     // image index 1 indicts - dtTimeKeeperMode = dtAutomatic.
-    DTData.tblDTEntrant.fieldbyName('imgActiveRT').AsInteger := 1;
+    DTData.tblDTEntrant.fieldbyName('imgActiveRT').AsInteger := -1;
 
     // graphic used in column[1] - for noodle drawing...
     DTData.tblDTEntrant.fieldbyName('imgPatch').AsInteger := 0;
@@ -724,24 +721,24 @@ begin
 
     for k := 0 to 2 do
     begin
-      TimeField := DTData.tblDTEntrant.FindField(Format('Time%d', [k + 1]));
-      if Assigned(TimeField) then
+      if (fTimeKeepers[k] = 0) then
       begin
-        if fTimeKeepers[k] > 0 then
-          TimeField.AsDateTime := TDateTime(fTimeKeepers[k])
-        else
-          TimeField.Clear;
+        s := Format('T%dM', [k + 1]);
+        DTData.tblDTEntrant.fieldbyName(s).AsBoolean := false;
+        s := Format('T%dA', [k + 1]);
+        DTData.tblDTEntrant.fieldbyName(s).AsBoolean := false;
+        DTData.tblDTEntrant.fieldbyName(s).Clear;
+      end
+      else
+      begin
+        s := Format('T%dM', [k + 1]);
+        DTData.tblDTEntrant.fieldbyName(s).AsBoolean := true;
+        s := Format('T%dA', [k + 1]);
+        DTData.tblDTEntrant.fieldbyName(s).AsBoolean := true;
+        s := Format('Time%d', [k + 1]);
+        DTData.tblDTEntrant.fieldbyName(s).AsDateTime := TimeOf(fTimeKeepers[k]);
       end;
     end;
-
-    // dtManual - make Active.
-    DTData.tblDTEntrant.fieldbyName('T1M').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('T2M').AsBoolean := true;
-    DTData.tblDTEntrant.fieldbyName('T2M').AsBoolean := true;
-
-    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
-    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
-    DTData.tblDTEntrant.fieldbyName('T1A').Clear;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodySplits(I, fSplits);
@@ -759,12 +756,13 @@ begin
     if fAcceptedDeviation = 0 then
       fAcceptedDeviation := 0.3; // Dolphin Timing's default.
 
-    // ----- Calculate RaceTimeA -----
-    // + Assign IsEmptyLane
-    // + Assigns all T#A fields
+    // Cacluate RaceTimeA for the ActiveRT. (artAutomatic)
     DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation);
-    // SET TO AUTOMATIC RACETIME MODE.
-    DTData.SetActiveRT(DTData.tblDTEntrant, artAutomatic);
+    // Copy value to RaceTime.
+    DTData.tblDTEntrant.Edit;
+    DTData.tblDTEntrant.fieldbyName('RaceTime').AsVariant :=
+      DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsVariant;
+    DTData.tblDTEntrant.post;
 
   end;
   DTData.tblDTEntrant.EnableControls;

@@ -283,6 +283,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -847,6 +848,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -1149,7 +1151,7 @@ object dtExec: TdtExec
             CheckTrue = 'Y'
             Color = 6445643
             DataImageField = True
-            FieldName = 'imgAuto'
+            FieldName = 'imgActiveRT'
             Font.Charset = DEFAULT_CHARSET
             Font.Color = clWindowText
             Font.Height = -16
@@ -1161,7 +1163,7 @@ object dtExec: TdtExec
             HeaderFont.Height = -16
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
-            Images = DTData.vimglistDTCell
+            Images = DTData.vimglistDTGrid
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
             PrintFont.Color = clWindowText
