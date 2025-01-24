@@ -132,6 +132,8 @@ type
     procedure UpdateDTDetailsLabel();
     procedure DeleteFilesWithWildcard(const APath, APattern: string);
     procedure ReconstructAndExportFiles(fileExtension: string; messageText: string);
+    procedure UpdateCellIcons(ADataset: TDataSet; ARow: Integer; AActiveRT:
+        dtActiveRT);
 
   const
     AcceptedTimeKeeperDeviation = 0.3;
@@ -238,7 +240,10 @@ begin
         begin
           dtUtils.PrepareDTData;
           dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+          // Update lblDTDetails.
           PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+          // Paint cell icons.
+          PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
         end;
     end;
   end;
@@ -575,8 +580,10 @@ begin
       DTData.dsdtHeat.DataSet.next;
     end;
   end;
-
+  // Update lblDTDetails.
   PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+  // paint cell icons into grid
+  PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
 end;
 
 procedure TdtExec.btnNextEventClick(Sender: TObject);
@@ -690,6 +697,9 @@ begin
 
     // Update UI controls ...
     PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+    // paint cell icons
+    PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
+
     end;
   dlg.Free;
   dtGrid.EndUpdate;
@@ -785,7 +795,10 @@ begin
     else
       DTData.dsDTHeat.DataSet.prior;
   end;
+  // Update UI controls ...
   PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+  // paint cell icons into grid.
+  PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
 end;
 
 procedure TdtExec.btnPrevEventClick(Sender: TObject);
@@ -821,27 +834,22 @@ procedure TdtExec.dtGridClickCell(Sender: TObject; ARow, ACol: Integer);
 var
   Grid: TDBAdvGrid;
   ADataSet: TDataSet;
-  b: boolean;
   s: string;
-  aImgIndx, I: integer;
   ActiveRT: dtActiveRT;
   t: TTime;
   dlg: TRaceTimeUser;
   mr: TModalResult;
-  EnabledField: TField;
 begin
   Grid := Sender as TDBAdvGrid;
   ADataSet := Grid.DataSource.DataSet;
-  // GRID IMAGES : DTData.vimglistDTCell -
-  // Image : A tomatoe colored red cross inside of a boxed frame.
-  AImgIndx := 2;
+
 
   if (ARow >= DTgrid.FixedRows) then
   begin
     case ACol of
       7: // C O L U M N   E N T E R   U S E R   R A C E T I M E  .
         begin
-          if (GetKeyState(VK_CONTROL) < 0) then
+          if (GetKeyState(VK_MENU) < 0) then
           begin
             ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
             if (ActiveRT = artUser) then // Enter a user race-time.
@@ -873,89 +881,36 @@ begin
       6: // C O L U M N   T O G G L E   A C T I V E - R T .
         begin
           grid.BeginUpdate;
-          // Re-assigns racetime (if needed), and updates the
-          // field.imgActiveRT with the correct graphics indx.
-          // Then returns with the ActiveRT.
-          ActiveRT := DTData.ToggleActiveRT(ADataSet);
+          { Toggle tblEntrant.ActiveRT}
+          if (GetKeyState(VK_MENU) < 0) then
+            // toggle backwards
+            ActiveRT := DTData.ToggleActiveRT(ADataSet, 1)
+          else
+            // toggle forward (default)
+            ActiveRT := DTData.ToggleActiveRT(ADataSet);
+          { Modifies tblEntrant: ActiveRT, RaceTime, imgActiveRT }
+          DTData.SetActiveRT(ADataSet, ActiveRT);
           case ActiveRT of
             artAutomatic:
             begin
-              // ReAssign Watch Time Icons
-              for I := 3 to 5 do
-              begin
-                // Remove icon in WatchTimes.
-                Grid.RemoveImageIdx(I, ARow);
-
-                // NO WATCH-TIME ... skip
-                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
-                if not Assigned(EnabledField) OR  EnabledField.IsNull then
-                  continue;
-
-                // get state of watch time.
-                EnabledField := ADataSet.FindField(Format('T%dA', [I-2]));
-                if not Assigned(EnabledField) OR EnabledField.IsNull then
-                  continue;
-
-                // not enabled - then place an icon into the cell.
-                if (EnabledField.AsBoolean = false) then
-                    Grid.AddImageIdx(I, ARow, 5, TCellHAlign.haFull,
-                      TCellVAlign.vaCenter);
-              end;
+              UpdateCellIcons(ADataSet, ARow, ActiveRT);
             end;
             artManual:
             begin
-              for I := 3 to 5 do
-              begin
-                // Remove icon in WatchTimes.
-                Grid.RemoveImageIdx(I, ARow);
-
-                // NO WATCH-TIME ... skip
-                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
-                if not Assigned(EnabledField) OR EnabledField.IsNull then
-                  continue;
-
-                // get state of watch time.
-                EnabledField := ADataSet.FindField(Format('T%dM', [I-2]));
-                if not Assigned(EnabledField) OR EnabledField.IsNull then
-                  continue;
-
-                // not enabled - then place an icon into the cell.
-                if (EnabledField.AsBoolean = false) then
-                    Grid.AddImageIdx(I, ARow, 6, TCellHAlign.haFull,
-                      TCellVAlign.vaCenter);
-              end;
               // The RaceTime needs to be recalculated...
-              DTData.CalcRaceTimeM(ADataset);
+              DTData.CalcRaceTimeM(ADataSet);
+              UpdateCellIcons(ADataSet, ARow, ActiveRT);
             end;
             artUser:
             begin
-              for I := 3 to 5 do
-              begin
-                Grid.RemoveImageIdx(I, ARow);
-
-                // NO WATCH-TIME ... skip
-                EnabledField := ADataSet.FindField(Format('Time%d', [I-2]));
-                if not Assigned(EnabledField) OR EnabledField.IsNull then
-                  continue;
-
-                Grid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-                      TCellVAlign.vaCenter);
-              end;
+              UpdateCellIcons(ADataSet, ARow, ActiveRT);
             end;
             artSplit:
-              for I := 3 to 5 do
-              begin
-                Grid.RemoveImageIdx(I, ARow);
-              end;
+               UpdateCellIcons(ADataSet, ARow, ActiveRT);
             artNone:
-              for I := 3 to 5 do
-              begin
-                Grid.RemoveImageIdx(I, ARow);
-              end;
-
+               UpdateCellIcons(ADataSet, ARow, ActiveRT);
           end;
           grid.EndUpdate;
-
         end;
       3, 4, 5:
         begin
@@ -963,43 +918,20 @@ begin
           if ADataSet.FieldByName('LaneIsEmpty').AsBoolean then exit;
 
           ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
-
           // Must be artmanual for the user to toggle watch-time state.
           if ActiveRT <> artManual then exit;
 
-          // the CNTRL key is required to perform toggle.
-          if (GetKeyState(VK_CONTROL) < 0) then
+          // the ALT key is required to perform toggle.
+          if (GetKeyState(VK_MENU) < 0) then
           begin
             s := 'Time' + IntToStr(ACol - 2);
             // Can toggle an empty TimeKeeper's stopwatch time...
-            if (ADataSet.FieldByName(s).IsNull) then
-            begin
-              grid.BeginUpdate;
-              // Check that no icons are shown in the empty cell.
-              if Grid.GetImageIdx(ACol, ARow, AImgIndx) then
-                // Remove icon.
-                Grid.RemoveImageIdx(ACol, ARow);
-              grid.EndUpdate;
-              exit;
-            end;
-
+            if (ADataSet.FieldByName(s).IsNull) then exit;
             grid.BeginUpdate;
             // modify TimeKeeper's stopwatch state.
             // idx in [1..3]. Asserts : dtTimeKeeperMode = dtManual.
-            b := DTData.ToggleWatchTime(ADataSet, (Acol - 2), ActiveRT);
-            // update the cell's icon.
-            if (b) then // TimeKeeper is enabled.
-            begin
-              if Grid.GetImageIdx(ACol, ARow, AImgIndx) then
-                Grid.RemoveImageIdx(ACol, ARow); // Remove icon.
-            end
-            else // TimKeeper is disabled.
-            begin
-              if not Grid.GetImageIdx(ACol, ARow, AImgIndx) then
-                // Add icon : box with cross.
-                Grid.AddImageIdx(ACol, ARow, 6, TCellHAlign.haFull,
-                  TCellVAlign.vaFull);
-            end;
+            DTData.ToggleWatchTime(ADataSet, (Acol - 2), ActiveRT);
+            UpdateCellIcons(ADataSet, ARow, ActiveRT);
             // The RaceTime needs to be recalculated...
             DTData.CalcRaceTimeM(ADataset);
             grid.EndUpdate;
@@ -1054,7 +986,10 @@ begin
       begin
         dtUtils.PrepareDTData;
         dtUtils.PopulateDTData(Settings.DolphinMeetsFolder, pBar);
+        // Update UI controls ...
         PostMessage(Self.Handle, SCM_UPDATEUI2, 0, 0);
+        // Paint cell icons.
+        PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
       end;
   end;
 
@@ -1102,10 +1037,10 @@ begin
     // Assert UI display is up-to-date.
     PostMessage(Self.Handle, SCM_UPDATEUI, 0 , 0 );
 
+  // Update lblDTDetails.
   PostMessage(Self.Handle, SCM_UPDATEUI2, 0 , 0 );
+  // paint cell icons into grid.
   PostMessage(Self.Handle, SCM_UPDATEUI3, 0 , 0 );
-
-
 end;
 
 procedure TdtExec.LoadFromSettings;
@@ -1208,9 +1143,7 @@ end;
 
 procedure TdtExec.MSG_UpdateUI3(var Msg: TMessage);
 var
-  I, J: integer;
-  s: string;
-  b: boolean;
+  J: integer;
   ActiveRT: dtActiveRT;
   ADataSet: TDataSet;
 begin
@@ -1226,15 +1159,17 @@ begin
 
   // clear out all images in TimeKeepers columns [3..5]
   // --------------------------------------------------
+  {
   for j := DTgrid.FixedRows to DTGrid.RowCount do
   begin
     for I := 3 to 5 do
     begin
       DTGrid.RemoveImageIdx(I, j); // Remove icon.
     end;
-    // Remove UseUserRaceTime icon. depreciated?
+    // Remove UseUserRaceTime icon.
     DTGrid.RemoveImageIdx(7, j);
   end;
+  }
 
   // iterate DTData and assign a cell images if needed.
   // --------------------------------------------------
@@ -1243,15 +1178,6 @@ begin
     // SYNC DTData record to DTGrid row.
     ADataSet.RecNo := j;
 
-    // HOW EMPTY LANES ARE HANDLED.
-    {
-      Calling DTData.UpdateActiveRT
-      Checks for empty lane.
-      Nn true ...
-      - assigns imgActiveRT -1
-      - clears race-time.
-    }
-
     // A C T I V E R T .
     ActiveRT := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
     case ActiveRT of
@@ -1259,80 +1185,43 @@ begin
       artAutomatic:
       begin
         // Switch to the Auto-Calculated RaceTime.
-        // RacetimeA was calculated when the DT file was
-        // first imported.
-        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
-        // Update watch time : cell's icon.
-        for I := 3 to 5 do
-        begin
-          s := 'Time' + IntToStr(I - 2);
-          if ADataSet.FieldByName(s).IsNull then
-            continue
-          else
-          begin
-            s := 'T' + IntToStr(I - 2) + 'A';
-            b := ADataSet.FieldByName(s).AsBoolean;
-            if not b then // disabled - place a cell icon.
-            begin
-                DTGrid.AddImageIdx(I, j, 7, TCellHAlign.haFull,
-                  TCellVAlign.vaFull);
-            end;
-          end;
-        end;
+        // RacetimeA was calculated when the DT file was first imported.
+        DTData.SetActiveRT(ADataSet, artAutomatic);
+        UpdateCellIcons(ADataSet, J, ActiveRT);
       end;
 
       // M A N U A L .
       artManual:
       begin
-
-        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
-        for I := 3 to 5 do
-        begin
-          s := 'Time' + IntToStr(I - 2);
-          if ADataSet.FieldByName(s).IsNull then
-            continue
-          else
-            begin
-              s := 'T' + IntToStr(I - 2) + 'M';
-              b := ADataSet.FieldByName(s).AsBoolean;
-              if (not b) then // disabled - place a cell icon.
-              begin  // update the cell's icon.
-                  DTGrid.AddImageIdx(I, j, 6, TCellHAlign.haFull,
-                    TCellVAlign.vaFull);
-              end;
-            end;
-        end;
+        DTData.SetActiveRT(ADataSet, artManual);
+        DTData.CalcRaceTimeM(ADataSet);
+        UpdateCellIcons(ADataSet, J, ActiveRT);
       end;
 
       artUser:
       begin
-        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
-        for I := 3 to 5 do
-        begin
-          s := 'Time' + IntToStr(I - 2);
-          if ADataSet.FieldByName(s).IsNull then
-            continue
-          else
-            DTGrid.AddImageIdx(I, j, 10, TCellHAlign.haFull,
-              TCellVAlign.vaFull);
-        end;
-        {
-        // USER MODE : display - additional warning icon in racetime cell?
-        DTGrid.AddImageIdx(7, j, 4, TCellHAlign.haAfterText, TCellVAlign.vaCenter)
-        }
+        DTData.SetActiveRT(ADataSet, artUser);
+        UpdateCellIcons(ADataSet, J, ActiveRT);
       end;
 
-      artSplit, artNone:
+      artSplit:
       begin
-        DTData.UpdateActiveRT(ADataSet, dtUtils.AcceptedDeviation);
+        DTData.SetActiveRT(ADataSet, artSplit);
+        UpdateCellIcons(ADataSet, J, ActiveRT);
       end;
 
+      artNone:
+      begin
+        DTData.SetActiveRT(ADataSet, artNone);
+        UpdateCellIcons(ADataSet, J, ActiveRT);
+      end;
 
     end;
 
   end;
   ADataSet.First;
   DTGrid.EndUpdate;
+  DTGrid.ClearRowSelect;
 
 end;
 
@@ -1433,6 +1322,106 @@ begin
     if Length(s) > 0 then s2 := s2 + ' ' + s;
     Caption := s2;
   end;
+end;
+
+procedure TdtExec.UpdateCellIcons(ADataset: TDataSet; ARow: Integer; AActiveRT:
+    dtActiveRT);
+var
+I: integer;
+s: string;
+b: boolean;
+begin
+
+  // SOURCE FOR GRID CELL IMAGES : DTData.vimglistDTCell.
+
+  DTGrid.BeginUpdate;
+
+  DTGrid.RemoveImageIdx(7, ARow);
+
+  case AActiveRT of
+    artAutomatic:
+    begin
+      // Update watch time : cell's icon.
+      for I := 3 to 5 do
+      begin
+        DTGrid.RemoveImageIdx(I, ARow);
+        s := 'Time' + IntToStr(I - 2);
+        if ADataSet.FieldByName(s).IsNull then
+          continue
+        else
+        begin
+          s := 'T' + IntToStr(I - 2) + 'A';
+          b := ADataSet.FieldByName(s).AsBoolean;
+          if not b then // disabled - place a cell icon.
+          begin
+              DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+                TCellVAlign.vaFull);
+          end;
+        end;
+      end;
+    end;
+    artManual:
+    begin
+      for I := 3 to 5 do
+      begin
+        DTGrid.RemoveImageIdx(I, ARow);
+        s := 'Time' + IntToStr(I - 2);
+        if ADataSet.FieldByName(s).IsNull then
+          continue
+        else
+          begin
+            s := 'T' + IntToStr(I - 2) + 'M';
+            b := ADataSet.FieldByName(s).AsBoolean;
+            if (not b) then // disabled - place a cell icon.
+            begin  // update the cell's icon.
+                DTGrid.AddImageIdx(I, ARow, 6, TCellHAlign.haFull,
+                  TCellVAlign.vaFull);
+            end;
+          end;
+      end;
+    end;
+    artUser:
+    begin
+      for I := 3 to 5 do
+      begin
+        DTGrid.RemoveImageIdx(I, ARow);
+        s := 'Time' + IntToStr(I - 2);
+        if ADataSet.FieldByName(s).IsNull then
+          continue;
+        DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+            TCellVAlign.vaFull);
+      end;
+      // USER MODE : display - cell pointer
+      DTGrid.AddImageIdx(7, ARow, 10, TCellHAlign.haAfterText, TCellVAlign.vaCenter)
+    end;
+    artSplit:
+    begin
+      for I := 3 to 5 do
+      begin
+        DTGrid.RemoveImageIdx(I, ARow);
+        s := 'Time' + IntToStr(I - 2);
+        if ADataSet.FieldByName(s).IsNull then
+          continue;
+        DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+            TCellVAlign.vaFull);
+      end;
+    end;
+    artNone:
+    begin
+      for I := 3 to 5 do
+      begin
+        DTGrid.RemoveImageIdx(I, ARow);
+        s := 'Time' + IntToStr(I - 2);
+        if ADataSet.FieldByName(s).IsNull then
+          continue;
+        DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+            TCellVAlign.vaFull);
+      end;
+    end;
+  end;
+
+  DTGrid.EndUpdate;
+
 end;
 
 procedure TdtExec.UpdateDTDetailsLabel;

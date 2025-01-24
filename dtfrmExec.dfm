@@ -283,7 +283,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -848,7 +847,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -927,6 +925,7 @@ object dtExec: TdtExec
         HTMLSettings.ImageFolder = 'images'
         HTMLSettings.ImageBaseName = 'img'
         Look = glCustom
+        MouseActions.DisjunctRowSelect = True
         PrintSettings.DateFormat = 'dd/mm/yyyy'
         PrintSettings.Font.Charset = DEFAULT_CHARSET
         PrintSettings.Font.Color = clWindowText
@@ -971,6 +970,7 @@ object dtExec: TdtExec
         SortSettings.HeaderColorTo = clWhite
         SortSettings.HeaderMirrorColor = clWhite
         SortSettings.HeaderMirrorColorTo = clWhite
+        VAlignment = vtaCenter
         Version = '2.5.1.3'
         AutoCreateColumns = False
         AutoRemoveColumns = False

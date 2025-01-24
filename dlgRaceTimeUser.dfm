@@ -4,7 +4,7 @@ object RaceTimeUser: TRaceTimeUser
   BorderStyle = bsDialog
   Caption = 'Enter a Race-Time ...'
   ClientHeight = 188
-  ClientWidth = 454
+  ClientWidth = 307
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,6 +13,7 @@ object RaceTimeUser: TRaceTimeUser
   Font.Style = []
   KeyPreview = True
   Position = poOwnerFormCenter
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   OnShow = FormShow
@@ -20,14 +21,16 @@ object RaceTimeUser: TRaceTimeUser
   object pnlFooter: TPanel
     Left = 0
     Top = 123
-    Width = 454
+    Width = 307
     Height = 65
     Align = alBottom
+    BevelEdges = [beTop]
+    BevelKind = bkFlat
     BevelOuter = bvNone
     TabOrder = 0
     object btnOk: TButton
-      Left = 287
-      Top = 24
+      Left = 157
+      Top = 15
       Width = 106
       Height = 34
       Caption = 'OK'
@@ -35,8 +38,8 @@ object RaceTimeUser: TRaceTimeUser
       OnClick = btnOkClick
     end
     object btnCancel: TButton
-      Left = 175
-      Top = 24
+      Left = 45
+      Top = 15
       Width = 106
       Height = 34
       Caption = 'Cancel'
@@ -44,27 +47,65 @@ object RaceTimeUser: TRaceTimeUser
       OnClick = btnCancelClick
     end
   end
-  object pnlBody: TPanel
+  object rpnlBody: TRelativePanel
     Left = 0
     Top = 0
-    Width = 454
+    Width = 307
     Height = 123
+    ControlCollection = <
+      item
+        Control = edtRaceTimeUser
+        AlignBottomWithPanel = False
+        AlignHorizontalCenterWithPanel = True
+        AlignLeftWithPanel = False
+        AlignRightWithPanel = False
+        AlignTopWithPanel = False
+        AlignVerticalCenterWithPanel = True
+      end
+      item
+        Control = lblErrMsg
+        AlignBottomWithPanel = False
+        AlignHorizontalCenterWithPanel = False
+        AlignLeftWithPanel = False
+        AlignRightWithPanel = False
+        AlignTopWithPanel = False
+        AlignVerticalCenterWithPanel = False
+      end>
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitLeft = 72
+    ExplicitTop = 96
+    ExplicitWidth = 185
+    ExplicitHeight = 41
+    DesignSize = (
+      307
+      123)
     object edtRaceTimeUser: TEdit
-      Left = 120
-      Top = 48
+      Left = 69
+      Top = 36
       Width = 169
-      Height = 38
+      Height = 50
+      Alignment = taCenter
+      Anchors = []
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
-      Font.Height = -21
+      Font.Height = -27
       Font.Name = 'Segoe UI'
       Font.Style = []
       ParentFont = False
       TabOrder = 0
       Text = '00:00.000'
+    end
+    object lblErrMsg: TLabel
+      Left = 0
+      Top = 96
+      Width = 307
+      Height = 21
+      Alignment = taCenter
+      Anchors = []
+      AutoSize = False
+      Caption = 'Enter the swimmers racetime.'
     end
   end
 end

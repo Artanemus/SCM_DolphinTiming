@@ -138,14 +138,12 @@ type
     procedure ReadFromBinary(AFilePath:string);
     // SET dtActiveRT : artAutomatic, artManual, artUser, artSplit, artNone
     procedure SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
-    function ToggleActiveRT(ADataSet: TDataSet): dtActiveRT;
+    function ToggleActiveRT(ADataSet: TDataSet; Direction: Integer = 0): dtActiveRT;
     // toggle [T1M .. T3M] [T1A .. T3A] - TimeKeeper's watch-time 'active state'.
     function ToggleWatchTime(ADataSet: TDataSet; idx: integer; art: dtActiveRT): Boolean;
     // Tests IsEmpty, IsNull, [T1M .. T3M] [T1A .. T3A] STATE.
     function ValidateWatchTime(ADataSet: TDataSet; TimeKeeperIndx: integer; art:
         dtActiveRT): boolean;
-    // Re-Calculates Automatic/Manual race-time. For the current ActiveRT.
-    procedure UpdateActiveRT(ADataSet: TDataSet; AAcceptedDeviation: double);
     // Read/Write DTData State to file
     procedure WriteToBinary(AFilePath:string);
 
@@ -1148,27 +1146,6 @@ begin
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
 end;
 
-procedure TDTData.UpdateActiveRT(ADataSet: TDataSet; AAcceptedDeviation:
-    double);
-var
-aActiveRT: dtActiveRT;
-begin
-  aActiveRT :=  dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
-  case aActiveRT of
-    artAutomatic:
-      CalcRaceTimeA(ADataSet, AAcceptedDeviation);
-    artManual:
-      CalcRaceTimeM(ADataSet);
-    artUser: ;
-    artSplit: ;
-    artNone: ;
-  end;
-  // ASSERT ActiveRT State.
-  DTData.SetActiveRT(ADataSet, aActiveRT);
-end;
-
-
-
 procedure TDTData.SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
 var
   RaceTimeField: TField;
@@ -1205,7 +1182,6 @@ begin
               raise; // Re-raise the exception to propagate it further
             end;
           end;
-          { to re-calculate CalcRaceTimeA(ADataSet); use UpdateActiveRT}
         end;
 
       artManual:
@@ -1214,7 +1190,6 @@ begin
           ADataSet.FieldByName('ActiveRT').AsInteger := ORD(artManual);
           ADataSet.fieldbyName('imgActiveRT').AsInteger := 3;
           ADataSet.post;
-          { to re-calculate CalcRaceTimeM(ADataSet); use UpdateActiveRT}
         end;
 
       artUser:
@@ -1266,7 +1241,8 @@ begin
     PostMessage(msgHandle, SCM_UPDATEUI3, 0,0);
 end;
 
-function TDTData.ToggleActiveRT(ADataSet: TDataSet): dtActiveRT;
+function TDTData.ToggleActiveRT(ADataSet: TDataSet; Direction: Integer = 0):
+dtActiveRT;
 var
   art: dtActiveRT;
 begin
@@ -1275,15 +1251,33 @@ begin
   if not (ADataSet.Name = 'tblDTEntrant') then exit;
   // Get the current ActiveRT value
   art := dtActiveRT(ADataSet.FieldByName('ActiveRT').AsInteger);
-  // Toggle state using Succ and handling wrapping
-  if art = High(dtActiveRT) then
-    art := Low(dtActiveRT)
+  if (Direction = 0) then
+  begin
+    // Toggle state using Succ and handling wrapping
+    if art = High(dtActiveRT) then
+      art := Low(dtActiveRT)
+    else
+      art := Succ(art);
+  end
   else
-    art := Succ(art);
-  // Set the new ActiveRT value - Deals with 'LaneIsEmpty'.
-  // DOES NOT RECALCULATE race-time. Consider using UpdateActiveRT.
-  SetActiveRT(ADataSet, art);
-  result := art;
+  begin
+    // Toggle state using Succ and handling wrapping
+    if art = Low(dtActiveRT) then
+      art := High(dtActiveRT)
+    else
+      art := Pred(art);
+  end;
+
+  try
+    ADataSet.Edit;
+    ADataSet.FieldByName('ActiveRT').AsInteger := ORD(art);
+    ADataSet.Post;
+    result := art;
+  except on E: Exception do
+    begin
+      ADataSet.Cancel;
+    end;
+  end;
 end;
 
 function TDTData.ToggleWatchTime(ADataSet: TDataSet; idx: integer; art: dtActiveRT): Boolean;

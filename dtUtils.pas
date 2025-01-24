@@ -663,7 +663,6 @@ var
   id, I, j, k, lane: integer;
   s: string;
   Found: boolean;
-  TimeField: TField;
 begin
   if HeatID = 0 then exit;
 
