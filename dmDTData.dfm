@@ -12225,7 +12225,7 @@ object DTData: TDTData
         Name = 'ActiveRTNone'
       end>
     ImageCollection = imgcolDT
-    Width = 24
+    Width = 28
     Height = 28
     Left = 176
     Top = 408

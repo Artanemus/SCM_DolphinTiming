@@ -1393,7 +1393,7 @@ object dtExec: TdtExec
         Left = 0
         Top = 0
         Width = 144
-        Height = 457
+        Height = 199
         Align = alTop
         BevelOuter = bvNone
         ControlCollection = <
@@ -1771,7 +1771,7 @@ object dtExec: TdtExec
     OkButtonLabel = 'Append DO file(s)'
     Options = [fdoStrictFileTypes, fdoAllowMultiSelect, fdoPathMustExist, fdoFileMustExist]
     Title = 'Append Dolphin Timing DO[3..4] files(s)...'
-    Left = 1343
-    Top = 524
+    Left = 55
+    Top = 380
   end
 end

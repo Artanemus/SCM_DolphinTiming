@@ -51,7 +51,6 @@ type
     function fn_RaceID(): integer;
 
     // --------------------------------------------
-
     // Main Process entry points
     procedure ProcessDirectory(const ADirectory: string;
       pBar: TProgressBar);
@@ -64,6 +63,7 @@ type
 
   public
     // Sub-routines for Process
+    procedure ProcessFile(const AFileName: string; pBar: TProgressBar);
     procedure ProcessSession(AFileName: TFileName);
     procedure PrepareDTData();
     procedure PopulateDTData(const ADirectory: string; pBar: TProgressBar);
@@ -417,6 +417,26 @@ begin
   DTData.tblDTNoodle.EnableControls;
 
   end;
+
+procedure TdtUtils.ProcessFile(const AFileName: string; pBar: TProgressBar);
+begin
+  if Assigned(pBar) then pBar.Position := 0;
+  if FileExists(AFileName) then
+  begin
+    // =====================================================
+    // De-attach from Master-Detail. Create flat files.
+    // Necessary to calculate table Primary keys.
+    DTData.DisableDTMasterDetail;
+    // =====================================================
+    ProcessSession(AFileName);
+    // =====================================================
+    // Re-attach Master-Detail.
+    DTData.EnableDTMasterDetail;
+    // =====================================================
+  end;
+end;
+
+
 
 procedure TdtUtils.ProcessDirectory(const ADirectory: string; pBar: TProgressBar);
 var

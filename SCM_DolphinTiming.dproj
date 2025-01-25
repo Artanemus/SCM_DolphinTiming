@@ -185,6 +185,7 @@
             <Form>RaceTimeUser</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="DirectoryWatcher.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

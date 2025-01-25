@@ -28,7 +28,7 @@ uses
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
-  System.Types, System.IOUtils, dtUtils, Math;
+  System.Types, System.IOUtils, dtUtils, Math, DirectoryWatcher;
 
 type
   TdtExec = class(TForm)
@@ -119,10 +119,13 @@ type
     fDolphinMeetsFolder: string;
     // dtPrecedence = (dtPrecHeader, dtPrecFileName);
     fPrecedence: dtPrecedence;
-
+    fDirectoryWatcher: TDirectoryWatcher;
     { On FormShow - prompt user to select session.
       Default value : FALSE     }
     fFlagSelectSession: boolean;
+
+    procedure OnFileChanged(Sender: TObject; const FileName: string);
+
     procedure LoadFromSettings; // JSON Program Settings
     procedure LoadSettings; // JSON Program Settings
     procedure SaveToSettings; // JSON Program Settings
@@ -979,6 +982,7 @@ begin
 
   dtUtils.AcceptedDeviation := Settings.DolphinAcceptedDeviation;
 
+  FDirectoryWatcher := nil;
   // Test DT directory exists...
   if DirectoryExists(Settings.DolphinMeetsFolder) then
   begin
@@ -991,7 +995,12 @@ begin
         // Paint cell icons.
         PostMessage(Self.Handle, SCM_UPDATEUI3, 0, 0);
       end;
+    // Set up the file system watcher
+    FDirectoryWatcher := TDirectoryWatcher.Create(Settings.DolphinMeetsFolder);
+    FDirectoryWatcher.OnFileChanged := OnFileChanged;
+    FDirectoryWatcher.Start;
   end;
+
 
 {$IFDEF DEBUG}
   pnlTool2.Visible := true;
@@ -1001,6 +1010,30 @@ end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
 begin
+{
+Summary:
+SignalTerminate Method: This public method in TDirectoryWatcher signals the
+termination event, allowing the Execute method to exit cleanly.
+
+Calling SignalTerminate: In FormDestroy, SignalTerminate is called after
+calling Terminate to ensure the thread exits properly.
+
+This approach ensures that the TDirectoryWatcher thread can be terminated
+gracefully without causing the application to hang.
+}
+  if Assigned(FDirectoryWatcher) then
+  begin
+    try
+      FDirectoryWatcher.Terminate;
+      {  Problems terminating ... }
+      // Signal the termination event...
+      FDirectoryWatcher.SignalTerminate;
+      FDirectoryWatcher.WaitFor;
+    finally
+      FDirectoryWatcher.Free;
+    end;
+  end;
+
   SaveToSettings;
   if Assigned(DTData) then DTData.MSG_Handle := 0;
 end;
@@ -1225,6 +1258,20 @@ begin
 
 end;
 
+procedure TdtExec.OnFileChanged(Sender: TObject; const FileName: string);
+var
+s: string;
+begin
+  // Handle the new file
+  s := UpperCase(ExtractFileExt(FileName));
+
+  if (s = '.DO4') OR (s = '.DO3') then
+  begin
+    ShowMessage('A new file was added to the directory: ' + FileName);
+    dtUtils.ProcessFile(FileName, PBar);
+  end;
+end;
+
 procedure TdtExec.Prepare(AConnection: TFDConnection);
 begin
   FConnection := AConnection;
@@ -1392,7 +1439,7 @@ begin
             TCellVAlign.vaFull);
       end;
       // USER MODE : display - cell pointer
-      DTGrid.AddImageIdx(7, ARow, 10, TCellHAlign.haAfterText, TCellVAlign.vaCenter)
+      DTGrid.AddImageIdx(7, ARow, 10, TCellHAlign.haAfterText, TCellVAlign.vaTop)
     end;
     artSplit:
     begin
