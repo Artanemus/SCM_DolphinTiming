@@ -283,6 +283,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -847,6 +848,7 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
+        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -1391,10 +1393,9 @@ object dtExec: TdtExec
       Visible = False
       object stackpnlTool2: TStackPanel
         Left = 0
-        Top = 0
+        Top = 84
         Width = 144
-        Height = 199
-        Align = alTop
+        Height = 269
         BevelOuter = bvNone
         ControlCollection = <
           item
@@ -1403,6 +1404,10 @@ object dtExec: TdtExec
           end
           item
             Control = spbtnPost
+            HorizontalPositioning = sphpLeft
+          end
+          item
+            Control = sbtnAutoPatch
             HorizontalPositioning = sphpLeft
           end
           item
@@ -1430,10 +1435,20 @@ object dtExec: TdtExec
           Action = actnPost
           Images = DTData.vimglistMenu
         end
+        object sbtnAutoPatch: TSpeedButton
+          Left = 0
+          Top = 90
+          Width = 128
+          Height = 41
+          Caption = 'PATCH'
+          ImageIndex = 14
+          ImageName = 'AutoPatch'
+          Images = DTData.vimglistMenu
+        end
         object ShapeSpacer: TShape
           AlignWithMargins = True
           Left = 11
-          Top = 96
+          Top = 141
           Width = 121
           Height = 4
           Margins.Top = 6
@@ -1442,7 +1457,7 @@ object dtExec: TdtExec
         end
         object btnDataDebug: TButton
           Left = 17
-          Top = 110
+          Top = 155
           Width = 109
           Height = 40
           Caption = 'Data Debug'
@@ -1548,8 +1563,8 @@ object dtExec: TdtExec
               item
                 Action = actnPost
                 Caption = 'P&OST'
-                ImageIndex = 7
-                ImageName = 'checked_bar'
+                ImageIndex = 13
+                ImageName = 'PostDTData'
               end
               item
                 Caption = '-'
@@ -1701,8 +1716,10 @@ object dtExec: TdtExec
     object actnPost: TAction
       Category = 'Edit'
       Caption = 'POST'
-      ImageIndex = 7
-      ImageName = 'checked_bar'
+      ImageIndex = 13
+      ImageName = 'PostDTData'
+      OnExecute = actnPostExecute
+      OnUpdate = actnPostUpdate
     end
     object actnReportSCMSession: TAction
       Category = 'Reports'

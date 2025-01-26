@@ -96,23 +96,22 @@ type
     // MISC SCM ROUTINES/FUNCTIONS
     function GetSCMNumberOfHeats(AEventID: integer): integer;
     function GetSCMRoundABBREV(AEventID: integer): string;
-    // WARNING : Master-Detail enabled... DT EventID may not be visible.
-    function LocateDTEventID(AEventID: integer): boolean;
-    function LocateDTEventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
-        boolean;
-    // WARNING : Master-Detail enabled... DT HeatID may not be visible.
-    function LocateDTHeatID(AHeatID: integer): boolean;
-    function LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
-        boolean;
 
     // L O C A T E S   F O R   D T   D A T A.
-    // WARNING : Master-Detail enabled...
-    // Use DisableDTMasterDetail() before calling here?
+    // WARNING : Master-Detail is enabled and locating to an ID isn't garenteed.
+    // Use DisableDTMasterDetail() before locating to ID's?
     // USED BY TdtUtils.ProcessSession.
     // .......................................................
     function LocateDTSessionID(ASessionID: integer): boolean;
     function LocateDTSessionNum(ASessionNum: integer; Aprecedence: dtPrecedence):
         boolean;
+    function LocateDTEventID(AEventID: integer): boolean;
+    function LocateDTEventNum(SessionID, AEventNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+    function LocateDTHeatID(AHeatID: integer): boolean;
+    function LocateDTHeatNum(EventID, AHeatNum: integer; Aprecedence: dtPrecedence):
+        boolean;
+    function LocateDTLane(ALane: integer): boolean;
 
     // L O C A T E S   F O R   S W I M C L U B M E E T   D A T A.
     // WARNING : Master-Detail enabled...
@@ -122,7 +121,13 @@ type
     // Uses SessionStart TDateTime...
     function LocateSCMNearestSessionID(aDate: TDateTime): integer;
     function LocateSCMSessionID(ASessionID: integer): boolean;
+    function LocateSCMLane(ALane: integer; aEventType: scmEventType): boolean;
     // .......................................................
+
+    function SyncDTtoSCM(APrecedence: dtPrecedence): boolean;
+    function SyncSCMtoDT(APrecedence: dtPrecedence): boolean;
+    function SyncDTCheck(APrecedence: dtPrecedence): boolean;
+    function SyncSCMCheck(APrecedence: dtPrecedence): boolean;
 
     // .......................................................
     // FIND MAXIMUM IDENTIFIER VALUE IN DOLPHIN TIMING TABLES.
@@ -976,6 +981,12 @@ begin
   tbldtHeat.IndexFieldNames := indexStr;
 end;
 
+function TDTData.LocateDTLane(ALane: integer): boolean;
+begin
+  // IGNORES SYNC STATE...
+  result := tbldtEntrant.Locate('Lane', ALane, []);
+end;
+
 function TDTData.LocateDTSessionID(ASessionID: integer): boolean;
 var
   SearchOptions: TLocateOptions;
@@ -1036,6 +1047,24 @@ begin
   SearchOptions := [];
   if dsHeat.DataSet.Active then
       result := dsHeat.DataSet.Locate('HeatID', AHeatID, SearchOptions);
+end;
+
+function TDTData.LocateSCMLane(ALane: integer; aEventType: scmEventType):
+    boolean;
+var
+found: boolean;
+begin
+  // IGNORES SYNC STATE...
+  found := false;
+  case aEventType of
+    etUnknown:
+      found := false;
+    etINDV:
+      found := qryINDV.Locate('Lane', ALane, []);
+    etTEAM:
+      found := qryTEAM.Locate('Lane', ALane, []);
+  end;
+  result := found;
 end;
 
 function TDTData.LocateSCMNearestSessionID(aDate: TDateTime): integer;
@@ -1234,6 +1263,159 @@ begin
       // handle arror.
   end;
 end;
+
+function TDTData.SyncDTCheck(APrecedence: dtPrecedence): boolean;
+var
+IsSynced: boolean;
+begin
+  IsSynced := false;
+  case APrecedence of
+    dtPrecHeader:
+    begin
+      if tbldtSession.FieldByName('SessionNum').AsInteger =
+        qrySession.FieldByName('SesionID').AsInteger then
+        if tbldtEvent.FieldByName('EventNum').AsInteger =
+          qryEvent.FieldByName('EventNum').AsInteger then
+          if tbldtEvent.FieldByName('HeatNum').AsInteger =
+            qryEvent.FieldByName('HeatNum').AsInteger then
+            IsSynced := true;
+    end;
+    dtPrecFileName:
+    begin
+      if tbldtSession.FieldByName('fnSessionNum').AsInteger =
+        qrySession.FieldByName('SesionID').AsInteger then
+        if tbldtEvent.FieldByName('fnEventNum').AsInteger =
+          qryEvent.FieldByName('EventNum').AsInteger then
+          if tbldtEvent.FieldByName('fnHeatNum').AsInteger =
+            qryEvent.FieldByName('HeatNum').AsInteger then
+            IsSynced := true;
+    end;
+  end;
+  result := IsSynced;
+end;
+
+function TDTData.SyncDTtoSCM(APrecedence: dtPrecedence): boolean;
+var
+  found: boolean;
+begin
+  result := false;
+  tblDTEvent.DisableControls;
+  tblDTHeat.DisableControls;
+  tblDTEntrant.DisableControls;
+  tblDTSession.DisableControls;
+  // NOTE : SCM Sesssion ID = DT SessionNum.
+  found :=
+  LocateDTSessionNum(qrySession.FieldByName('SessionID').AsInteger, APrecedence);
+  tblDTEvent.ApplyMaster;
+  if found then
+  begin
+    if APrecedence = dtPrecFileName then
+      found := tbldtEvent.Locate('fnEventNum',
+        qryEvent.FieldByName('EventNum').AsInteger)
+    else if APrecedence = dtPrecHeader then
+      found := tbldtEvent.Locate('EventNum',
+        qryEvent.FieldByName('EventNum').AsInteger);
+    tblDTHeat.ApplyMaster;
+    if found then
+    begin
+      if APrecedence = dtPrecFileName then
+        found := tbldtHeat.Locate('fnHeatNum',
+          qryHeat.FieldByName('HeatNum').AsInteger)
+      else if APrecedence = dtPrecHeader then
+        found := tbldtHeat.Locate('HeatNum',
+          qryHeat.FieldByName('HeatNum').AsInteger);
+      tblDTEntrant.ApplyMaster;
+      if found then
+        result := true;
+    end;
+  end;
+  tblDTSession.EnableControls;
+  tblDTEvent.EnableControls;
+  tblDTHeat.EnableControls;
+  tblDTEntrant.EnableControls;
+end;
+
+function TDTData.SyncSCMCheck(APrecedence: dtPrecedence): boolean;
+var
+  IsSynced: boolean;
+begin
+  IsSynced := false;
+  case APrecedence of
+    dtPrecHeader:
+      begin
+        if qrySession.FieldByName('SesionID').AsInteger =
+        tbldtSession.FieldByName('SessionNum').AsInteger then
+          if qryEvent.FieldByName('EventNum').AsInteger =
+          tbldtEvent.FieldByName('EventNum').AsInteger then
+            if qryEvent.FieldByName('HeatNum').AsInteger =
+            tbldtEvent.FieldByName('HeatNum').AsInteger then
+              IsSynced := true;
+      end;
+    dtPrecFileName:
+      begin
+        if qrySession.FieldByName('SesionID').AsInteger =
+        tbldtSession.FieldByName('fnSessionNum').AsInteger then
+          if qryEvent.FieldByName('EventNum').AsInteger =
+          tbldtEvent.FieldByName('fnEventNum').AsInteger then
+            if qryEvent.FieldByName('HeatNum').AsInteger =
+            tbldtEvent.FieldByName('fnHeatNum').AsInteger then
+              IsSynced := true;
+      end;
+  end;
+  result := IsSynced;
+
+end;
+
+function TDTData.SyncSCMtoDT(APrecedence: dtPrecedence): boolean;
+var
+  found: boolean;
+  sessNum: integer;
+  s: string;
+begin
+  result := false;
+  found := false;
+
+  qryINDV.DisableControls;
+  qryHeat.DisableControls;
+  qryEvent.DisableControls;
+  qrySession.DisableControls;
+
+  if APrecedence = dtPrecHeader then
+    sessNum := tbldtSession.FieldByName('SessionNum').AsInteger
+  else if APrecedence = dtPrecFileName then
+    sessNum := tbldtSession.FieldByName('fnSessionNum').AsInteger
+  else sessNum := 0;
+
+  s := 'The current SwimClubMeet session cannot sync to the Dolphin Timing Data.'
+  +  sLineBreak +   'Load the correct session and try again.';
+
+  if qrySession.FieldByName('SessionID').AsInteger <> sessNum then
+  begin
+    MessageBox(0, PChar(s), PChar('Sync SCM to DT.'), MB_ICONWARNING or MB_OK);
+    exit;
+  end;
+
+  case APrecedence of
+    dtPrecHeader:
+    begin
+      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('EventNum').AsInteger) then
+        found :=  qryHeat.Locate('HeatNum', tbldtEvent.FieldByName('HeatNum').AsInteger);
+    end;
+
+    dtPrecFileName:
+    begin
+      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('EventNum').AsInteger) then
+        found :=  qryHeat.Locate('HeatNum', tbldtEvent.FieldByName('HeatNum').AsInteger);
+    end;
+  end;
+
+  result := found;
+  qrySession.EnableControls;
+  qryEvent.EnableControls;
+  qryHeat.EnableControls;
+  qryINDV.EnableControls;
+end;
+
 
 procedure TDTData.tblDTHeatAfterScroll(DataSet: TDataSet);
 begin

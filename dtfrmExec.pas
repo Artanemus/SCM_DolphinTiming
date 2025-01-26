@@ -86,10 +86,13 @@ type
     actnReportSCMSession: TAction;
     actnReportDT: TAction;
     actnReportSCMEvent: TAction;
+    sbtnAutoPatch: TSpeedButton;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnClearReScanMeetsExecute(Sender: TObject);
     procedure actnImportAppendDOExecute(Sender: TObject);
+    procedure actnPostExecute(Sender: TObject);
+    procedure actnPostUpdate(Sender: TObject);
     procedure actnPreferencesExecute(Sender: TObject);
     procedure actnReConstructDO3Execute(Sender: TObject);
     procedure actnReConstructDO3Update(Sender: TObject);
@@ -164,7 +167,7 @@ implementation
 {$R *.dfm}
 
 uses UITypes, DateUtils ,dlgSessionPicker, dtDlgOptions, dtTreeViewSCM,
-  dlgDataDebug, dtTreeViewDT, dlgRaceTimeUser;
+  dlgDataDebug, dtTreeViewDT, dlgRaceTimeUser, dtPostData;
 
 const
   MSG_CONFIRM_RECONSTRUCT =
@@ -277,6 +280,115 @@ begin
       // =====================================================
     end;
   end;
+end;
+
+procedure TdtExec.actnPostExecute(Sender: TObject);
+var
+  dlg: TPostData;
+  mr: TModalResult;
+  I, idx, storedRow: integer;
+  ALaneNum: integer;
+  b1, b2: boolean;
+  s: string;
+  AEventType: scmEventType;
+begin
+  // Establish if SCM qryHeat is syncronized to tbldtHeat.
+  b1 := DTData.SyncSCMCheck(fPrecedence);
+  if not b1 then
+  begin
+    s := 'Unable to post data. SCM and DT are not synronized.';
+    MessageBox(0, PChar(s), PChar('Post DT race-times error.'), MB_ICONSTOP or MB_OK);
+  end;
+
+  AEventType := scmEventType(DTData.qryDistance.FieldByName('EventTypeID').AsInteger);
+
+  dlg := TPostData.Create(Self);
+  mr := dlg.ShowModal;
+  if IsPositiveResult(mr) then
+  begin
+
+    // Post all race-times to SCM ...
+    if dlg.rgrpSelection.ItemIndex = 0 then
+    begin
+      DTGrid.BeginUpdate;
+      DTData.qryINDV.DisableControls;
+      DTData.qryTEAM.DisableControls;
+
+      storedRow := DTGrid.Row;  // store the current grid position
+
+      // ONE TO ONE SYNC....
+      DTData.tblDTEntrant.First;
+      While not (DTData.tblDTEntrant.eof OR DTData.qryINDV.eof)  do
+      begin
+        ALaneNum := DTData.tblDTEntrant.FieldByName('Lane').AsInteger;
+        if DTData.LocateSCMLane(ALaneNum, AEventType) then
+        begin
+          DTData.qryINDV.Edit;
+          DTData.qryINDV.FieldByName('RaceTime').AsDateTime :=
+              DTData.tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+          DTData.qryINDV.Post;
+        end;
+        DTData.tblDTEntrant.Next;
+      end;
+
+      DTData.qryINDV.First;
+      DTData.qryTEAM.EnableControls;
+      DTData.qryINDV.EnableControls;
+      DTGrid.ClearRowSelect;  // UI clean-up .
+      if (StoredRow >= DTGrid.FixedRows) and (StoredRow < DTGrid.RowCount) then
+        DTGrid.Row := StoredRow;  // restore, cue-to-row
+      DTGrid.EndUpdate;
+    end
+    // Post only racetime from selected lanes to SCM ...
+    else if dlg.rgrpSelection.ItemIndex = 1 then
+    begin
+      DTGrid.BeginUpdate;
+      DTData.qryINDV.DisableControls;
+      DTData.qryTEAM.DisableControls;
+
+      storedRow := DTGrid.Row;  // store the current grid position
+
+      for i := 0 to DTGrid.SelectedRowCount - 1 do
+      begin
+        idx := DTGrid.SelectedRow[i];
+        ALaneNum := StrToIntDef(DTGrid.Cells[2, idx], 0);
+        // SYNC to ROW ...
+        if (idx >= DTGrid.FixedRows) AND (ALaneNum <> 0)then
+        begin
+          b1 := DTData.LocateDTLane(ALaneNum);
+          b2 := DTData.LocateSCMLane(ALaneNum, AEventType);
+          if (b1 AND b2) then
+          begin
+            DTData.qryINDV.Edit;
+            DTData.qryINDV.FieldByName('RaceTime').AsDateTime :=
+                DTData.tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+            DTData.qryINDV.Post;
+          end;
+        end;
+      end;
+
+      DTData.qryTEAM.EnableControls;
+      DTData.qryINDV.EnableControls;
+      DTGrid.ClearRowSelect; // UI clean-up .
+      // restore, cue-to-row
+      if (StoredRow >= DTGrid.FixedRows) and (StoredRow < DTGrid.RowCount) then
+        DTGrid.Row := StoredRow;
+      DTGrid.EndUpdate;
+    end;
+
+  end;
+  dlg.Free;
+end;
+
+procedure TdtExec.actnPostUpdate(Sender: TObject);
+begin
+  if Assigned(DTData) then
+  begin
+    if not TAction(Sender).Enabled then
+      TAction(Sender).Enabled := true;
+  end
+  else
+      TAction(Sender).Enabled := false;
 end;
 
 procedure TdtExec.actnPreferencesExecute(Sender: TObject);
@@ -460,57 +572,11 @@ begin
 end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
-var
-  foundsess, foundev: boolean;
 begin
   DTGrid.BeginUpdate;
-  DTData.tblDTEvent.DisableControls;
-  DTData.tblDTHeat.DisableControls;
-  DTData.tblDTEntrant.DisableControls;
-  DTData.tblDTSession.DisableControls;
-
-  foundev := false;
-
-  // SCM Sesssion ID = DT SessionNum.
-  foundsess :=
-  DTData.LocateDTSessionNum(DTData.qrySession.FieldByName('SessionID').AsInteger, fPrecedence);
-  DTData.tblDTEvent.ApplyMaster;
-//  DTData.tblDTEvent.First;
-
-  if foundsess then
-  begin
-    if fPrecedence = dtPrecFileName then
-      foundev := DTData.tbldtEvent.Locate('fnEventNum',
-        DTData.qryEvent.FieldByName('EventNum').AsInteger)
-    else if fPrecedence = dtPrecHeader then
-      foundev := DTData.tbldtEvent.Locate('EventNum',
-        DTData.qryEvent.FieldByName('EventNum').AsInteger);
-  end;
-
-  DTData.tblDTHeat.ApplyMaster;
-//  DTData.tblDTHeat.First;
-  if foundev then
-  begin
-    if fPrecedence = dtPrecFileName then
-      DTData.tbldtHeat.Locate('fnHeatNum',
-        DTData.qryHeat.FieldByName('HeatNum').AsInteger)
-    else if fPrecedence = dtPrecHeader then
-      DTData.tbldtHeat.Locate('HeatNum',
-        DTData.qryHeat.FieldByName('HeatNum').AsInteger);
-
-  end;
-
-  DTData.tblDTEntrant.ApplyMaster;
-//  DTData.tblDTEntrant.First;
-
-  DTData.tblDTSession.EnableControls;
-  DTData.tblDTEvent.EnableControls;
-  DTData.tblDTHeat.EnableControls;
-  DTData.tblDTEntrant.EnableControls;
+  DTData.SyncDTtoSCM(fPrecedence); // data event - scroll.
   DTGrid.EndUpdate;
-
   UpdateDTDetailsLabel;
-
 end;
 
 procedure TdtExec.btnDataDebugClick(Sender: TObject);

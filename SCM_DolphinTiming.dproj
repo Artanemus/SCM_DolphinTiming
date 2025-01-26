@@ -186,6 +186,10 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="DirectoryWatcher.pas"/>
+        <DCCReference Include="dtPostData.pas">
+            <Form>PostData</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
