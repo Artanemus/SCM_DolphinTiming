@@ -40,13 +40,12 @@ type
     btnNextEvent: TButton;
     btnPrevDTFile: TButton;
     btnPrevEvent: TButton;
-    btnRefresh: TButton;
     FileSaveDlgCSV: TFileSaveDialog;
     lblEventDetails: TLabel;
     lblHeatNum: TLabel;
     lblMeters: TLabel;
     PickDTFolderDlg: TFileOpenDialog;
-    sbtnSync: TSpeedButton;
+    sbtnSyncDTtoSCM: TSpeedButton;
     scmGrid: TDBAdvGrid;
     spbtnPost: TSpeedButton;
     vimgHeatNum: TVirtualImage;
@@ -87,6 +86,12 @@ type
     actnReportDT: TAction;
     actnReportSCMEvent: TAction;
     sbtnAutoPatch: TSpeedButton;
+    sbtnSyncSCMtoDT: TSpeedButton;
+    sbtnRefreshSCM: TSpeedButton;
+    ShapeSpaceerSCM: TShape;
+    actnSyncSCM: TAction;
+    StatBar: TStatusBar;
+    Timer1: TTimer;
     procedure actnExportDTCSVExecute(Sender: TObject);
     procedure actnExportDTCSVUpdate(Sender: TObject);
     procedure actnClearReScanMeetsExecute(Sender: TObject);
@@ -98,9 +103,11 @@ type
     procedure actnReConstructDO3Update(Sender: TObject);
     procedure actnReConstructDO4Execute(Sender: TObject);
     procedure actnReConstructDO4Update(Sender: TObject);
+    procedure actnRefreshExecute(Sender: TObject);
     procedure actnSelectSessionExecute(Sender: TObject);
     procedure actnSetDTMeetsFolderExecute(Sender: TObject);
     procedure actnSyncDTExecute(Sender: TObject);
+    procedure actnSyncSCMExecute(Sender: TObject);
     procedure btnDataDebugClick(Sender: TObject);
     procedure btnNextDTFileClick(Sender: TObject);
     procedure btnNextEventClick(Sender: TObject);
@@ -115,6 +122,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure scmGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var Value:
         string);
+    procedure Timer1Timer(Sender: TObject);
 
   private
     { Private declarations }
@@ -286,98 +294,65 @@ procedure TdtExec.actnPostExecute(Sender: TObject);
 var
   dlg: TPostData;
   mr: TModalResult;
-  I, idx, storedRow: integer;
+  I, idx: integer;
   ALaneNum: integer;
-  b1, b2: boolean;
   s: string;
-  AEventType: scmEventType;
 begin
-  // Establish if SCM qryHeat is syncronized to tbldtHeat.
-  b1 := DTData.SyncSCMCheck(fPrecedence);
-  if not b1 then
+  // Establish if SCM AND DT are syncronized.
+  if not DTData.SyncCheck(fPrecedence) then
   begin
-    s := 'Unable to post data. SCM and DT are not synronized.';
-    MessageBox(0, PChar(s), PChar('Post DT race-times error.'), MB_ICONSTOP or MB_OK);
+    s := '''
+      SCM and DT are not synronized. (Based on Session ID, event and heat number.)
+      However you are permitted to perform the post.
+      Do you want to CONTINUE?
+      ''';
+    mr := MessageBox(0, PChar(s), PChar('POST ''RACE-TIMES'' WARNING'), MB_ICONEXCLAMATION or MB_YESNO or MB_DEFBUTTON2);
+    if not IsPositiveResult(mr) then
+    begin
+      StatBar.SimpleText := 'No POST was made.';
+      Timer1.Enabled := true;
+      exit;
+    end;
   end;
 
-  AEventType := scmEventType(DTData.qryDistance.FieldByName('EventTypeID').AsInteger);
-
+  // dialogue to pick 'selected' or 'all'.
   dlg := TPostData.Create(Self);
   mr := dlg.ShowModal;
+  idx := dlg.rgrpSelection.ItemIndex;
+  // release the dlg in case of 'POST' exceptions.
+  dlg.free;
+
   if IsPositiveResult(mr) then
   begin
-
     // Post all race-times to SCM ...
-    if dlg.rgrpSelection.ItemIndex = 0 then
+    if idx = 0 then
     begin
       DTGrid.BeginUpdate;
-      DTData.qryINDV.DisableControls;
-      DTData.qryTEAM.DisableControls;
-
-      storedRow := DTGrid.Row;  // store the current grid position
-
-      // ONE TO ONE SYNC....
-      DTData.tblDTEntrant.First;
-      While not (DTData.tblDTEntrant.eof OR DTData.qryINDV.eof)  do
-      begin
-        ALaneNum := DTData.tblDTEntrant.FieldByName('Lane').AsInteger;
-        if DTData.LocateSCMLane(ALaneNum, AEventType) then
-        begin
-          DTData.qryINDV.Edit;
-          DTData.qryINDV.FieldByName('RaceTime').AsDateTime :=
-              DTData.tblDTEntrant.FieldByName('RaceTime').AsDateTime;
-          DTData.qryINDV.Post;
-        end;
-        DTData.tblDTEntrant.Next;
-      end;
-
-      DTData.qryINDV.First;
-      DTData.qryTEAM.EnableControls;
-      DTData.qryINDV.EnableControls;
+      DTData.POST_All;
       DTGrid.ClearRowSelect;  // UI clean-up .
-      if (StoredRow >= DTGrid.FixedRows) and (StoredRow < DTGrid.RowCount) then
-        DTGrid.Row := StoredRow;  // restore, cue-to-row
       DTGrid.EndUpdate;
     end
-    // Post only racetime from selected lanes to SCM ...
-    else if dlg.rgrpSelection.ItemIndex = 1 then
+    // Post only racetimes from selected lanes to SCM ...
+    else if idx = 1 then
     begin
       DTGrid.BeginUpdate;
-      DTData.qryINDV.DisableControls;
-      DTData.qryTEAM.DisableControls;
-
-      storedRow := DTGrid.Row;  // store the current grid position
-
       for i := 0 to DTGrid.SelectedRowCount - 1 do
       begin
         idx := DTGrid.SelectedRow[i];
         ALaneNum := StrToIntDef(DTGrid.Cells[2, idx], 0);
-        // SYNC to ROW ...
-        if (idx >= DTGrid.FixedRows) AND (ALaneNum <> 0)then
-        begin
-          b1 := DTData.LocateDTLane(ALaneNum);
-          b2 := DTData.LocateSCMLane(ALaneNum, AEventType);
-          if (b1 AND b2) then
-          begin
-            DTData.qryINDV.Edit;
-            DTData.qryINDV.FieldByName('RaceTime').AsDateTime :=
-                DTData.tblDTEntrant.FieldByName('RaceTime').AsDateTime;
-            DTData.qryINDV.Post;
-          end;
-        end;
+        DTData.POST_Lane(ALaneNum);
       end;
-
-      DTData.qryTEAM.EnableControls;
-      DTData.qryINDV.EnableControls;
       DTGrid.ClearRowSelect; // UI clean-up .
-      // restore, cue-to-row
-      if (StoredRow >= DTGrid.FixedRows) and (StoredRow < DTGrid.RowCount) then
-        DTGrid.Row := StoredRow;
       DTGrid.EndUpdate;
     end;
-
+    StatBar.SimpleText := 'The POST race-times to SCM completed.';
+    Timer1.Enabled := true;
+  end
+  else
+  begin
+    StatBar.SimpleText := 'The POST was aborted.';
+    Timer1.Enabled := true;
   end;
-  dlg.Free;
 end;
 
 procedure TdtExec.actnPostUpdate(Sender: TObject);
@@ -538,6 +513,13 @@ begin
       TAction(Sender).Enabled := false;
 end;
 
+procedure TdtExec.actnRefreshExecute(Sender: TObject);
+begin
+  SCMGrid.BeginUpdate;
+  DTData.RefreshSCM;
+  SCMGrid.EndUpdate;
+end;
+
 procedure TdtExec.actnSelectSessionExecute(Sender: TObject);
 var
   dlg: TSessionPicker;
@@ -572,11 +554,35 @@ begin
 end;
 
 procedure TdtExec.actnSyncDTExecute(Sender: TObject);
+var
+found: boolean;
 begin
   DTGrid.BeginUpdate;
-  DTData.SyncDTtoSCM(fPrecedence); // data event - scroll.
+  found := DTData.SyncDTtoSCM(fPrecedence); // data event - scroll.
   DTGrid.EndUpdate;
   UpdateDTDetailsLabel;
+  if not found then
+  begin
+    StatBar.SimpleText := 'Syncronization of Dolphin Timing to SwimClubMeet failed. '
+    + 'Your Dolphin Meets folder may not contain the session files required to sync.';
+    timer1.enabled := true;
+  end;
+end;
+
+procedure TdtExec.actnSyncSCMExecute(Sender: TObject);
+begin
+  if not DTData.SyncCheckSession(fPrecedence) then
+  begin
+    StatBar.SimpleText := 'The SwimClubMeet session cannot be synced to the DT data. '
+    +   'Load the correct session and try again.';
+    timer1.enabled := true;
+    exit;
+  end;
+
+  SCMGrid.BeginUpdate;
+  DTData.SyncSCMtoDT(fPrecedence);
+  SCMGrid.EndUpdate;
+  UpdateEventDetailsLabel;
 end;
 
 procedure TdtExec.btnDataDebugClick(Sender: TObject);
@@ -1072,6 +1078,16 @@ begin
   pnlTool2.Visible := true;
 {$ENDIF}
 
+  // Assert StatusBar params
+  // Ensure that the StyleElements property does not include seFont
+  //  StatBar.StyleElements := StatBar.StyleElements - [seFont];
+  //  StatBar.ParentFont := False;
+  StatBar.Font.Size := 12;
+  StatBar.Font.Color := clWebAntiqueWhite;
+
+  // Enable hint information
+  Application.ShowHint := true;
+
 end;
 
 procedure TdtExec.FormDestroy(Sender: TObject);
@@ -1413,6 +1429,12 @@ begin
   end;
 end;
 
+procedure TdtExec.Timer1Timer(Sender: TObject);
+begin
+  Timer1.Enabled := False; // Stop the timer
+  StatBar.SimpleText := ''; // Clear the message
+end;
+
 
 procedure TdtExec.UpdateCaption;
 var
@@ -1448,7 +1470,7 @@ begin
   // SOURCE FOR GRID CELL IMAGES : DTData.vimglistDTCell.
 
   DTGrid.BeginUpdate;
-
+  // Clear out - point to cell icon
   DTGrid.RemoveImageIdx(7, ARow);
 
   case AActiveRT of
@@ -1472,6 +1494,7 @@ begin
           end;
         end;
       end;
+      DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'AUTO';
     end;
     artManual:
     begin
@@ -1492,6 +1515,7 @@ begin
             end;
           end;
       end;
+      DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'MANUAL';
     end;
     artUser:
     begin
@@ -1505,7 +1529,8 @@ begin
             TCellVAlign.vaFull);
       end;
       // USER MODE : display - cell pointer
-      DTGrid.AddImageIdx(7, ARow, 10, TCellHAlign.haAfterText, TCellVAlign.vaTop)
+      DTGrid.AddImageIdx(7, ARow, 9, TCellHAlign.haAfterText, TCellVAlign.vaTop);
+      DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'USER RT';
     end;
     artSplit:
     begin
@@ -1518,6 +1543,7 @@ begin
         DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
             TCellVAlign.vaFull);
       end;
+      DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'SPLIT';
     end;
     artNone:
     begin
@@ -1529,6 +1555,7 @@ begin
           continue;
         DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
             TCellVAlign.vaFull);
+      DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'NONE';
       end;
     end;
   end;
@@ -1545,7 +1572,7 @@ begin
   lblDTDetails.caption := '';
 
   if DTData.tblDTSession.IsEmpty then exit;
-  s := 'Session ID: ';
+  s := 'Session : ';
   if fPrecedence = dtPrecFileName then
     i := DTData.tblDTSession.FieldByName('fnSessionNum').AsInteger
   else
@@ -1557,7 +1584,7 @@ begin
     lblDTDetails.caption := s;
     exit;
   end;
-  s := s + '  Event #: ';
+  s := s + '  Event : ';
   if fPrecedence = dtPrecFileName then
     i := DTData.tblDTEvent.FieldByName('fnEventNum').AsInteger
   else
@@ -1569,7 +1596,7 @@ begin
     lblDTDetails.caption := s;
     exit;
   end;
-  s := s + '  Heat #: ';
+  s := s + ' - Heat : ';
   if fPrecedence = dtPrecFileName then
     i := DTData.tblDTHeat.FieldByName('fnHeatNum').AsInteger
   else
@@ -1581,7 +1608,7 @@ end;
 
 procedure TdtExec.UpdateEventDetailsLabel;
 var
-i: integer;
+i, ASessionID: integer;
 s, s2: string;
 begin
   lblEventDetails.Caption := '';
@@ -1590,7 +1617,10 @@ begin
   i := DTData.qryEvent.FieldByName('EventNum').AsInteger;
   if (i = 0) then exit;
 
-  s := 'Event ' + IntToStr(i) + ' : ';
+  ASessionID := DTData.qryEvent.FieldByName('SessionID').AsInteger;
+  s := IntToStr(ASessionID);
+
+  s := s + ' : Event ' + IntToStr(i) + ' : ';
   // build the event detail string...  Distance Stroke (OPT: Caption)
   s := s + DTData.qryDistance.FieldByName('Caption').AsString;
   s := s + ' ' + DTData.qryStroke.FieldByName('Caption').AsString;

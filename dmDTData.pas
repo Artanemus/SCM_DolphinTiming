@@ -77,6 +77,8 @@ type
     fSCMDataIsActive: Boolean;
     msgHandle: HWND;  // TForm.dtfrmExec ...
     function GetSCMActiveSessionID: integer;
+    procedure DeActivateDataSCM();
+
   public
     procedure ActivateDataDT();
     procedure ActivateDataSCM();
@@ -126,8 +128,8 @@ type
 
     function SyncDTtoSCM(APrecedence: dtPrecedence): boolean;
     function SyncSCMtoDT(APrecedence: dtPrecedence): boolean;
-    function SyncDTCheck(APrecedence: dtPrecedence): boolean;
-    function SyncSCMCheck(APrecedence: dtPrecedence): boolean;
+    function SyncCheck(APrecedence: dtPrecedence): boolean;
+    function SyncCheckSession(APrecedence: dtPrecedence): boolean;
 
     // .......................................................
     // FIND MAXIMUM IDENTIFIER VALUE IN DOLPHIN TIMING TABLES.
@@ -139,8 +141,15 @@ type
     function MaxID_Heat(): integer;
     function MaxID_Session():integer;
 
+    procedure POST_All;
+    procedure POST_Lane(ALane: Integer);
+
     // Read/Write DTData State to file
     procedure ReadFromBinary(AFilePath:string);
+    // If events, heats, etc change within SwimClubMeet then call here to
+    // reload and sync to changes.
+    procedure RefreshSCM();
+
     // SET dtActiveRT : artAutomatic, artManual, artUser, artSplit, artNone
     procedure SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
     function ToggleActiveRT(ADataSet: TDataSet; Direction: Integer = 0): dtActiveRT;
@@ -203,8 +212,10 @@ begin
   begin
     // GRAND MASTER.
     qrySwimClub.Connection := fConnection;
-    qrySwimClub.Active;
-    qrySwimClub.First;
+    qrySwimClub.Open;
+    if qrySwimClub.Active then
+      qrySwimClub.First;
+
     // Query used by pick session dialogue.
     qrySessionList.Connection := fConnection;
     qrySessionList.Close;
@@ -232,7 +243,6 @@ begin
 
     if qrySwimClub.Active and qrySession.Active then
     begin
-      qrySession.Open;
       qrySession.First;
       qryEvent.Open;
       qryDistance.Open;
@@ -793,7 +803,25 @@ end;
 
 procedure TDTData.DataModuleDestroy(Sender: TObject);
 begin
-  // clean-up.
+  DeActivateDataSCM;
+end;
+
+procedure TDTData.DeActivateDataSCM;
+begin
+  if Assigned(fConnection) and fConnection.Connected then
+  begin
+    fSCMDataIsActive := false;
+    qryTEAMEntrant.Close; // Detail of TEAM
+    qryTEAM.Close;  // Detail of Heat
+    qryINDV.Close;  // Detail of Heat
+    qryHeat.Close;  // Detail of event
+    qryStroke.Close; // Detail of event
+    qryDistance.Close;  // Detail of event
+    qryEvent.Close;
+    qrySession.Close;
+    qrySessionList.Close; // Query used by pick session dialogue.
+    qrySwimClub.Close;  // GRAND MASTER.
+  end;
 end;
 
 procedure TDTData.DisableDTMasterDetail();
@@ -1159,6 +1187,102 @@ begin
   result := max;
 end;
 
+procedure TDTData.POST_All;
+var
+  AEventType: scmEventType;
+  ALaneNum: integer;
+begin
+  qryINDV.DisableControls;
+  qryTEAM.DisableControls;
+  tblDTEntrant.DisableControls;
+
+  AEventType := scmEventType(qryDistance.FieldByName('EventTypeID').AsInteger);
+
+  // ONE TO ONE SYNC....
+  tblDTEntrant.First;
+  while not (tblDTEntrant.eof or qryINDV.eof) do
+  begin
+    ALaneNum := tblDTEntrant.FieldByName('Lane').AsInteger;
+    if LocateSCMLane(ALaneNum, AEventType) then
+    begin
+      if AEventType = etINDV then
+      begin
+        // can't post a time to a lane with no swimmer!
+        if not qryINDV.FieldByName('MemberID').IsNull then
+        begin
+          qryINDV.Edit;
+          qryINDV.FieldByName('RaceTime').AsDateTime :=
+          tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+          qryINDV.Post;
+        end;
+      end
+      else if AEventType = etTEAM then
+      begin
+        // can't post a time to a lane that doesn't have a relay team.
+        if not qryINDV.FieldByName('TeamNameID').IsNull then
+        begin
+          qryTEAM.Edit;
+          qryTEAM.FieldByName('RaceTime').AsDateTime :=
+          tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+          qryTEAM.Post;
+        end;
+      end;
+    end;
+    tblDTEntrant.Next;
+  end;
+  if AEventType = etINDV then
+    qryINDV.First
+  else if AEventType = etTEAM then
+    qryTEAM.First;
+  tblDTEntrant.First;
+  tblDTEntrant.EnableControls;
+  qryTEAM.EnableControls;
+  qryINDV.EnableControls;
+
+end;
+
+procedure TDTData.POST_Lane(ALane: Integer);
+var
+  AEventType: scmEventType;
+  b1, b2: boolean;
+begin
+  qryINDV.DisableControls;
+  qryTEAM.DisableControls;
+  tblDTEntrant.DisableControls;
+  AEventType := scmEventType(qryDistance.FieldByName('EventTypeID').AsInteger);
+  // SYNC to ROW ...
+  b1 := LocateDTLane(ALane);
+  b2 := LocateSCMLane(ALane, AEventType);
+  if (b1 and b2) then
+  begin
+      if AEventType = etINDV then
+      begin
+        // can't post a time to a lane with no swimmer!
+        if not qryINDV.FieldByName('MemberID').IsNull then
+        begin
+          qryINDV.Edit;
+          qryINDV.FieldByName('RaceTime').AsDateTime :=
+          tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+          qryINDV.Post;
+        end;
+      end
+      else if AEventType = etTEAM then
+      begin
+        // can't post a time to a lane that doesn't have a relay team.
+        if not qryINDV.FieldByName('TeamNameID').IsNull then
+        begin
+          qryTEAM.Edit;
+          qryTEAM.FieldByName('RaceTime').AsDateTime :=
+          tblDTEntrant.FieldByName('RaceTime').AsDateTime;
+          qryTEAM.Post;
+        end;
+      end;
+  end;
+  tblDTEntrant.EnableControls;
+  qryTEAM.EnableControls;
+  qryINDV.EnableControls;
+end;
+
 procedure TDTData.ReadFromBinary(AFilePath:string);
 var
 s: string;
@@ -1173,6 +1297,53 @@ begin
   tblDTHeat.LoadFromFile(s + 'DTHeat.fsBinary');
   tblDTEntrant.LoadFromFile(s + 'DTLane.fsBinary');
   tblDTNoodle.LoadFromFile(s + 'DTNoodle.fsBinary');
+end;
+
+procedure TDTData.RefreshSCM;
+var
+  ASwimClubID, ASessionID, AEventID, AHeatID: integer;
+begin
+  qryTEAM.DisableControls;
+  qryINDV.DisableControls;
+  qryHeat.DisableControls;
+  qryEvent.DisableControls;
+  qrySession.DisableControls;
+  qrySwimClub.DisableControls;
+
+  // Store database record position(s).
+  ASwimClubID := qrySwimClub.FieldByName('SwimClubID').AsInteger;
+  ASessionID := qrySession.FieldByName('SessionID').AsInteger;
+  AEventID := qryEvent.FieldByName('EventID').AsInteger;
+  AHeatID := qryHeat.FieldByName('HeatID').AsInteger;
+  // close
+  DeActivateDataSCM;
+  // open : assign connection : assert Master-Detail, etc.
+  ActivateDataSCM;
+  // cue-to-record : locate.
+  if qrySwimClub.Locate('SwimClubID', ASwimClubID, []) then
+  begin
+    qrySession.ApplyMaster;
+    if LocateSCMSessionID(ASessionID) then
+    begin
+      qryEvent.ApplyMaster;
+      if LocateSCMEventID(AEventID) then
+      begin
+        qryHeat.ApplyMaster;
+        LocateSCMHeatID(AHeatID);
+      end;
+    end;
+  end;
+  // cue-to-lane 1
+  qryINDV.first;
+  qryTEAM.first;
+
+  qrySwimClub.EnableControls;
+  qrySession.EnableControls;
+  qryEvent.EnableControls;
+  qryHeat.EnableControls;
+  qryINDV.EnableControls;
+  qryTEAM.EnableControls;
+
 end;
 
 procedure TDTData.SetActiveRT(ADataSet: TDataSet; aActiveRT: dtActiveRT);
@@ -1264,36 +1435,6 @@ begin
   end;
 end;
 
-function TDTData.SyncDTCheck(APrecedence: dtPrecedence): boolean;
-var
-IsSynced: boolean;
-begin
-  IsSynced := false;
-  case APrecedence of
-    dtPrecHeader:
-    begin
-      if tbldtSession.FieldByName('SessionNum').AsInteger =
-        qrySession.FieldByName('SesionID').AsInteger then
-        if tbldtEvent.FieldByName('EventNum').AsInteger =
-          qryEvent.FieldByName('EventNum').AsInteger then
-          if tbldtEvent.FieldByName('HeatNum').AsInteger =
-            qryEvent.FieldByName('HeatNum').AsInteger then
-            IsSynced := true;
-    end;
-    dtPrecFileName:
-    begin
-      if tbldtSession.FieldByName('fnSessionNum').AsInteger =
-        qrySession.FieldByName('SesionID').AsInteger then
-        if tbldtEvent.FieldByName('fnEventNum').AsInteger =
-          qryEvent.FieldByName('EventNum').AsInteger then
-          if tbldtEvent.FieldByName('fnHeatNum').AsInteger =
-            qryEvent.FieldByName('HeatNum').AsInteger then
-            IsSynced := true;
-    end;
-  end;
-  result := IsSynced;
-end;
-
 function TDTData.SyncDTtoSCM(APrecedence: dtPrecedence): boolean;
 var
   found: boolean;
@@ -1335,7 +1476,7 @@ begin
   tblDTEntrant.EnableControls;
 end;
 
-function TDTData.SyncSCMCheck(APrecedence: dtPrecedence): boolean;
+function TDTData.SyncCheck(APrecedence: dtPrecedence): boolean;
 var
   IsSynced: boolean;
 begin
@@ -1343,7 +1484,7 @@ begin
   case APrecedence of
     dtPrecHeader:
       begin
-        if qrySession.FieldByName('SesionID').AsInteger =
+        if qrySession.FieldByName('SessionID').AsInteger =
         tbldtSession.FieldByName('SessionNum').AsInteger then
           if qryEvent.FieldByName('EventNum').AsInteger =
           tbldtEvent.FieldByName('EventNum').AsInteger then
@@ -1353,7 +1494,7 @@ begin
       end;
     dtPrecFileName:
       begin
-        if qrySession.FieldByName('SesionID').AsInteger =
+        if qrySession.FieldByName('SessionID').AsInteger =
         tbldtSession.FieldByName('fnSessionNum').AsInteger then
           if qryEvent.FieldByName('EventNum').AsInteger =
           tbldtEvent.FieldByName('fnEventNum').AsInteger then
@@ -1366,46 +1507,46 @@ begin
 
 end;
 
-function TDTData.SyncSCMtoDT(APrecedence: dtPrecedence): boolean;
+function TDTData.SyncCheckSession(APrecedence: dtPrecedence): boolean;
 var
-  found: boolean;
   sessNum: integer;
-  s: string;
 begin
   result := false;
-  found := false;
-
-  qryINDV.DisableControls;
-  qryHeat.DisableControls;
-  qryEvent.DisableControls;
-  qrySession.DisableControls;
-
   if APrecedence = dtPrecHeader then
     sessNum := tbldtSession.FieldByName('SessionNum').AsInteger
   else if APrecedence = dtPrecFileName then
     sessNum := tbldtSession.FieldByName('fnSessionNum').AsInteger
   else sessNum := 0;
+  if qrySession.FieldByName('SessionID').AsInteger = sessNum then
+    result := true;
+end;
 
-  s := 'The current SwimClubMeet session cannot sync to the Dolphin Timing Data.'
-  +  sLineBreak +   'Load the correct session and try again.';
+function TDTData.SyncSCMtoDT(APrecedence: dtPrecedence): boolean;
+var
+  found: boolean;
+begin
+  result := false;
+  found := false;
 
-  if qrySession.FieldByName('SessionID').AsInteger <> sessNum then
-  begin
-    MessageBox(0, PChar(s), PChar('Sync SCM to DT.'), MB_ICONWARNING or MB_OK);
-    exit;
-  end;
+  if not SyncCheckSession(Aprecedence) then exit;
+
+  qryTEAM.DisableControls;
+  qryINDV.DisableControls;
+  qryHeat.DisableControls;
+  qryEvent.DisableControls;
+  qrySession.DisableControls;
 
   case APrecedence of
     dtPrecHeader:
     begin
-      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('EventNum').AsInteger) then
-        found :=  qryHeat.Locate('HeatNum', tbldtEvent.FieldByName('HeatNum').AsInteger);
+      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('EventNum').AsInteger, []) then
+        found :=  qryHeat.Locate('HeatNum', tbldtHeat.FieldByName('HeatNum').AsInteger, []);
     end;
 
     dtPrecFileName:
     begin
-      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('EventNum').AsInteger) then
-        found :=  qryHeat.Locate('HeatNum', tbldtEvent.FieldByName('HeatNum').AsInteger);
+      if qryEvent.Locate('EventNum', tbldtEvent.FieldByName('fnEventNum').AsInteger, []) then
+        found :=  qryHeat.Locate('HeatNum', tbldtHeat.FieldByName('fnHeatNum').AsInteger, []);
     end;
   end;
 
@@ -1414,6 +1555,7 @@ begin
   qryEvent.EnableControls;
   qryHeat.EnableControls;
   qryINDV.EnableControls;
+  qryTEAM.EnableControls;
 end;
 
 

@@ -3,7 +3,7 @@ object dtExec: TdtExec
   Top = 0
   BorderStyle = bsSingle
   Caption = 'SwimClubMeet - Dolphin Timing.'
-  ClientHeight = 801
+  ClientHeight = 833
   ClientWidth = 1444
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -41,7 +41,7 @@ object dtExec: TdtExec
     Left = 0
     Top = 25
     Width = 1444
-    Height = 776
+    Height = 773
     ControlCollection = <
       item
         Control = pnlTool1
@@ -87,19 +87,19 @@ object dtExec: TdtExec
     TabOrder = 1
     DesignSize = (
       1444
-      776)
+      773)
     object pnlTool1: TPanel
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 144
-      Height = 770
+      Height = 767
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 0
       object vimgHeatNum: TVirtualImage
         Left = 24
-        Top = 154
+        Top = 181
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -110,18 +110,21 @@ object dtExec: TdtExec
       end
       object vimgHeatStatus: TVirtualImage
         Left = 80
-        Top = 154
+        Top = 181
         Width = 50
         Height = 50
+        Hint = 'Heat status. (Open, raced, closed.)'
         ImageCollection = DTData.imgcolDT
         ImageWidth = 0
         ImageHeight = 0
         ImageIndex = 10
         ImageName = 'HeatOpen'
+        ParentShowHint = False
+        ShowHint = True
       end
       object vimgRelayBug: TVirtualImage
         Left = 24
-        Top = 98
+        Top = 125
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -132,7 +135,7 @@ object dtExec: TdtExec
       end
       object vimgStrokeBug: TVirtualImage
         Left = 80
-        Top = 98
+        Top = 125
         Width = 50
         Height = 50
         ImageCollection = DTData.imgcolDT
@@ -143,7 +146,7 @@ object dtExec: TdtExec
       end
       object lblMeters: TLabel
         Left = 9
-        Top = 104
+        Top = 131
         Width = 71
         Height = 37
         Alignment = taRightJustify
@@ -157,7 +160,7 @@ object dtExec: TdtExec
       end
       object lblHeatNum: TLabel
         Left = 24
-        Top = 154
+        Top = 181
         Width = 50
         Height = 45
         Alignment = taCenter
@@ -173,7 +176,7 @@ object dtExec: TdtExec
       end
       object lblMetersRelay: TLabel
         Left = 34
-        Top = 61
+        Top = 88
         Width = 96
         Height = 37
         Alignment = taRightJustify
@@ -204,16 +207,45 @@ object dtExec: TdtExec
         Transparent = True
         WordWrap = True
       end
-      object btnRefresh: TButton
-        Left = 24
-        Top = 254
-        Width = 106
+      object sbtnSyncSCMtoDT: TSpeedButton
+        Left = 16
+        Top = 266
+        Width = 128
         Height = 41
-        Caption = 'Refresh'
-        ImageIndex = 4
-        ImageName = 'Sync'
+        Hint = 
+          'Syncronize SwimClubMeet to DT.'#13#10'(Must have the same session numb' +
+          'er.)'
+        Action = actnSyncSCM
+        Caption = 'SYNC'
         Images = DTData.vimglistMenu
-        TabOrder = 0
+        Layout = blGlyphRight
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object sbtnRefreshSCM: TSpeedButton
+        Left = 16
+        Top = 313
+        Width = 128
+        Height = 41
+        Hint = 
+          'If changes have occurred (new events, heats, etc)'#13#10'pressing this' +
+          ' button will re-sync to the SCM database.'
+        Action = actnRefresh
+        Caption = 'REFRESH'
+        Images = DTData.vimglistMenu
+        Layout = blGlyphRight
+        ParentShowHint = False
+        ShowHint = True
+      end
+      object ShapeSpaceerSCM: TShape
+        AlignWithMargins = True
+        Left = 9
+        Top = 253
+        Width = 121
+        Height = 4
+        Margins.Top = 6
+        Margins.Bottom = 6
+        Brush.Color = clTomato
       end
     end
     object pnlSCM: TPanel
@@ -221,7 +253,7 @@ object dtExec: TdtExec
       Left = 153
       Top = 3
       Width = 525
-      Height = 770
+      Height = 767
       BevelOuter = bvNone
       Color = 5988209
       ParentBackground = False
@@ -231,6 +263,9 @@ object dtExec: TdtExec
         Top = 28
         Width = 497
         Height = 64
+        Hint = 
+          'Session : Event : Distance+Stroke : Heat.'#13#10'2nd line - Event Desc' +
+          'ription. '
         Alignment = taCenter
         AutoSize = False
         Caption = 'EVENT 1 : 50M Freestyle'#13#10'Boys under 10y'
@@ -240,6 +275,8 @@ object dtExec: TdtExec
         Font.Name = 'Segoe UI Semibold'
         Font.Style = []
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         Layout = tlCenter
         WordWrap = True
       end
@@ -248,7 +285,12 @@ object dtExec: TdtExec
         Top = 683
         Width = 498
         Height = 50
+        Hint = 
+          'LMB Move to next record (heat, event, session)'#13#10'CNTRL+LMB Move t' +
+          'o next EVENT.'#13#10'Use File menu to load SESSION.'
         Caption = 'NEXT'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 0
         OnClick = btnNextEventClick
       end
@@ -257,7 +299,12 @@ object dtExec: TdtExec
         Top = 98
         Width = 434
         Height = 50
+        Hint = 
+          'LMB Move to previous record (heat, event, session)'#13#10'CNTRL+LMB Mo' +
+          've to previous EVENT.'#13#10'Use File menu to load SESSION.'
         Caption = 'PREVIOUS'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
         OnClick = btnPrevEventClick
       end
@@ -760,10 +807,15 @@ object dtExec: TdtExec
         Top = 98
         Width = 58
         Height = 50
+        Hint = 
+          'Tree-View. Quick access and browse for event and heat.'#13#10'Also dis' +
+          'plays event and heat status. (Open, raced, closed.)'
         DisabledImages = DTData.vimglistDTEvent
         ImageIndex = 10
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
         OnClick = btnPickSCMTreeViewClick
       end
@@ -773,7 +825,7 @@ object dtExec: TdtExec
       Left = 684
       Top = 3
       Width = 613
-      Height = 770
+      Height = 767
       BevelOuter = bvNone
       ParentBackground = False
       TabOrder = 2
@@ -797,6 +849,9 @@ object dtExec: TdtExec
         Top = 56
         Width = 553
         Height = 36
+        Hint = 
+          'Dolphin Timing Filename. (DO3, DO4)'#13#10'2nd line - Session : Event ' +
+          ':: Heat.'
         Alignment = taCenter
         AutoSize = False
         Caption = 'Session - Event - Heat'
@@ -806,6 +861,8 @@ object dtExec: TdtExec
         Font.Name = 'Segoe UI'
         Font.Style = []
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         Layout = tlCenter
       end
       object btnPrevDTFile: TButton
@@ -813,7 +870,12 @@ object dtExec: TdtExec
         Top = 99
         Width = 534
         Height = 49
+        Hint = 
+          'LMB Move to previous record (heat, event, session)'#13#10'CNTRL+LMB Mo' +
+          've to previous EVENT.'#13#10'SHIFT+CNTRL+LMB Move to previous SESSION.'
         Caption = 'PREVIOUS'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
         OnClick = btnPrevDTFileClick
       end
@@ -822,7 +884,12 @@ object dtExec: TdtExec
         Top = 683
         Width = 597
         Height = 50
+        Hint = 
+          'LMB Move to next record (heat, event, session)'#13#10'CNTRL+LMB Move t' +
+          'o next EVENT.'#13#10'SHIFT+CNTRL+LMB Move to next SESSION.'
         Caption = 'NEXT'
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 0
         OnClick = btnNextDTFileClick
       end
@@ -1162,9 +1229,10 @@ object dtExec: TdtExec
             Header = ' '
             HeaderFont.Charset = DEFAULT_CHARSET
             HeaderFont.Color = clWindow
-            HeaderFont.Height = -16
+            HeaderFont.Height = -13
             HeaderFont.Name = 'Segoe UI'
             HeaderFont.Style = []
+            HeaderAlignment = taCenter
             Images = DTData.vimglistDTGrid
             PrintBorders = [cbTop, cbLeft, cbRight, cbBottom]
             PrintFont.Charset = DEFAULT_CHARSET
@@ -1371,10 +1439,13 @@ object dtExec: TdtExec
         Top = 98
         Width = 58
         Height = 50
+        Hint = 'Tree-View. Quick access and browse for session, event and heat.'
         DisabledImages = DTData.vimglistDTEvent
         ImageIndex = 10
         ImageName = 'TreeView_W'
         Images = DTData.vimglistDTEvent
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 4
         OnClick = btnPickDTTreeViewClick
       end
@@ -1384,7 +1455,7 @@ object dtExec: TdtExec
       Left = 1303
       Top = 3
       Width = 144
-      Height = 770
+      Height = 767
       Anchors = []
       BevelOuter = bvNone
       Color = clDimgray
@@ -1399,7 +1470,7 @@ object dtExec: TdtExec
         BevelOuter = bvNone
         ControlCollection = <
           item
-            Control = sbtnSync
+            Control = sbtnSyncDTtoSCM
             HorizontalPositioning = sphpLeft
           end
           item
@@ -1419,31 +1490,42 @@ object dtExec: TdtExec
         HorizontalPositioning = sphpCenter
         Spacing = 4
         TabOrder = 0
-        object sbtnSync: TSpeedButton
+        object sbtnSyncDTtoSCM: TSpeedButton
           Left = 0
           Top = 0
           Width = 128
           Height = 41
+          Hint = 'Syncronize Dolphin Timing to SCM.'
           Action = actnSyncDT
+          Caption = 'SYNC'
           Images = DTData.vimglistMenu
+          ParentShowHint = False
+          ShowHint = True
         end
         object spbtnPost: TSpeedButton
           Left = 0
           Top = 45
           Width = 128
           Height = 41
+          Hint = 'Post the DT '#39'Race-Times'#39' to the SCM heat.'
           Action = actnPost
           Images = DTData.vimglistMenu
+          ParentShowHint = False
+          ShowHint = True
         end
         object sbtnAutoPatch: TSpeedButton
           Left = 0
           Top = 90
           Width = 128
           Height = 41
+          Hint = 'Auto-Patch lanes and enable manual patching.'
           Caption = 'PATCH'
           ImageIndex = 14
           ImageName = 'AutoPatch'
           Images = DTData.vimglistMenu
+          Enabled = False
+          ParentShowHint = False
+          ShowHint = True
         end
         object ShapeSpacer: TShape
           AlignWithMargins = True
@@ -1466,6 +1548,19 @@ object dtExec: TdtExec
         end
       end
     end
+  end
+  object StatBar: TStatusBar
+    Left = 0
+    Top = 798
+    Width = 1444
+    Height = 35
+    Hint = 'Check here for information, messages and warnings.'
+    Panels = <>
+    ParentShowHint = False
+    ShowHint = True
+    SimplePanel = True
+    SimpleText = 'Check here for information and messages.'
+    StyleElements = [seClient, seBorder]
   end
   object actnManager: TActionManager
     ActionBars = <
@@ -1556,9 +1651,15 @@ object dtExec: TdtExec
             Items = <
               item
                 Action = actnSyncDT
-                Caption = '&SYNC'
+                Caption = '&Sync DT to SCM'
                 ImageIndex = 11
                 ImageName = 'arrow_back'
+              end
+              item
+                Action = actnSyncSCM
+                Caption = 'S&ync SCM to DT'
+                ImageIndex = 15
+                ImageName = 'arrow_forward'
               end
               item
                 Action = actnPost
@@ -1620,6 +1721,7 @@ object dtExec: TdtExec
       Caption = 'Refresh'
       ImageIndex = 4
       ImageName = 'Sync'
+      OnExecute = actnRefreshExecute
     end
     object actnSelectSwimClub: TAction
       Category = 'File'
@@ -1702,7 +1804,7 @@ object dtExec: TdtExec
     end
     object actnSyncDT: TAction
       Category = 'Edit'
-      Caption = 'SYNC'
+      Caption = 'Sync DT to SCM'
       ImageIndex = 11
       ImageName = 'arrow_back'
       OnExecute = actnSyncDTExecute
@@ -1738,6 +1840,13 @@ object dtExec: TdtExec
       Caption = 'Dolphin Timing Report...'
       ImageIndex = 12
       ImageName = 'file_report'
+    end
+    object actnSyncSCM: TAction
+      Category = 'Edit'
+      Caption = 'Sync SCM to DT'
+      ImageIndex = 15
+      ImageName = 'arrow_forward'
+      OnExecute = actnSyncSCMExecute
     end
   end
   object FileSaveDlgCSV: TFileSaveDialog
@@ -1788,7 +1897,14 @@ object dtExec: TdtExec
     OkButtonLabel = 'Append DO file(s)'
     Options = [fdoStrictFileTypes, fdoAllowMultiSelect, fdoPathMustExist, fdoFileMustExist]
     Title = 'Append Dolphin Timing DO[3..4] files(s)...'
-    Left = 55
-    Top = 380
+    Left = 983
+    Top = 548
+  end
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 6000
+    OnTimer = Timer1Timer
+    Left = 1116
+    Top = 374
   end
 end
