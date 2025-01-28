@@ -78,6 +78,8 @@ type
     msgHandle: HWND;  // TForm.dtfrmExec ...
     function GetSCMActiveSessionID: integer;
     procedure DeActivateDataSCM();
+    function CalcRaceTimeA_dev3(ADataSet: TDataSet; AcceptedDeviation: double; out
+        indx: Integer): Integer;
 
   public
     procedure ActivateDataDT();
@@ -87,7 +89,8 @@ type
     // --------------------------------------------
     // Routines ONLY for ActiveRT = dtAutomatic
     // on called on loading of DT file ...
-    procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
+    procedure CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double;
+        CalcMethod: Integer);
     // Routines ONLY for ActiveRT = dtManual
     // For dtAutomatic Racetime, Deviation and validation are perform on
     // loading of the DO file.
@@ -525,15 +528,95 @@ begin
 
 end;
 
-procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double);
+function TDTData.CalcRaceTimeA_dev3(ADataSet: TDataSet; AcceptedDeviation:
+    double; out indx: Integer): Integer;
 var
-  t, tot, AcceptedDeviationAsTime: TTime;
+  Times: array[1..3] of TTime;    // Array to store the times
+  Indices: array[1..3] of Integer; // Array to store the original indices
+  i, j, TempIndex: Integer;
+  TempTime: TTime;
+  Gap1, Gap2, AcceptedDeviationMs: Double;
+  FieldNameStr: string;
+begin
+  result := 0;
+  indx := 0;
+  // Populate the Times array and track their original indices
+  Times[1] := TimeOf(DTData.tblDTEntrant.FieldByName('Time1').AsDateTime);
+  Times[2] := TimeOf(DTData.tblDTEntrant.FieldByName('Time2').AsDateTime);
+  Times[3] := TimeOf(DTData.tblDTEntrant.FieldByName('Time3').AsDateTime);
+
+  Indices[1] := 1;
+  Indices[2] := 2;
+  Indices[3] := 3;
+
+    // Convert AcceptedDeviation from seconds to milliseconds
+  AcceptedDeviationMs := AcceptedDeviation * 1000;
+
+  // Sort the Times array and keep the Indices array in sync
+  for i := 1 to 2 do
+  begin
+    for j := i + 1 to 3 do
+    begin
+      if Times[i] > Times[j] then
+      begin
+        // Swap Times
+        TempTime := Times[i];
+        Times[i] := Times[j];
+        Times[j] := TempTime;
+
+        // Swap corresponding Indices
+        TempIndex := Indices[i];
+        Indices[i] := Indices[j];
+        Indices[j] := TempIndex;
+      end;
+    end;
+  end;
+
+  // After sorting:
+  // Times[1], Times[2], Times[3] = MinTime, MidTime, MaxTime
+  // Indices[1], Indices[2], Indices[3] = Original indices of MinTime, MidTime, MaxTime
+
+  Gap1 := MilliSecondsBetween(Times[2], Times[1]); // MidTime - MinTime
+  Gap2 := MilliSecondsBetween(Times[3], Times[2]); // MaxTime - MidTime
+
+  // Check deviations and resolve the likely issue back to the original field name
+  if (Gap1 > AcceptedDeviationMs) and (Gap2 > AcceptedDeviationMs) then
+  begin
+    // Both deviations exceed the limit. Ambiguous issue.
+    result := -1;   indx := 0;
+  end
+  else if Gap1 > AcceptedDeviationMs then
+  begin
+    //    FieldNameStr := 'Time' + IntToStr(Indices[1]); //
+    // Illegal deviation detected. Likely issue with MinTime index
+    result := 1; indx := Indices[1];
+  end
+  else if Gap2 > AcceptedDeviationMs then
+  begin
+    //    FieldNameStr := 'Time' + IntToStr(Indices[3]); //
+    // Illegal deviation detected. Likely issue with MaxTime index
+    result := 2; indx := Indices[3];
+  end
+  else
+  begin
+    // All deviations are within the accepted range.
+    result := 0;    indx := 0;
+  end;
+end;
+
+
+procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double;
+    CalcMethod: Integer);
+var
+  t, tot, AcceptedDeviationMs: TTime;
   isValidTime: array[1..3] of boolean;
+  Times: array[1..3] of variant;
+
   count, I, J: integer;
   s: string;
-  CalcRaceTime: double;
+  CalcRaceTime, Gap: double;
 
-  indx1, indx2: Integer;
+  indx1, indx2, indx: Integer;
   t1, t2: TTime;
   dev: TTime;
   found: Integer;
@@ -549,31 +632,22 @@ begin
       declared in SysUtils) so to get AcceptedDeviation (given in seconds)
       as TDateTime do:
   }
-  AcceptedDeviationAsTime := AcceptedDeviation / (SecsPerDay);
+  // Convert AcceptedDeviation from seconds to milliseconds
+  AcceptedDeviationMs := AcceptedDeviation * 1000;
 
-  // setup arrays
-  for I := 1 to 3 do isValidTime[i] := true;
-  // Validate watch time. Count the number of valid watch times.
+    // Populate the Times array and track their original indices
+  Times[1] := ADataSet.FieldByName('Time1').AsVariant;
+  Times[2] := ADataSet.FieldByName('Time2').AsVariant;
+  Times[3] := ADataSet.FieldByName('Time3').AsVariant;
+
+  count := 0; // Init count
   for I := 1 to 3 do
   begin
-    s := 'Time' + IntToStr(I);
-    v := ADataSet.FieldByName(s).AsVariant;
-    if VarIsEmpty(v) then
-    begin
-      isValidTime[I] := false;
-      Continue;
-    end;
-    if VarIsNull(v) then
-    begin
-      isValidTime[I] := false;
-      Continue;
-    end;
-    if (v=0) then
-    begin
-      isValidTime[I] := false;
-      Continue;
-    end;
-    if isValidTime[I] then Inc(count);
+    // Validate time and set isValidTime
+    isValidTime[I] := not (VarIsEmpty(Times[I]) or VarIsNull(Times[I]) or (Times[I] = 0));
+    // Increment count if the time is valid
+    if isValidTime[I] then
+      Inc(count);
   end;
 
   ADataset.Edit;
@@ -585,9 +659,9 @@ begin
     end;
     ADataSet.FieldByName('LaneIsEmpty').AsBoolean := false;
     ADataSet.Post;
-  except
-      ADataSet.Cancel;
-      raise;
+    except
+        ADataSet.Cancel;
+        raise;
   end;
 
   {
@@ -629,91 +703,122 @@ begin
       end;
     1:
       begin
-        // Cue-to-time ...
         for I := 1 to 3 do
         begin
-          if (isValidTime[I] = true) then
+          if isValidTime[I] then
           begin
-            s := 'Time' + IntToStr(I);
-            CalcRaceTime := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-            break;
+            if VarType(Times[I]) = varDate then // Ensure Times[I] is a TDateTime
+            begin
+              CalcRaceTime := TimeOf(Times[I]);
+              Break;
+            end
+            else
+              raise Exception.Create('Invalid time format in Times[' + IntToStr(I) + ']');
           end;
         end;
       end;
     2:
+    begin
+      found := 0;
+      indx1 := 0;
+      indx2 := 0;
+      t1 := 0;
+      t2 := 0;
+
+      // Loop through the times to find the valid ones
+      for I := 1 to 3 do
       begin
-        found := 0;
-        indx1 := 0;
-        t1 := 0;
-
-        // Loop through the times to find the valid ones and assign values immediately
-        for I := 1 to 3 do
+        if isValidTime[I] then
         begin
-          if isValidTime[I] then
+          if found = 0 then
           begin
-            s := 'Time' + IntToStr(I);
-            if found = 0 then
+            t1 := TimeOf(Times[I]);
+            indx1 := I;
+          end
+          else if found = 1 then
+          begin
+            t2 := TimeOf(Times[I]);
+            indx2 := I;
+
+            // Calculate deviation between the two valid times
+            Gap := MilliSecondsBetween(t1, t2);
+
+            // Check if the deviation is acceptable
+            if Gap >= AcceptedDeviationMs then
             begin
-              t1 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-              indx1 := I;
+              // Invalidate both times if deviation is too high
+              isValidTime[indx1] := False;
+              isValidTime[indx2] := False;
+              CalcRaceTime := 0;
             end
-            else if found = 1 then
+            else
             begin
-              t2 := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-              indx2 := I;
-
-              // Calculate deviation and update isValidTime and CalcRaceTime
-              dev := Abs(t1 - t2);
-
-              if dev >= AcceptedDeviationAsTime then
-              begin
-                isValidTime[indx1] := false;
-                isValidTime[indx2] := false;
-                CalcRaceTime := 0;
-              end
-              else
-              begin
-                CalcRaceTime := (t1 + t2) / 2;
-              end;
-
-              Break; // Exit loop after processing two valid times
+              // Calculate the average time if deviation is acceptable
+              CalcRaceTime := (t1 + t2) / 2;
             end;
-            Inc(found);
+
+            Break; // Exit loop after processing the second valid time
           end;
-        end;
 
-        if found < 2 then
-        begin
-          // Handle the case where there are not exactly two valid times
+          Inc(found);
         end;
-
       end;
+
+      // Handle the case where fewer than two valid times were found.
+      if found < 2 then
+      begin
+        // Handle case: not exactly two valid times available
+        // e.g., show a message, set CalcRaceTime to 0, etc.
+        CalcRaceTime := 0; // Example action
+      end;
+    end;
+
       3:
       begin
         tot := 0;
-        var times: array[1..3] of TTime;
-        var UseSCMTimeMode: boolean;
+        if CalcMethod = 1 then
+        begin
+          j := CalcRaceTimeA_dev3(ADataSet, AcceptedDeviation, indx);
+          case j of
+          -1:
+            begin
+              // Ambiguous issue.  invalidate all.
+              ADataset.Edit;
+              ADataSet.FieldByName('T1A').AsBoolean := false;
+              ADataSet.FieldByName('T2A').AsBoolean := false;
+              ADataSet.FieldByName('T3A').AsBoolean := false;
+              ADataSet.Post;
+            end;
+          0:
+            ; // PASSED.
+          1,2:
+            begin
+              // Likely issue with MinTime index.
+              // Likely issue with MaxTime index.
+              s := 'T' + IntToStr(indx) + 'A';
+              ADataset.Edit;
+              ADataSet.FieldByName(s).AsBoolean := false;
+              ADataSet.Post;
+            end;
+          end;
 
-        UseSCMTimeMode := false;
+        end;
 
+        // RECOUNT VALID WATCH TIMES.
+
+        {
         // Add up all racetimes
         for I := 1 to 3 do
         begin
           if isValidTime[I] then
-          begin
-            s := 'Time' + IntToStr(I);
-            t := TimeOF(ADataSet.FieldByName(s).AsDateTime);
-            times[i] := t;
-            tot := tot + t;
-          end;
+            tot := tot + TimeOF(Times[I]);;
         end;
+        // Calculate the average stopwatch time.
+        CalcRaceTime := (tot / count);
+        }
 
-        if UseSCMTimeMode then
-        begin
-          // Calculate the average stopwatch time.
-          CalcRaceTime := (tot / count);
-        end
-        else
+
+        if Count = 3 then
         begin
           // Sort the times array
           var temp: TTime;

@@ -30,6 +30,7 @@ type
     DolphinReConstruct: string;
     DolphinPrecedence: dtPrecedence;
     DolphinAcceptedDeviation: double;
+    DolphinCalcRTMethod: integer;
 
     constructor Create();
     function GetDefaultSettingsFilename(): string;
@@ -61,6 +62,8 @@ begin
   DolphinReConstruct := 'c:\CTSDolphin\ReConstruct';
   DolphinPrecedence := dtPrecHeader;
   DolphinAcceptedDeviation := 0.3;
+  // 0 = default DT method : 1 = extended SCM method.
+  DolphinCalcRTMethod := 0;
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in

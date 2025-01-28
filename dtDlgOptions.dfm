@@ -8439,13 +8439,14 @@ object dlgOptions: TdlgOptions
         Caption = 'Settings'
         ImageIndex = 1
         object lbledtDeviation: TLabeledEdit
-          Left = 20
+          Left = 22
           Top = 16
-          Width = 49
+          Width = 48
           Height = 29
-          EditLabel.Width = 324
+          Alignment = taCenter
+          EditLabel.Width = 217
           EditLabel.Height = 29
-          EditLabel.Caption = 'Accepted deviation for time keeping (float +/-).'
+          EditLabel.Caption = 'Max watch time variance: '#177'0.3s'
           LabelPosition = lpRight
           LabelSpacing = 10
           TabOrder = 0
@@ -8453,10 +8454,11 @@ object dlgOptions: TdlgOptions
         end
         object rgrpMeanTimeMethod: TRadioGroup
           Left = 20
-          Top = 66
+          Top = 138
           Width = 269
           Height = 95
-          Caption = 'Auto calcuate race-times ...'
+          Caption = 'Calculate race times.'
+          ItemIndex = 0
           Items.Strings = (
             'DT default behaviour'
             'SCM method')
@@ -8464,10 +8466,10 @@ object dlgOptions: TdlgOptions
         end
         object chkbxRenameSession: TCheckBox
           Left = 20
-          Top = 216
+          Top = 58
           Width = 181
           Height = 25
-          Caption = 'Auto rename DT files.'
+          Caption = 'Enable rename DT files.'
           TabOrder = 2
         end
         object rgrpPrecedence: TRadioGroup
@@ -8584,31 +8586,6 @@ object dlgOptions: TdlgOptions
           TabOrder = 3
           Text = 'c:\CTSDolphin\ReConstruct\'
           OnRightButtonClick = btnedtReConstructRightButtonClick
-        end
-      end
-      object tabsheetWatchDTFolder: TTabSheet
-        Caption = 'Watch'
-        ImageIndex = 2
-        object lbledtWatchInterval: TLabeledEdit
-          Left = 28
-          Top = 24
-          Width = 49
-          Height = 29
-          EditLabel.Width = 221
-          EditLabel.Height = 29
-          EditLabel.Caption = 'Watch interval given in seconds.'
-          LabelPosition = lpRight
-          LabelSpacing = 10
-          TabOrder = 0
-          Text = '60'
-        end
-        object chkbxEnableWatchAtBootUp: TCheckBox
-          Left = 28
-          Top = 88
-          Width = 285
-          Height = 17
-          Caption = 'Enable Watch on application boot up.'
-          TabOrder = 1
         end
       end
     end

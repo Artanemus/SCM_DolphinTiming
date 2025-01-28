@@ -21,6 +21,7 @@ type
       fFileName: string; // Filename + EXTENSION. NO PATH.
       fCreatedDT: TDateTime;
       fAcceptedDeviation: double;
+      fCalcMode: integer; // 0 = DT Method. (Default) 1 = SCM Method.
 
     // --------------------------------------------
     { Routine to :
@@ -151,6 +152,7 @@ begin
   Dest.fSList := TStringList.Create;
   Dest.fFileType := dtUnknown;
   Dest.fFileName := '';
+  Dest.fCalcMode := 0;
 end;
 
 function TdtUtils.DirectoryHasDTFiles(const ADirectory: string): boolean;
@@ -776,7 +778,7 @@ begin
       fAcceptedDeviation := 0.3; // Dolphin Timing's default.
 
     // Cacluate RaceTimeA for the ActiveRT. (artAutomatic)
-    DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation);
+    DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation, fCalcMode);
     // Copy value to RaceTime.
     DTData.tblDTEntrant.Edit;
     DTData.tblDTEntrant.fieldbyName('RaceTime').AsVariant :=

@@ -33,9 +33,6 @@ type
     vimgDT: TVirtualImage;
     BrowseFolderDlg: TFileOpenDialog;
     rgrpPrecedence: TRadioGroup;
-    tabsheetWatchDTFolder: TTabSheet;
-    lbledtWatchInterval: TLabeledEdit;
-    chkbxEnableWatchAtBootUp: TCheckBox;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtEventCSVRightButtonClick(Sender: TObject);
@@ -174,8 +171,20 @@ begin
   btnedtEventCSV.Text := Settings.DolphinEventFolder;
   btnedtAppData.Text := Settings.DolphinAppData;
   btnedtReConstruct.Text := Settings.DolphinReConstruct;
-  // dtPrecedence = (dtPrecHeader, dtPrecFileName); (Delphi default base 0)
-  rgrpPrecedence.ItemIndex := Ord(Settings.DolphinPrecedence)
+  case Settings.DolphinPrecedence of
+  dtPrecHeader:
+    rgrpPrecedence.ItemIndex := 0;
+  dtPrecFileName:
+    rgrpPrecedence.ItemIndex := 1;
+  end;
+  case Settings.DolphinCalcRTMethod of
+  1:
+    // extended SCM method.
+    rgrpMeanTimeMethod.ItemIndex := 1;
+  else
+    // default DT method (default).
+    rgrpMeanTimeMethod.ItemIndex := 0;
+  end;
 end;
 
 procedure TdlgOptions.LoadSettings;
