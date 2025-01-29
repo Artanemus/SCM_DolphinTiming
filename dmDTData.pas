@@ -21,7 +21,35 @@ type
   dtPrecedence = (dtPrecHeader, dtPrecFileName);
   dtActiveRT = (artAutomatic, artManual, artUser, artSplit, artNone);
 
+
+
 type
+TWatchTime = class(TObject)
+private
+  Times: array[1..3] of variant; // Array to store the times (as Variants).
+  Indices: array[1..3] of Integer; // Array to store the original indices
+  IsValid: array[1..3] of boolean; // Array to store the validation
+  CountOfValid: integer; // Number of valid times .
+  fAcceptedDeviation, fAccptDevMsec: double;
+  function CnvSecToMsec(ASeconds: double): double;
+  function LaneIsEmpty: boolean;
+  procedure SortWatchTimes();
+  procedure ValidateTimes();
+  procedure CheckDeviation();
+protected
+
+public
+  constructor Create(aVar1, aVar2, aVar3: variant);
+  destructor Destroy; override;
+  procedure Prepare(aAcceptedDeviation: double = 0);
+  function CalcRaceTimeAuto(): Variant;
+  procedure SyncData(ADataSet: TDataSet);
+
+published
+  property AcceptedDeviation: double read FAcceptedDeviation write FAcceptedDeviation;
+
+end;
+
   TDTData = class(TDataModule)
     dsDTEntrant: TDataSource;
     dsDTEvent: TDataSource;
@@ -182,6 +210,7 @@ implementation
 {$R *.dfm}
 
 uses System.Variants, System.DateUtils;
+
 
 procedure TDTData.ActivateDataDT;
 begin
@@ -575,7 +604,6 @@ begin
   // After sorting:
   // Times[1], Times[2], Times[3] = MinTime, MidTime, MaxTime
   // Indices[1], Indices[2], Indices[3] = Original indices of MinTime, MidTime, MaxTime
-
   Gap1 := MilliSecondsBetween(Times[2], Times[1]); // MidTime - MinTime
   Gap2 := MilliSecondsBetween(Times[3], Times[2]); // MaxTime - MidTime
 
@@ -600,7 +628,7 @@ begin
   else
   begin
     // All deviations are within the accepted range.
-    result := 0;    indx := 0;
+    result := 0; indx := 0;
   end;
 end;
 
@@ -643,9 +671,9 @@ begin
   count := 0; // Init count
   for I := 1 to 3 do
   begin
-    // Validate time and set isValidTime
+    // Validate time and set isValidTime state.
     isValidTime[I] := not (VarIsEmpty(Times[I]) or VarIsNull(Times[I]) or (Times[I] = 0));
-    // Increment count if the time is valid
+    // Increment count if the time is valid.
     if isValidTime[I] then
       Inc(count);
   end;
@@ -655,8 +683,10 @@ begin
     for I := 1 to 3 do
     begin
       s := 'T' + IntToStr(I) + 'A';
+      // store validation state for each watch time into [T1A, T2A, T3A].
       ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
     end;
+    // initalise the LaneIsEmpty...
     ADataSet.FieldByName('LaneIsEmpty').AsBoolean := false;
     ADataSet.Post;
     except
@@ -773,68 +803,71 @@ begin
       end;
     end;
 
-      3:
+    3:
+    begin
+      tot := 0;
+      if CalcMethod = 1 then
       begin
-        tot := 0;
-        if CalcMethod = 1 then
-        begin
-          j := CalcRaceTimeA_dev3(ADataSet, AcceptedDeviation, indx);
-          case j of
-          -1:
-            begin
-              // Ambiguous issue.  invalidate all.
-              ADataset.Edit;
-              ADataSet.FieldByName('T1A').AsBoolean := false;
-              ADataSet.FieldByName('T2A').AsBoolean := false;
-              ADataSet.FieldByName('T3A').AsBoolean := false;
-              ADataSet.Post;
-            end;
-          0:
-            ; // PASSED.
-          1,2:
-            begin
-              // Likely issue with MinTime index.
-              // Likely issue with MaxTime index.
-              s := 'T' + IntToStr(indx) + 'A';
-              ADataset.Edit;
-              ADataSet.FieldByName(s).AsBoolean := false;
-              ADataSet.Post;
-            end;
+        j := CalcRaceTimeA_dev3(ADataSet, AcceptedDeviation, indx);
+        case j of
+        -1:
+          begin
+            // Ambiguous issue.  invalidate all.
+            ADataset.Edit;
+            ADataSet.FieldByName('T1A').AsBoolean := false;
+            ADataSet.FieldByName('T2A').AsBoolean := false;
+            ADataSet.FieldByName('T3A').AsBoolean := false;
+            ADataSet.Post;
           end;
-
+        0:
+          ; // PASSED.
+        1,2:
+          begin
+            // Likely issue with MinTime index.
+            // Likely issue with MaxTime index.
+            s := 'T' + IntToStr(indx) + 'A';
+            ADataset.Edit;
+            ADataSet.FieldByName(s).AsBoolean := false;
+            ADataSet.Post;
+          end;
         end;
 
-        // RECOUNT VALID WATCH TIMES.
-
-        {
-        // Add up all racetimes
-        for I := 1 to 3 do
-        begin
-          if isValidTime[I] then
-            tot := tot + TimeOF(Times[I]);;
-        end;
-        // Calculate the average stopwatch time.
-        CalcRaceTime := (tot / count);
-        }
-
-
-        if Count = 3 then
-        begin
-          // Sort the times array
-          var temp: TTime;
-          for I := 1 to 2 do
-            for J := I + 1 to 3 do
-              if times[I] > times[J] then
-              begin
-                temp := times[I];
-                times[I] := times[J];
-                times[J] := temp;
-              end;
-
-          // The middle time is the second element in the sorted array
-          CalcRaceTime := times[2];
-        end;
       end;
+
+      // RE-EVALUATE the number of valid timecodes...
+      count := 0; // Init count
+      for I := 1 to 3 do
+      begin
+        // Validate time and set isValidTime state.
+        s := 'T' + IntToStr(indx) + 'A';
+        isValidTime[I] := ADataSet.FieldByName(s).AsBoolean;
+        // Increment count if the time is valid.
+        if isValidTime[I] then
+          Inc(count);
+      end;
+
+      if Count = 3 then
+      begin
+        // Sort the times array
+        var temp: TTime;
+        for I := 1 to 2 do
+          for J := I + 1 to 3 do
+            if times[I] > times[J] then
+            begin
+              temp := times[I];
+              times[I] := times[J];
+              times[J] := temp;
+            end;
+
+        // The middle time is the second element in the sorted array
+        CalcRaceTime := times[2];
+      end
+      else if Count = 2 then
+      begin
+        // find the average of the two times..
+      end;
+
+    end;
   end;
 
   // Write out database values (tblDTEntrant)
@@ -1796,5 +1829,217 @@ begin
   tblDTNoodle.SaveToFile(s + 'DTNoodle.fsBinary', sfXML);
 end;
 
+
+
+{ TWatchTime }
+
+function TWatchTime.CalcRaceTimeAuto: Variant;
+var
+I: integer;
+v1, v2: variant;
+begin
+
+  result := null;
+
+  case CountOfValid of
+  0:
+    result := null;
+  1:
+    BEGIN
+      for I := 1 to 3 do
+        if IsValid[I] then
+        begin
+          result := Times[I];
+          break;
+        end;
+    END;
+  2:
+    BEGIN
+      var count := 0;
+      // Loop through the times to find the valid ones
+      for I := 1 to 3 do
+      begin
+        if IsValid[I] then
+        begin
+          if Count = 0 then
+            v1 := Times[I]
+          else if Count = 1 then
+          begin
+            v2 := Times[I];
+            // calculate the average of the two times.
+            result := (v1 + v2)/2.0;
+            Break; // Exit loop after processing the second valid time
+          end;
+          Inc(Count);
+        end;
+      end;
+    END;
+  3:
+    BEGIN
+      if IsValid[2] then
+        // The middle time is the second element in the sorted array
+        result := times[2];
+    END
+  END;
+
+end;
+
+procedure TWatchTime.CheckDeviation;
+var
+I,indx1, indx2, Count: integer;
+t1, t2: TTime;
+Gap: double;
+begin
+  case CountOfValid of
+  0, 1: // LANE IS EMPTY or single watch time.
+      ;
+  2:
+  BEGIN
+    count := 0;
+    // Loop through the times to find the valid ones
+    for I := 1 to 3 do
+    begin
+      if IsValid[I] then
+      begin
+        if Count = 0 then
+        begin
+          t1 := TimeOf(Times[I]);
+          indx1 := I;
+        end
+        else if Count = 1 then
+        begin
+          t2 := TimeOf(Times[I]);
+          indx2 := I;
+          // Calculate deviation between the two valid times
+          Gap := MilliSecondsBetween(t1, t2);
+          // Check if the deviation is acceptable
+          if Gap >= fAccptDevMsec then
+          begin
+            // Invalidate both times if deviation is too high
+            isValid[indx1] := False;
+            isValid[indx2] := False;
+            CountOfValid := CountOfValid - 2;
+          end;
+          Break; // Exit loop after processing the second valid time
+        end;
+        Inc(Count);
+      end;
+    end;
+  END;
+  3: ;
+  end;
+end;
+
+function TWatchTime.CnvSecToMsec(ASeconds: double): double;
+begin
+  if fAcceptedDeviation = 0 then fAcceptedDeviation := 0.3;
+  // Convert AcceptedDeviation from seconds to milliseconds
+  result := fAcceptedDeviation * 1000;
+end;
+
+constructor TWatchTime.Create(aVar1, aVar2, aVar3: variant);
+begin
+  inherited Create;
+  Times[1] := aVar1;
+  Times[2] := aVar2;
+  Times[3] := aVar3;
+  fAcceptedDeviation := 0;
+  CountOfValid := 0;
+end;
+
+destructor TWatchTime.Destroy;
+begin
+
+  inherited;
+end;
+
+function TWatchTime.LaneIsEmpty: boolean;
+var
+I: integer;
+begin
+  result := true;
+  for I := 1 to 3 do
+    if isValid[I] then
+    begin
+      result := false;
+      break;
+    end;
+end;
+
+procedure TWatchTime.Prepare(aAcceptedDeviation: double = 0);
+begin
+  fAcceptedDeviation := aAcceptedDeviation;
+  fAccptDevMsec := CnvSecToMsec(fAcceptedDeviation);
+  SortWatchTimes;
+  ValidateTimes;
+  if not LaneIsEmpty then
+    CheckDeviation;
+
+end;
+
+procedure TWatchTime.SortWatchTimes;
+var
+I, J: integer;
+TempTime: Variant;
+TempIndex: integer;
+begin
+  // Sort the Times array and keep the Indices array in sync
+  for i := 1 to 2 do
+  begin
+    for j := i + 1 to 3 do
+    begin
+      if Times[i] > Times[j] then
+      begin
+        // Swap Times
+        TempTime := Times[i];
+        Times[i] := Times[j];
+        Times[j] := TempTime;
+
+        // Swap corresponding Indices
+        TempIndex := Indices[i];
+        Indices[i] := Indices[j];
+        Indices[j] := TempIndex;
+      end;
+    end;
+  end;
+end;
+
+procedure TWatchTime.SyncData(ADataSet: TDataSet);
+var
+rt: variant;
+begin
+  ADataSet.Edit;
+  try
+    ADataSet.FieldByName('LaneIsEmpty').AsBoolean := LaneIsEmpty;
+    ADataSet.FieldByName('T1A').AsBoolean := IsValid[Indices[1]];
+    ADataSet.FieldByName('T2A').AsBoolean := IsValid[Indices[2]];
+    ADataSet.FieldByName('T3A').AsBoolean := IsValid[Indices[3]];
+    rt := CalcRaceTimeAuto;
+    if LaneIsEmpty then
+      ADataSet.FieldByName('RaceTimeA').Clear
+    else
+      ADataSet.FieldByName('RaceTimeA').AsDateTime := TimeOf(rt);
+
+    ADataSet.Post;
+  except on E: Exception do
+    ADataSet.Cancel;
+  end;
+end;
+
+procedure TWatchTime.ValidateTimes;
+var
+I: Integer;
+begin
+  CountOfvalid := 0; // Initiate
+
+  for I := 1 to 3 do
+  begin
+    // Validate time and set isValidTime state.
+    isValid[I] := not (VarIsEmpty(Times[I]) or VarIsNull(Times[I]) or (Times[I] = 0));
+    // Increment CountOfvalid if the time is valid.
+    if isValid[I] then
+      Inc(CountOfvalid);
+  end;
+end;
 
 end.
