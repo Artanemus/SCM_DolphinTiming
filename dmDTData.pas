@@ -21,34 +21,34 @@ type
   dtPrecedence = (dtPrecHeader, dtPrecFileName);
   dtActiveRT = (artAutomatic, artManual, artUser, artSplit, artNone);
 
-
-
 type
-TWatchTime = class(TObject)
-private
-  Times: array[1..3] of variant; // Array to store the times (as Variants).
-  Indices: array[1..3] of Integer; // Array to store the original indices
-  IsValid: array[1..3] of boolean; // Array to store the validation
-  CountOfValid: integer; // Number of valid times .
-  fAcceptedDeviation, fAccptDevMsec: double;
-  function CnvSecToMsec(ASeconds: double): double;
-  function LaneIsEmpty: boolean;
-  procedure SortWatchTimes();
-  procedure ValidateTimes();
-  procedure CheckDeviation();
-protected
 
-public
-  constructor Create(aVar1, aVar2, aVar3: variant);
-  destructor Destroy; override;
-  procedure Prepare(aAcceptedDeviation: double = 0);
-  function CalcRaceTimeAuto(): Variant;
-  procedure SyncData(ADataSet: TDataSet);
+  TWatchTime = class(TObject)
+  private
+    Times: array[1..3] of variant; // Array to store the times (as Variants).
+    Indices: array[1..3] of Integer; // Array to store the original indices
+    IsValid: array[1..3] of boolean; // Array to store the validation
+    fCountOfValid: integer;
+    fAcceptedDeviation, fAccptDevMsec: double;
+    fCalcRTMethod: integer;
+    function CnvSecToMsec(ASeconds: double): double;
+    function LaneIsEmpty: boolean;
+    function IsValidWatchTime(ATime: variant): boolean;
+    function CalcAvgWatchTime(): variant;
+    procedure SortWatchTimes();
+    procedure ValidateWatchTimes;
+    procedure CheckDeviation();
+    procedure LoadFromSettings();
+  protected
 
-published
-  property AcceptedDeviation: double read FAcceptedDeviation write FAcceptedDeviation;
+  public
+    constructor Create(aVar1, aVar2, aVar3: variant);
+    destructor Destroy; override;
+    procedure Prepare();
+    function CalcRaceTimeAuto(): Variant;
+    procedure SyncData(ADataSet: TDataSet);
 
-end;
+  end;
 
   TDTData = class(TDataModule)
     dsDTEntrant: TDataSource;
@@ -106,8 +106,6 @@ end;
     msgHandle: HWND;  // TForm.dtfrmExec ...
     function GetSCMActiveSessionID: integer;
     procedure DeActivateDataSCM();
-    function CalcRaceTimeA_dev3(ADataSet: TDataSet; AcceptedDeviation: double; out
-        indx: Integer): Integer;
 
   public
     procedure ActivateDataDT();
@@ -209,7 +207,7 @@ implementation
 
 {$R *.dfm}
 
-uses System.Variants, System.DateUtils;
+uses System.Variants, System.DateUtils, dtuSetting;
 
 
 procedure TDTData.ActivateDataDT;
@@ -557,334 +555,17 @@ begin
 
 end;
 
-function TDTData.CalcRaceTimeA_dev3(ADataSet: TDataSet; AcceptedDeviation:
-    double; out indx: Integer): Integer;
-var
-  Times: array[1..3] of TTime;    // Array to store the times
-  Indices: array[1..3] of Integer; // Array to store the original indices
-  i, j, TempIndex: Integer;
-  TempTime: TTime;
-  Gap1, Gap2, AcceptedDeviationMs: Double;
-  FieldNameStr: string;
-begin
-  result := 0;
-  indx := 0;
-  // Populate the Times array and track their original indices
-  Times[1] := TimeOf(DTData.tblDTEntrant.FieldByName('Time1').AsDateTime);
-  Times[2] := TimeOf(DTData.tblDTEntrant.FieldByName('Time2').AsDateTime);
-  Times[3] := TimeOf(DTData.tblDTEntrant.FieldByName('Time3').AsDateTime);
-
-  Indices[1] := 1;
-  Indices[2] := 2;
-  Indices[3] := 3;
-
-    // Convert AcceptedDeviation from seconds to milliseconds
-  AcceptedDeviationMs := AcceptedDeviation * 1000;
-
-  // Sort the Times array and keep the Indices array in sync
-  for i := 1 to 2 do
-  begin
-    for j := i + 1 to 3 do
-    begin
-      if Times[i] > Times[j] then
-      begin
-        // Swap Times
-        TempTime := Times[i];
-        Times[i] := Times[j];
-        Times[j] := TempTime;
-
-        // Swap corresponding Indices
-        TempIndex := Indices[i];
-        Indices[i] := Indices[j];
-        Indices[j] := TempIndex;
-      end;
-    end;
-  end;
-
-  // After sorting:
-  // Times[1], Times[2], Times[3] = MinTime, MidTime, MaxTime
-  // Indices[1], Indices[2], Indices[3] = Original indices of MinTime, MidTime, MaxTime
-  Gap1 := MilliSecondsBetween(Times[2], Times[1]); // MidTime - MinTime
-  Gap2 := MilliSecondsBetween(Times[3], Times[2]); // MaxTime - MidTime
-
-  // Check deviations and resolve the likely issue back to the original field name
-  if (Gap1 > AcceptedDeviationMs) and (Gap2 > AcceptedDeviationMs) then
-  begin
-    // Both deviations exceed the limit. Ambiguous issue.
-    result := -1;   indx := 0;
-  end
-  else if Gap1 > AcceptedDeviationMs then
-  begin
-    //    FieldNameStr := 'Time' + IntToStr(Indices[1]); //
-    // Illegal deviation detected. Likely issue with MinTime index
-    result := 1; indx := Indices[1];
-  end
-  else if Gap2 > AcceptedDeviationMs then
-  begin
-    //    FieldNameStr := 'Time' + IntToStr(Indices[3]); //
-    // Illegal deviation detected. Likely issue with MaxTime index
-    result := 2; indx := Indices[3];
-  end
-  else
-  begin
-    // All deviations are within the accepted range.
-    result := 0; indx := 0;
-  end;
-end;
-
-
 procedure TDTData.CalcRaceTimeA(ADataSet: TDataSet; AcceptedDeviation: double;
     CalcMethod: Integer);
 var
-  t, tot, AcceptedDeviationMs: TTime;
-  isValidTime: array[1..3] of boolean;
-  Times: array[1..3] of variant;
-
-  count, I, J: integer;
-  s: string;
-  CalcRaceTime, Gap: double;
-
-  indx1, indx2, indx: Integer;
-  t1, t2: TTime;
-  dev: TTime;
-  found: Integer;
-  v: variant;
-
+  wt: TWatchtime;
 begin
-  count := 0;
-  CalcRaceTime := 0.0;
-
-  { A TDateTime value is essentially a double, where the integer part is the
-      number of days and fraction is the time.
-    In a day there are 24*60*60 = 86400 seconds (SecsPerDay constant
-      declared in SysUtils) so to get AcceptedDeviation (given in seconds)
-      as TDateTime do:
-  }
-  // Convert AcceptedDeviation from seconds to milliseconds
-  AcceptedDeviationMs := AcceptedDeviation * 1000;
-
-    // Populate the Times array and track their original indices
-  Times[1] := ADataSet.FieldByName('Time1').AsVariant;
-  Times[2] := ADataSet.FieldByName('Time2').AsVariant;
-  Times[3] := ADataSet.FieldByName('Time3').AsVariant;
-
-  count := 0; // Init count
-  for I := 1 to 3 do
-  begin
-    // Validate time and set isValidTime state.
-    isValidTime[I] := not (VarIsEmpty(Times[I]) or VarIsNull(Times[I]) or (Times[I] = 0));
-    // Increment count if the time is valid.
-    if isValidTime[I] then
-      Inc(count);
-  end;
-
-  ADataset.Edit;
-  try
-    for I := 1 to 3 do
-    begin
-      s := 'T' + IntToStr(I) + 'A';
-      // store validation state for each watch time into [T1A, T2A, T3A].
-      ADataSet.FieldByName(s).AsBoolean := (isValidTime[I]);
-    end;
-    // initalise the LaneIsEmpty...
-    ADataSet.FieldByName('LaneIsEmpty').AsBoolean := false;
-    ADataSet.Post;
-    except
-        ADataSet.Cancel;
-        raise;
-  end;
-
-  {
-
-- A. If there is one watch per lane, that time will also be placed in
-  'racetime'.
-
-- B. If there are two watches for a given lane, the average will be
-  computed and placed in 'racetime'.
-
-- C. If there are 3 watch times for a given lane, the middle time will be
-  placed in 'racetime'.
-
-  CASE B. NOTE:
-  If there is more than the 'Accepted Deviation' difference between the
-  two watch times, the average result time will NOT be computed and
-  warning icons will show for both watch times in this lane.
-  The 'RaceTime' will be empty.
-  Switch to manaul mode and select which time to use.
-  You are permitted to select both - in which case a average of the
-  two watch times is used in 'racetime' .
-  }
-
- {
-  - one watch per lane: deviation is 0.
-  - two watches per lane: deviation is the difference between the two.
-  - three watch per lane: deviation is the difference between the average of
-    the three watch times.
-  }
-
-  case count of
-    0:
-      begin
-        ADataSet.Edit;
-        ADataSet.FieldByName('RaceTimeA').Clear;
-        ADataSet.FieldByName('LaneIsEmpty').AsBoolean := true;
-        ADataSet.Post;
-        exit;
-      end;
-    1:
-      begin
-        for I := 1 to 3 do
-        begin
-          if isValidTime[I] then
-          begin
-            if VarType(Times[I]) = varDate then // Ensure Times[I] is a TDateTime
-            begin
-              CalcRaceTime := TimeOf(Times[I]);
-              Break;
-            end
-            else
-              raise Exception.Create('Invalid time format in Times[' + IntToStr(I) + ']');
-          end;
-        end;
-      end;
-    2:
-    begin
-      found := 0;
-      indx1 := 0;
-      indx2 := 0;
-      t1 := 0;
-      t2 := 0;
-
-      // Loop through the times to find the valid ones
-      for I := 1 to 3 do
-      begin
-        if isValidTime[I] then
-        begin
-          if found = 0 then
-          begin
-            t1 := TimeOf(Times[I]);
-            indx1 := I;
-          end
-          else if found = 1 then
-          begin
-            t2 := TimeOf(Times[I]);
-            indx2 := I;
-
-            // Calculate deviation between the two valid times
-            Gap := MilliSecondsBetween(t1, t2);
-
-            // Check if the deviation is acceptable
-            if Gap >= AcceptedDeviationMs then
-            begin
-              // Invalidate both times if deviation is too high
-              isValidTime[indx1] := False;
-              isValidTime[indx2] := False;
-              CalcRaceTime := 0;
-            end
-            else
-            begin
-              // Calculate the average time if deviation is acceptable
-              CalcRaceTime := (t1 + t2) / 2;
-            end;
-
-            Break; // Exit loop after processing the second valid time
-          end;
-
-          Inc(found);
-        end;
-      end;
-
-      // Handle the case where fewer than two valid times were found.
-      if found < 2 then
-      begin
-        // Handle case: not exactly two valid times available
-        // e.g., show a message, set CalcRaceTime to 0, etc.
-        CalcRaceTime := 0; // Example action
-      end;
-    end;
-
-    3:
-    begin
-      tot := 0;
-      if CalcMethod = 1 then
-      begin
-        j := CalcRaceTimeA_dev3(ADataSet, AcceptedDeviation, indx);
-        case j of
-        -1:
-          begin
-            // Ambiguous issue.  invalidate all.
-            ADataset.Edit;
-            ADataSet.FieldByName('T1A').AsBoolean := false;
-            ADataSet.FieldByName('T2A').AsBoolean := false;
-            ADataSet.FieldByName('T3A').AsBoolean := false;
-            ADataSet.Post;
-          end;
-        0:
-          ; // PASSED.
-        1,2:
-          begin
-            // Likely issue with MinTime index.
-            // Likely issue with MaxTime index.
-            s := 'T' + IntToStr(indx) + 'A';
-            ADataset.Edit;
-            ADataSet.FieldByName(s).AsBoolean := false;
-            ADataSet.Post;
-          end;
-        end;
-
-      end;
-
-      // RE-EVALUATE the number of valid timecodes...
-      count := 0; // Init count
-      for I := 1 to 3 do
-      begin
-        // Validate time and set isValidTime state.
-        s := 'T' + IntToStr(indx) + 'A';
-        isValidTime[I] := ADataSet.FieldByName(s).AsBoolean;
-        // Increment count if the time is valid.
-        if isValidTime[I] then
-          Inc(count);
-      end;
-
-      if Count = 3 then
-      begin
-        // Sort the times array
-        var temp: TTime;
-        for I := 1 to 2 do
-          for J := I + 1 to 3 do
-            if times[I] > times[J] then
-            begin
-              temp := times[I];
-              times[I] := times[J];
-              times[J] := temp;
-            end;
-
-        // The middle time is the second element in the sorted array
-        CalcRaceTime := times[2];
-      end
-      else if Count = 2 then
-      begin
-        // find the average of the two times..
-      end;
-
-    end;
-  end;
-
-  // Write out database values (tblDTEntrant)
-  // calculated deviation and if TimeKeeper's stopwatch time is to be enabled.
-  ADataSet.Edit;
-  try
-    // Convert msec to TTime.
-    if (CalcRaceTime <> 0) then
-      ADataSet.FieldByName('RaceTimeA').AsDateTime := CalcRaceTime
-    else
-      ADataSet.FieldByName('RaceTimeA').Clear;
-    ADataSet.Post;
-  except
-    ADataSet.Cancel;
-    raise;
-  end;
-
+  wt := TWatchTime.Create(ADataSet.FieldByName('Time1').AsVariant,
+                ADataSet.FieldByName('Time2').AsVariant,
+                ADataSet.FieldByName('Time3').AsVariant);
+  wt.Prepare;
+  wt.SyncData(ADataSet);
+  wt.free;
 end;
 
 procedure TDTData.CalcRaceTimeM(ADataSet: TDataSet);
@@ -1829,21 +1510,68 @@ begin
   tblDTNoodle.SaveToFile(s + 'DTNoodle.fsBinary', sfXML);
 end;
 
-
-
 { TWatchTime }
+
+function TWatchTime.CalcAvgWatchTime: variant;
+var
+  I, C: Integer;
+  t: variant;
+begin
+  // call ValidateWatchTimes prior to calling here.
+  t := 0;
+  c := 0;
+  for I := 1 to 3 do
+  begin
+    if IsValid[I] then
+    begin
+      t := t + Times[I];
+      inc(c);
+    end;
+  end;
+  if c > 0 then
+    result := t / c
+  else
+    result := 0;
+end;
 
 function TWatchTime.CalcRaceTimeAuto: Variant;
 var
 I: integer;
-v1, v2: variant;
 begin
+
+  {
+  RULES USED BY DOLPHIN TIMING METHOD. (DEFAULT).
+- A. If there is one watch per lane, that time will also be placed in
+  'racetime'.
+
+- B. If there are two watches for a given lane, the average will be
+  computed and placed in 'racetime'.
+
+- C. If there are 3 watch times for a given lane, the middle time will be
+  placed in 'racetime'.
+
+  CASE B. NOTE:
+  If there is more than the 'Accepted Deviation' difference between the
+  two watch times, the average result time will NOT be computed and
+  warning icons will show for both watch times in this lane.
+  The 'RaceTime' will be empty.
+  Switch to manaul mode and select which time to use.
+  You are permitted to select both - in which case a average of the
+  two watch times is used in 'racetime' .
+
+  }
+  {
+    RULES USED BY SWIMCLUBMEET METHOD.
+    The average is always used - for 2x or 3x watch-times.
+    Deviation between 3xwatch-times is always checked and swimclubmeet may
+    concluded that all watch-times should be dropped!
+  }
 
   result := null;
 
-  case CountOfValid of
+  case fCountOfValid of
   0:
-    result := null;
+    ;
   1:
     BEGIN
       for I := 1 to 3 do
@@ -1854,31 +1582,17 @@ begin
         end;
     END;
   2:
-    BEGIN
-      var count := 0;
-      // Loop through the times to find the valid ones
-      for I := 1 to 3 do
-      begin
-        if IsValid[I] then
-        begin
-          if Count = 0 then
-            v1 := Times[I]
-          else if Count = 1 then
-          begin
-            v2 := Times[I];
-            // calculate the average of the two times.
-            result := (v1 + v2)/2.0;
-            Break; // Exit loop after processing the second valid time
-          end;
-          Inc(Count);
-        end;
-      end;
-    END;
+      result := CalcAvgWatchTime;
   3:
     BEGIN
-      if IsValid[2] then
-        // The middle time is the second element in the sorted array
-        result := times[2];
+      if (fCalcRTMethod = 0) then
+      begin
+        if IsValid[2] then
+          // The middle time is the second element in the sorted array
+          result := times[2];
+      end
+      else
+        result := CalcAvgWatchTime;
     END
   END;
 
@@ -1886,52 +1600,98 @@ end;
 
 procedure TWatchTime.CheckDeviation;
 var
-I,indx1, indx2, Count: integer;
+I,indx1, Count: integer;
 t1, t2: TTime;
-Gap: double;
+GapA, GapB: double;
 begin
-  case CountOfValid of
-  0, 1: // LANE IS EMPTY or single watch time.
+  // prior to calling here do SortWatchTimes and ValidWatchTimes ...
+
+  case fCountOfValid of
+  0: // LANE IS EMPTY
       ;
+  1: // Single watch time.
+    ;
   2:
-  BEGIN
-    count := 0;
-    // Loop through the times to find the valid ones
-    for I := 1 to 3 do
-    begin
-      if IsValid[I] then
+    BEGIN
+      count := 0;
+      indx1 :=0;
+      t1:=0;
+      // Loop through array to find the 2 valid watch time
+      for I := 1 to 3 do
       begin
-        if Count = 0 then
+        if IsValid[I] then
         begin
-          t1 := TimeOf(Times[I]);
-          indx1 := I;
-        end
-        else if Count = 1 then
-        begin
-          t2 := TimeOf(Times[I]);
-          indx2 := I;
-          // Calculate deviation between the two valid times
-          Gap := MilliSecondsBetween(t1, t2);
-          // Check if the deviation is acceptable
-          if Gap >= fAccptDevMsec then
+          if Count = 0 then
           begin
-            // Invalidate both times if deviation is too high
-            isValid[indx1] := False;
-            isValid[indx2] := False;
-            CountOfValid := CountOfValid - 2;
-          end;
-          Break; // Exit loop after processing the second valid time
+            t1 := TimeOf(Times[I]);
+            indx1 := I;
+          end
+          else if Count = 1 then
+          begin
+            t2 := TimeOf(Times[I]);
+            // Calculate deviation between the two valid times
+            GapA := MilliSecondsBetween(t1, t2);
+            // Check if the deviation is acceptable
+            if GapA >= fAccptDevMsec then
+            begin
+              // Invalidate both times if deviation is too high
+              isValid[indx1] := False;
+              isValid[I] := False;
+              fCountOfValid := fCountOfValid - 2;
+            end;
+            break;
+            Inc(Count);
+          end
         end;
-        Inc(Count);
       end;
-    end;
-  END;
-  3: ;
+      // recount
+    END;
+
+    3:
+    BEGIN
+      { Dolphin Timing doesn't consider check deviation on 3xwatch-times
+        and instead picks the middle watch time.
+      }
+      if (fCalcRTMethod = 1) then
+      Begin
+        // Calculate deviation between the two valid times
+        GapA := MilliSecondsBetween(Times[2], Times[1]);
+        // Calculate deviation between the two valid times
+        GapB := MilliSecondsBetween(Times[3],Times[2]);
+        // Check if the deviation is acceptable
+        if (GapA >= fAccptDevMsec) AND (GapB >= fAccptDevMsec) then
+        begin
+          // Both deviations exceed the limit. Ambiguous issue.
+          isValid[1] := False;
+          isValid[2] := False;
+          isValid[3] := False;
+          fCountOfValid := 0;
+        end
+        else if (GapA >= fAccptDevMsec) then
+        begin
+          // Illegal deviation detected. Likely issue with MinTime index
+          isValid[1] := False;
+          fCountOfValid := fCountOfValid - 1;
+        end
+        else if (GapB >= fAccptDevMsec) then
+        begin
+          // Illegal deviation detected. Likely issue with MinTime index
+          isValid[2] := False;
+          fCountOfValid := fCountOfValid - 1;
+        end;
+      End;
+    END;
   end;
 end;
 
 function TWatchTime.CnvSecToMsec(ASeconds: double): double;
 begin
+  { A TDateTime value is essentially a double, where the integer part is the
+      number of days and fraction is the time.
+    In a day there are 24*60*60 = 86400 seconds (SecsPerDay constant
+      declared in SysUtils) so to get AcceptedDeviation (given in seconds)
+      as TDateTime do:
+  }
   if fAcceptedDeviation = 0 then fAcceptedDeviation := 0.3;
   // Convert AcceptedDeviation from seconds to milliseconds
   result := fAcceptedDeviation * 1000;
@@ -1944,13 +1704,18 @@ begin
   Times[2] := aVar2;
   Times[3] := aVar3;
   fAcceptedDeviation := 0;
-  CountOfValid := 0;
+  fCountOfValid := 0;
 end;
 
 destructor TWatchTime.Destroy;
 begin
 
   inherited;
+end;
+
+function TWatchTime.IsValidWatchTime(ATime: variant): boolean;
+begin
+  result := not (VarIsEmpty(ATime) or VarIsNull(ATime) or (ATime = 0));
 end;
 
 function TWatchTime.LaneIsEmpty: boolean;
@@ -1966,15 +1731,28 @@ begin
     end;
 end;
 
-procedure TWatchTime.Prepare(aAcceptedDeviation: double = 0);
+procedure TWatchTime.LoadFromSettings;
 begin
-  fAcceptedDeviation := aAcceptedDeviation;
+  if Settings <> nil then
+  begin
+    fAcceptedDeviation := Settings.DolphinAcceptedDeviation;
+    fCalcRTMethod := Settings.DolphinCalcRTMethod;
+  end
+  else
+  begin
+    fAcceptedDeviation := 0.3;
+    fCalcRTMethod := 0; // default - Dolphin Timing Method.
+  end;
+end;
+
+procedure TWatchTime.Prepare();
+begin
+  LoadFromSettings; // loads the accepted deviation gap for watch times.
   fAccptDevMsec := CnvSecToMsec(fAcceptedDeviation);
   SortWatchTimes;
-  ValidateTimes;
+  ValidateWatchTimes;
   if not LaneIsEmpty then
     CheckDeviation;
-
 end;
 
 procedure TWatchTime.SortWatchTimes;
@@ -1982,6 +1760,7 @@ var
 I, J: integer;
 TempTime: Variant;
 TempIndex: integer;
+TempValid: boolean;
 begin
   // Sort the Times array and keep the Indices array in sync
   for i := 1 to 2 do
@@ -1999,6 +1778,11 @@ begin
         TempIndex := Indices[i];
         Indices[i] := Indices[j];
         Indices[j] := TempIndex;
+
+        // Swap corresponding IsValid state. (boolean)
+        TempValid := IsValid[i];
+        IsValid[i] := IsValid[j];
+        IsValid[j] := TempValid;
       end;
     end;
   end;
@@ -2026,19 +1810,18 @@ begin
   end;
 end;
 
-procedure TWatchTime.ValidateTimes;
+procedure TWatchTime.ValidateWatchTimes;
 var
 I: Integer;
 begin
-  CountOfvalid := 0; // Initiate
-
+  fCountOfValid := 0; // Initiate
   for I := 1 to 3 do
   begin
-    // Validate time and set isValidTime state.
-    isValid[I] := not (VarIsEmpty(Times[I]) or VarIsNull(Times[I]) or (Times[I] = 0));
-    // Increment CountOfvalid if the time is valid.
+    // Validate time and set IsValidWatchTime state.
+    isValid[I] := IsValidWatchTime(Times[I]);
+    // Increment fCountOfValid if the time is valid.
     if isValid[I] then
-      Inc(CountOfvalid);
+      Inc(fCountOfValid);
   end;
 end;
 
