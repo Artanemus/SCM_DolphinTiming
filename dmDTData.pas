@@ -28,13 +28,16 @@ type
     Times: array[1..3] of variant; // Array to store the times (as Variants).
     Indices: array[1..3] of Integer; // Array to store the original indices
     IsValid: array[1..3] of boolean; // Array to store the validation
-    fCountOfValid: integer;
+    DevOk: array[1..2] of boolean; // Array to store min-mid, mid-max deviations
     fAcceptedDeviation, fAccptDevMsec: double;
     fCalcRTMethod: integer;
+    fRaceTime: variant;
+
     function CnvSecToMsec(ASeconds: double): double;
     function LaneIsEmpty: boolean;
     function IsValidWatchTime(ATime: variant): boolean;
     function CalcAvgWatchTime(): variant;
+    function CalcRaceTime: Variant;
     procedure SortWatchTimes();
     procedure ValidateWatchTimes;
     procedure CheckDeviation();
@@ -45,7 +48,6 @@ type
     constructor Create(aVar1, aVar2, aVar3: variant);
     destructor Destroy; override;
     procedure Prepare();
-    function CalcRaceTimeAuto(): Variant;
     procedure SyncData(ADataSet: TDataSet);
 
   end;
@@ -499,15 +501,24 @@ begin
   tblDTEntrant.FieldDefs.Add('Time3', ftTime);  // timekeeper 3.
 
   // dtManual - store flip/flop.
+  // The watch time is enabled (true) - is disabled (false).
   tblDTEntrant.FieldDefs.Add('T1M', ftBoolean);
   tblDTEntrant.FieldDefs.Add('T2M', ftBoolean);
   tblDTEntrant.FieldDefs.Add('T3M', ftBoolean);
 
   // dtAutomatic - store flip/flop.
+  // The watch time is valid  (true).
   // SET on load of DT file (DO3 .. DO4). Read only.
   tblDTEntrant.FieldDefs.Add('T1A', ftBoolean);
   tblDTEntrant.FieldDefs.Add('T2A', ftBoolean);
   tblDTEntrant.FieldDefs.Add('T3A', ftBoolean);
+
+  // Deviation - store flip/flop.
+  // The watch time is within accepted deviation (true).
+  // Only 2xfields Min-Mid, Mid-Max
+  // SET on load of DT file (DO3 .. DO4). Read only.
+  tblDTEntrant.FieldDefs.Add('TDev1', ftBoolean);
+  tblDTEntrant.FieldDefs.Add('TDev2', ftBoolean);
 
   // Dolphin timing (dtfiletype dtDO4) stores MAX 10 splits.
   tblDTEntrant.FieldDefs.Add('Split1', ftTime); // DO4.
@@ -1534,9 +1545,10 @@ begin
     result := 0;
 end;
 
-function TWatchTime.CalcRaceTimeAuto: Variant;
+function TWatchTime.CalcRaceTime: Variant;
 var
-I: integer;
+I, count: integer;
+
 begin
 
   {
@@ -1568,8 +1580,11 @@ begin
   }
 
   result := null;
+  count := 0;
+  for I := 1 to 3 do
+    if IsValid[I] then inc(count);
 
-  case fCountOfValid of
+  case count of
   0:
     ;
   1:
@@ -1577,22 +1592,33 @@ begin
       for I := 1 to 3 do
         if IsValid[I] then
         begin
-          result := Times[I];
+          result := Times[I]; // NOTE: deviation is ignored.
           break;
         end;
     END;
   2:
+    // if deviation is within accepted value.
+    if DevOk[1] then
       result := CalcAvgWatchTime;
   3:
     BEGIN
+      // DOLPHIN TIMING RULES - use mid watch-time.
       if (fCalcRTMethod = 0) then
       begin
         if IsValid[2] then
           // The middle time is the second element in the sorted array
           result := times[2];
       end
+      // SwimClubMeet RULES - assert deviation and find use average.
       else
-        result := CalcAvgWatchTime;
+      begin
+        if DevOk[1] and DevOk[2] then
+          result := CalcAvgWatchTime
+        else if DevOk[1] then
+          result := (Times[1]+Times[2])/2.0
+        else if DevOk[2] then
+          result := (Times[2]+Times[3])/2.0;
+      end;
     END
   END;
 
@@ -1600,51 +1626,48 @@ end;
 
 procedure TWatchTime.CheckDeviation;
 var
-I,indx1, Count: integer;
+I, j, count: integer;
 t1, t2: TTime;
 GapA, GapB: double;
 begin
-  // prior to calling here do SortWatchTimes and ValidWatchTimes ...
+  // prior to calling here call SortWatchTimes ... ValidWatchTimes ...
+  count := 0;
+  // reset accepted deviation state;
+  for I := 1 to 3 do
+    if IsValid[I] then inc(count);
 
-  case fCountOfValid of
-  0: // LANE IS EMPTY
-      ;
-  1: // Single watch time.
-    ;
+  DevOk[1] := false;
+  DevOk[2] := false;
+
+  case count of
+  0, 1: // LANE IS EMPTY or Single watch time.
+    ; // there is no deviation gap to calculate.
   2:
     BEGIN
-      count := 0;
-      indx1 :=0;
+      j := 0;
       t1:=0;
-      // Loop through array to find the 2 valid watch time
+      // Loop through array to find the 2 valid watch times.
       for I := 1 to 3 do
       begin
         if IsValid[I] then
         begin
-          if Count = 0 then
+          if j = 0 then
           begin
             t1 := TimeOf(Times[I]);
-            indx1 := I;
           end
-          else if Count = 1 then
+          else if j = 1 then
           begin
             t2 := TimeOf(Times[I]);
             // Calculate deviation between the two valid times
             GapA := MilliSecondsBetween(t1, t2);
             // Check if the deviation is acceptable
-            if GapA >= fAccptDevMsec then
-            begin
-              // Invalidate both times if deviation is too high
-              isValid[indx1] := False;
-              isValid[I] := False;
-              fCountOfValid := fCountOfValid - 2;
-            end;
+            if GapA <= fAccptDevMsec then
+              DevOk[1] := true;
             break;
-            Inc(Count);
-          end
+          end;
+          Inc(j);
         end;
       end;
-      // recount
     END;
 
     3:
@@ -1652,33 +1675,28 @@ begin
       { Dolphin Timing doesn't consider check deviation on 3xwatch-times
         and instead picks the middle watch time.
       }
+      if (fCalcRTMethod = 0) then
+      Begin
+      End;
       if (fCalcRTMethod = 1) then
       Begin
         // Calculate deviation between the two valid times
         GapA := MilliSecondsBetween(Times[2], Times[1]);
         // Calculate deviation between the two valid times
         GapB := MilliSecondsBetween(Times[3],Times[2]);
+
         // Check if the deviation is acceptable
         if (GapA >= fAccptDevMsec) AND (GapB >= fAccptDevMsec) then
         begin
           // Both deviations exceed the limit. Ambiguous issue.
-          isValid[1] := False;
-          isValid[2] := False;
-          isValid[3] := False;
-          fCountOfValid := 0;
+          ;
         end
-        else if (GapA >= fAccptDevMsec) then
-        begin
-          // Illegal deviation detected. Likely issue with MinTime index
-          isValid[1] := False;
-          fCountOfValid := fCountOfValid - 1;
-        end
-        else if (GapB >= fAccptDevMsec) then
-        begin
-          // Illegal deviation detected. Likely issue with MinTime index
-          isValid[2] := False;
-          fCountOfValid := fCountOfValid - 1;
-        end;
+        else if (GapA <= fAccptDevMsec) then
+          // If false - likely issue with MinTime index
+          DevOk[1] := true
+        else if (GapB <= fAccptDevMsec) then
+          // If false - likely issue with MaxTime index
+          DevOk[2] := true;
       End;
     END;
   end;
@@ -1703,8 +1721,16 @@ begin
   Times[1] := aVar1;
   Times[2] := aVar2;
   Times[3] := aVar3;
+  Indices[1] := 1;
+  Indices[2] := 2;
+  Indices[3] := 3;
+  DevOk[1] := false;
+  DevOk[2] := false;
+  IsValid[1] := false;
+  IsValid[2] := false;
+  IsValid[3] := false;
   fAcceptedDeviation := 0;
-  fCountOfValid := 0;
+  fRaceTime := null;
 end;
 
 destructor TWatchTime.Destroy;
@@ -1723,6 +1749,7 @@ var
 I: integer;
 begin
   result := true;
+  ValidateWatchTimes;
   for I := 1 to 3 do
     if isValid[I] then
     begin
@@ -1751,8 +1778,8 @@ begin
   fAccptDevMsec := CnvSecToMsec(fAcceptedDeviation);
   SortWatchTimes;
   ValidateWatchTimes;
-  if not LaneIsEmpty then
-    CheckDeviation;
+  CheckDeviation;
+  CalcRaceTime;
 end;
 
 procedure TWatchTime.SortWatchTimes;
@@ -1760,7 +1787,7 @@ var
 I, J: integer;
 TempTime: Variant;
 TempIndex: integer;
-TempValid: boolean;
+TempBool: boolean;
 begin
   // Sort the Times array and keep the Indices array in sync
   for i := 1 to 2 do
@@ -1773,24 +1800,21 @@ begin
         TempTime := Times[i];
         Times[i] := Times[j];
         Times[j] := TempTime;
-
         // Swap corresponding Indices
         TempIndex := Indices[i];
         Indices[i] := Indices[j];
         Indices[j] := TempIndex;
-
         // Swap corresponding IsValid state. (boolean)
-        TempValid := IsValid[i];
+        TempBool := IsValid[i];
         IsValid[i] := IsValid[j];
-        IsValid[j] := TempValid;
+        IsValid[j] := TempBool;
       end;
     end;
   end;
 end;
 
 procedure TWatchTime.SyncData(ADataSet: TDataSet);
-var
-rt: variant;
+
 begin
   ADataSet.Edit;
   try
@@ -1798,11 +1822,14 @@ begin
     ADataSet.FieldByName('T1A').AsBoolean := IsValid[Indices[1]];
     ADataSet.FieldByName('T2A').AsBoolean := IsValid[Indices[2]];
     ADataSet.FieldByName('T3A').AsBoolean := IsValid[Indices[3]];
-    rt := CalcRaceTimeAuto;
+    // deviation status min-mid.
+    ADataSet.FieldByName('TDev1').AsBoolean := DevOk[Indices[1]];
+    // deviation status mid-max.
+    ADataSet.FieldByName('TDev2').AsBoolean := DevOk[Indices[2]];
     if LaneIsEmpty then
       ADataSet.FieldByName('RaceTimeA').Clear
     else
-      ADataSet.FieldByName('RaceTimeA').AsDateTime := TimeOf(rt);
+      ADataSet.FieldByName('RaceTimeA').AsDateTime := TimeOf(fRaceTime);
 
     ADataSet.Post;
   except on E: Exception do
@@ -1814,14 +1841,10 @@ procedure TWatchTime.ValidateWatchTimes;
 var
 I: Integer;
 begin
-  fCountOfValid := 0; // Initiate
   for I := 1 to 3 do
   begin
     // Validate time and set IsValidWatchTime state.
     isValid[I] := IsValidWatchTime(Times[I]);
-    // Increment fCountOfValid if the time is valid.
-    if isValid[I] then
-      Inc(fCountOfValid);
   end;
 end;
 

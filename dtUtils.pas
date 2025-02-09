@@ -744,22 +744,34 @@ begin
     begin
       if (fTimeKeepers[k] = 0) then
       begin
+        // The user's manual watch-time is disabled.
         s := Format('T%dM', [k + 1]);
         DTData.tblDTEntrant.fieldbyName(s).AsBoolean := false;
+        // Initialize - The Automatic watch-time is invalid.
         s := Format('T%dA', [k + 1]);
         DTData.tblDTEntrant.fieldbyName(s).AsBoolean := false;
         DTData.tblDTEntrant.fieldbyName(s).Clear;
       end
       else
       begin
+        // The user's manual watch-time is enabled.
         s := Format('T%dM', [k + 1]);
         DTData.tblDTEntrant.fieldbyName(s).AsBoolean := true;
+        // Initialize - The Automatic watch-time is valid.
+        // (vertified later in procedure)
         s := Format('T%dA', [k + 1]);
         DTData.tblDTEntrant.fieldbyName(s).AsBoolean := true;
+        // Place watch-time in manual time field.
         s := Format('Time%d', [k + 1]);
         DTData.tblDTEntrant.fieldbyName(s).AsDateTime := TimeOf(fTimeKeepers[k]);
       end;
     end;
+
+    // D e v i a t i o n  --- initialization
+    // The watch-times, min-mid and mid-max, are within accepted deviation.
+    // (verified later in procedure)
+    DTData.tblDTEntrant.fieldbyName('TDev1').AsBoolean := true;
+    DTData.tblDTEntrant.fieldbyName('TDev2').AsBoolean := true;
 
     // gather up the timekeepers 1-3 recorded race times for this lane.
     sListBodySplits(I, fSplits);
@@ -778,8 +790,10 @@ begin
       fAcceptedDeviation := 0.3; // Dolphin Timing's default.
 
     // Cacluate RaceTimeA for the ActiveRT. (artAutomatic)
+    // AND verify deviaiton AND assert fields [T1A, T2A, T3A]
     DTData.CalcRaceTimeA(DTData.tblDTEntrant, fAcceptedDeviation, fCalcMode);
-    // Copy value to RaceTime.
+
+    // FINALLY place values into manual and automatic watch time fields.
     DTData.tblDTEntrant.Edit;
     DTData.tblDTEntrant.fieldbyName('RaceTime').AsVariant :=
       DTData.tblDTEntrant.fieldbyName('RaceTimeA').AsVariant;
