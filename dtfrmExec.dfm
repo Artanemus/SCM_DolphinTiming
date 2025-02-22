@@ -330,7 +330,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -915,7 +914,6 @@ object dtExec: TdtExec
         Font.Height = -16
         Font.Name = 'Segoe UI'
         Font.Style = []
-        GradientEndColor = 14079702
         GradientStartColor = 6445643
         Options = [goFixedHorzLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
         ParentCtl3D = False
@@ -1461,7 +1459,6 @@ object dtExec: TdtExec
       Color = clDimgray
       ParentBackground = False
       TabOrder = 3
-      Visible = False
       object stackpnlTool2: TStackPanel
         Left = 0
         Top = 84

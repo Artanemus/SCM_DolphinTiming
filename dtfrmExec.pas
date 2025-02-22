@@ -1074,8 +1074,8 @@ begin
   end;
 
 
-{$IFDEF DEBUG}
-  pnlTool2.Visible := true;
+{$IFNDEF DEBUG}
+  btnDataDebug.Visible := false;
 {$ENDIF}
 
   // Assert StatusBar params
@@ -1288,7 +1288,7 @@ begin
 
   // iterate DTData and assign a cell images if needed.
   // --------------------------------------------------
-  for j := DTgrid.FixedRows to DTGrid.RowCount do
+  for j := DTgrid.FixedRows to (DTGrid.RowCount-DTgrid.FixedRows) do
   begin
     // SYNC DTData record to DTGrid row.
     ADataSet.RecNo := j;
@@ -1464,7 +1464,7 @@ procedure TdtExec.UpdateCellIcons(ADataset: TDataSet; ARow: Integer; AActiveRT:
 var
 I: integer;
 s: string;
-b: boolean;
+b, b2: boolean;
 begin
 
   // SOURCE FOR GRID CELL IMAGES : DTData.vimglistDTCell.
@@ -1487,10 +1487,41 @@ begin
         begin
           s := 'T' + IntToStr(I - 2) + 'A';
           b := ADataSet.FieldByName(s).AsBoolean;
-          if not b then // disabled - place a cell icon.
+          // Empty, zero or bad race-time - display CROSS in BOX.
+          if (b = false) then
           begin
-              DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+              DTGrid.AddImageIdx(I, ARow, 5, TCellHAlign.haFull,
                 TCellVAlign.vaFull);
+          end;
+          { watch-time 1 :
+              If the time is valid but the deviation between min and mid_
+              is not acceptable then ...
+          }
+          if (I = 3)  then
+          begin
+            s := 'TDev1';
+            b2 := ADataSet.FieldByName(s).AsBoolean;
+            // Unacceptable deviation - display DEV,CROSS in BOX.
+            if b and b2 then
+            begin
+                DTGrid.AddImageIdx(I, ARow, 10, TCellHAlign.haFull,
+                  TCellVAlign.vaFull);
+            end;
+          end;
+          { watch-time 3 :
+              If the time is valid but the deviation between mid and max
+              is not acceptable then ...
+          }
+          if (I = 5)  then
+          begin
+            s := 'TDev2';
+            b2 := ADataSet.FieldByName(s).AsBoolean;
+            // Unacceptable deviation - display DEV,CROSS in BOX.
+            if b and b2 then
+            begin
+                DTGrid.AddImageIdx(I, ARow, 10, TCellHAlign.haFull,
+                  TCellVAlign.vaFull);
+            end;
           end;
         end;
       end;
@@ -1508,8 +1539,9 @@ begin
           begin
             s := 'T' + IntToStr(I - 2) + 'M';
             b := ADataSet.FieldByName(s).AsBoolean;
-            if (not b) then // disabled - place a cell icon.
-            begin  // update the cell's icon.
+            // Empty, zero or illegal watch time - display CROSS in BOX.
+            if (not b) then
+            begin
                 DTGrid.AddImageIdx(I, ARow, 6, TCellHAlign.haFull,
                   TCellVAlign.vaFull);
             end;
@@ -1521,14 +1553,14 @@ begin
     begin
       for I := 3 to 5 do
       begin
-        DTGrid.RemoveImageIdx(I, ARow);
-        s := 'Time' + IntToStr(I - 2);
+        dtGrid.RemoveImageIdx(i, ARow);
+      { s := 'Time' + IntToStr(I - 2);
         if ADataSet.FieldByName(s).IsNull then
-          continue;
+        continue;
         DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
-            TCellVAlign.vaFull);
+        TCellVAlign.vaFull); }
       end;
-      // USER MODE : display - cell pointer
+        // USER MODE : display - cell pointer
       DTGrid.AddImageIdx(7, ARow, 9, TCellHAlign.haAfterText, TCellVAlign.vaTop);
       DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'USER RT';
     end;
@@ -1537,10 +1569,8 @@ begin
       for I := 3 to 5 do
       begin
         DTGrid.RemoveImageIdx(I, ARow);
-        s := 'Time' + IntToStr(I - 2);
-        if ADataSet.FieldByName(s).IsNull then
-          continue;
-        DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+        // display small blue bug.
+        DTGrid.AddImageIdx(I, ARow, 11, TCellHAlign.haFull,
             TCellVAlign.vaFull);
       end;
       DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'SPLIT';
@@ -1550,10 +1580,8 @@ begin
       for I := 3 to 5 do
       begin
         DTGrid.RemoveImageIdx(I, ARow);
-        s := 'Time' + IntToStr(I - 2);
-        if ADataSet.FieldByName(s).IsNull then
-          continue;
-        DTGrid.AddImageIdx(I, ARow, 7, TCellHAlign.haFull,
+        // display red cross.
+        DTGrid.AddImageIdx(I, ARow, 8, TCellHAlign.haFull,
             TCellVAlign.vaFull);
       DTGrid.ColumnByFieldName['imgActiveRT'].Header := 'NONE';
       end;

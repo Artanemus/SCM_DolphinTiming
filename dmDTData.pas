@@ -1318,8 +1318,8 @@ begin
         tbldtSession.FieldByName('SessionNum').AsInteger then
           if qryEvent.FieldByName('EventNum').AsInteger =
           tbldtEvent.FieldByName('EventNum').AsInteger then
-            if qryEvent.FieldByName('HeatNum').AsInteger =
-            tbldtEvent.FieldByName('HeatNum').AsInteger then
+            if qryHeat.FieldByName('HeatNum').AsInteger =
+            tbldtHeat.FieldByName('HeatNum').AsInteger then
               IsSynced := true;
       end;
     dtPrecFileName:
@@ -1328,8 +1328,8 @@ begin
         tbldtSession.FieldByName('fnSessionNum').AsInteger then
           if qryEvent.FieldByName('EventNum').AsInteger =
           tbldtEvent.FieldByName('fnEventNum').AsInteger then
-            if qryEvent.FieldByName('HeatNum').AsInteger =
-            tbldtEvent.FieldByName('fnHeatNum').AsInteger then
+            if qryHeat.FieldByName('HeatNum').AsInteger =
+            tbldtHeat.FieldByName('fnHeatNum').AsInteger then
               IsSynced := true;
       end;
   end;
@@ -1741,7 +1741,11 @@ end;
 
 function TWatchTime.IsValidWatchTime(ATime: variant): boolean;
 begin
-  result := not (VarIsEmpty(ATime) or VarIsNull(ATime) or (ATime = 0));
+  result := false;
+  if VarIsEmpty(ATime) then exit;
+  if VarIsNull(ATime) then exit;
+  if (ATime = 0) then exit;
+  result := true;
 end;
 
 function TWatchTime.LaneIsEmpty: boolean;
@@ -1779,7 +1783,7 @@ begin
   SortWatchTimes;
   ValidateWatchTimes;
   CheckDeviation;
-  CalcRaceTime;
+  fRaceTime := CalcRaceTime;
 end;
 
 procedure TWatchTime.SortWatchTimes;
@@ -1814,22 +1818,40 @@ begin
 end;
 
 procedure TWatchTime.SyncData(ADataSet: TDataSet);
-
+var
+  I, J: integer;
 begin
   ADataSet.Edit;
   try
     ADataSet.FieldByName('LaneIsEmpty').AsBoolean := LaneIsEmpty;
-    ADataSet.FieldByName('T1A').AsBoolean := IsValid[Indices[1]];
-    ADataSet.FieldByName('T2A').AsBoolean := IsValid[Indices[2]];
-    ADataSet.FieldByName('T3A').AsBoolean := IsValid[Indices[3]];
+    for I := 1 to 3 do
+    begin
+      j := Indices[I];
+      case j of
+      1:
+        ADataSet.FieldByName('T1A').AsBoolean := IsValid[I];
+      2:
+        ADataSet.FieldByName('T2A').AsBoolean := IsValid[I];
+      3:
+        ADataSet.FieldByName('T3A').AsBoolean := IsValid[I];
+      end;
+    end;
+
     // deviation status min-mid.
-    ADataSet.FieldByName('TDev1').AsBoolean := DevOk[Indices[1]];
+    ADataSet.FieldByName('TDev1').AsBoolean := DevOk[1];
     // deviation status mid-max.
-    ADataSet.FieldByName('TDev2').AsBoolean := DevOk[Indices[2]];
+    ADataSet.FieldByName('TDev2').AsBoolean := DevOk[2];
+
     if LaneIsEmpty then
       ADataSet.FieldByName('RaceTimeA').Clear
     else
+    begin
+      fRaceTime := CalcRaceTime;
+      if VarIsNull(fRaceTime)  then
+        ADataSet.FieldByName('RaceTimeA').Clear
+      else
       ADataSet.FieldByName('RaceTimeA').AsDateTime := TimeOf(fRaceTime);
+    end;
 
     ADataSet.Post;
   except on E: Exception do
