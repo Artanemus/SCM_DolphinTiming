@@ -6,27 +6,27 @@ object SCM: TSCM
       'ConnectionDef=MSSQL_SwimClubMeet')
     Connected = True
     LoginPrompt = False
-    Left = 136
-    Top = 24
+    Left = 120
+    Top = 120
   end
   object tblSwimClub: TFDTable
     ActiveStoredUsage = [auDesignTime]
     Connection = scmConnection
     TableName = 'SwimClubMeet.dbo.SwimClub'
-    Left = 112
-    Top = 96
+    Left = 96
+    Top = 192
   end
   object dsSwimClub: TDataSource
     DataSet = tblSwimClub
-    Left = 208
-    Top = 96
+    Left = 192
+    Top = 192
   end
   object qrySCMSystem: TFDQuery
     ActiveStoredUsage = [auDesignTime]
     Connection = scmConnection
     SQL.Strings = (
       'SELECT * FROM SCMSystem WHERE SCMSystemID = 1;')
-    Left = 112
-    Top = 160
+    Left = 96
+    Top = 256
   end
 end
