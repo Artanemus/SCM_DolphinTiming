@@ -833,20 +833,19 @@ procedure TMain.actnReConstructTDResultFilesUpdate(Sender: TObject);
 var
 Passed: boolean;
 begin
-  passed := true;
-  if not Assigned(SCM) then passed := false;
-  if not Assigned(SCM.scmConnection) then passed := false;
-  if not SCM.scmConnection.Connected then passed := false;
-  if not Assigned(TDS) then passed := false;
-  if not SCM.DataIsActive then passed := false;
-
-  if passed then
-  begin
-    if not TAction(Sender).Enabled then
-      TAction(Sender).Enabled := true;
-  end
-  else
-      TAction(Sender).Enabled := false;
+	passed := true;
+	if not Assigned(SCM) then passed := false;
+	if not Assigned(SCM.scmConnection) then passed := false;
+	if not SCM.scmConnection.Connected then passed := false;
+	if not Assigned(TDS) then passed := false;
+	if not SCM.DataIsActive then passed := false;
+	if passed then
+	begin
+		if not TAction(Sender).Enabled then
+			TAction(Sender).Enabled := true;
+	end
+	else
+			TAction(Sender).Enabled := false;
 end;
 
 procedure TMain.actnRefreshExecute(Sender: TObject);
@@ -1865,9 +1864,11 @@ begin
 {$IFDEF DEBUG}
 	actnBuildTDTables.Visible := true;
 	actnTDTableViewer.Visible := true;
+	actnReConstructTDResultFiles.Visible := true;
 {$ELSE}
 	actnBuildTDTables.Visible := false;
 	actnTDTableViewer.Visible := false;
+	actnReConstructTDResultFiles.Visible := false;
 {$ENDIF}
 
 end;

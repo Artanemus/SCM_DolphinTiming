@@ -10609,13 +10609,11 @@ object Main: TMain
               end
               item
                 Action = actnSaveSession
-                Caption = 'S&ave SCM-TD Session ...'
                 ImageIndex = 1
                 ImageName = 'file_saveAlt'
               end
               item
                 Action = actnLoadSession
-                Caption = '&Load SCM-TD Session ...'
                 ImageIndex = 0
                 ImageName = 'file_open'
               end
@@ -10628,13 +10626,11 @@ object Main: TMain
             Items = <
               item
                 Action = actnSyncTD
-                Caption = '&Sync TD to SCM'
                 ImageIndex = 11
                 ImageName = 'arrow_back'
               end
               item
                 Action = actnSyncSCM
-                Caption = 'S&ync SCM to TD'
                 ImageIndex = 15
                 ImageName = 'arrow_forward'
               end
@@ -10688,13 +10684,11 @@ object Main: TMain
                 Items = <
                   item
                     Action = actnExportMeetProgram
-                    Caption = '&Export Time-Drops Meet Program ...'
                     ImageIndex = 1
                     ImageName = 'file_saveAlt'
                   end
                   item
                     Action = actnReConstructTDResultFiles
-                    Caption = '&Generate Time-Drops Results files  ...'
                     ImageIndex = 9
                     ImageName = 'build'
                   end>
@@ -10733,11 +10727,10 @@ object Main: TMain
               end
               item
                 Action = actnClearGrid
-                Caption = '&Clear the TimeDrops grid ...'
                 ImageIndex = 10
                 ImageName = 'scan'
               end>
-            Caption = 'T&imeDrops'
+            Caption = 'Dolphin'
           end
           item
             Items = <
@@ -10755,7 +10748,6 @@ object Main: TMain
               end
               item
                 Action = actnReportTD
-                Caption = '&Time Drops Report...'
                 ImageIndex = 12
                 ImageName = 'file_report'
               end>
@@ -10771,7 +10763,6 @@ object Main: TMain
               end
               item
                 Action = actnTDTableViewer
-                Caption = '&Inspect Time-Drops Tables ...'
                 ImageIndex = 12
                 ImageName = 'file_report'
               end
@@ -10780,7 +10771,6 @@ object Main: TMain
               end
               item
                 Action = actnBuildTDTables
-                Caption = '&Re-Build TimeDrops Tables ... '
                 ImageIndex = 3
                 ImageName = 'Settings'
               end>
@@ -10790,7 +10780,6 @@ object Main: TMain
             Items = <
               item
                 Action = actnAbout
-                Caption = '&About SCM TimeDrops ...'
                 ImageIndex = 8
                 ImageName = 'Help'
               end>
@@ -10837,7 +10826,7 @@ object Main: TMain
     end
     object actnExportMeetProgram: TAction
       Category = 'Export'
-      Caption = 'Export Time-Drops Meet Program ...'
+      Caption = 'Export DT Meet Program (.csv) ...'
       ImageIndex = 1
       ImageName = 'file_saveAlt'
       OnExecute = actnExportMeetProgramExecute
@@ -10845,14 +10834,14 @@ object Main: TMain
     end
     object actnReConstructTDResultFiles: TAction
       Category = 'Export'
-      Caption = 'Generate Time-Drops Results files  ...'
+      Caption = 'Generate Dolphin Timing results files  ...'
       ImageIndex = 9
       ImageName = 'build'
       OnExecute = actnReConstructTDResultFilesExecute
       OnUpdate = actnReConstructTDResultFilesUpdate
     end
     object actnPushResults: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'Push '#39'Results'#39' to the grid...'
       ImageIndex = 0
       ImageName = 'file_open'
@@ -10860,7 +10849,7 @@ object Main: TMain
       OnUpdate = actnPushResultsUpdate
     end
     object actnScanMeetsFolder: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'Re-Scan '#39'Meets'#39' folder...'
       ImageIndex = 2
       ImageName = 'document_search'
@@ -10868,8 +10857,8 @@ object Main: TMain
       OnUpdate = actnScanMeetsFolderUpdate
     end
     object actnClearGrid: TAction
-      Category = 'TimeDrops'
-      Caption = 'Clear the TimeDrops grid ...'
+      Category = 'Dolphin'
+      Caption = 'Clear the Dolphin grid ...'
       ImageIndex = 10
       ImageName = 'scan'
       OnExecute = actnClearGridExecute
@@ -10877,7 +10866,7 @@ object Main: TMain
     end
     object actnSaveSession: TAction
       Category = 'File'
-      Caption = 'Save SCM-TD Session ...'
+      Caption = 'Save SCM-DT Session ...'
       Enabled = False
       ImageIndex = 1
       ImageName = 'file_saveAlt'
@@ -10886,7 +10875,7 @@ object Main: TMain
     end
     object actnLoadSession: TAction
       Category = 'File'
-      Caption = 'Load SCM-TD Session ...'
+      Caption = 'Load SCM-DT Session ...'
       Enabled = False
       ImageIndex = 0
       ImageName = 'file_open'
@@ -10895,7 +10884,7 @@ object Main: TMain
     end
     object actnAbout: TAction
       Category = 'Help'
-      Caption = 'About SCM TimeDrops ...'
+      Caption = 'About SCM Dolphin Timing ...'
       ImageIndex = 8
       ImageName = 'Help'
       OnExecute = actnAboutExecute
@@ -10903,7 +10892,7 @@ object Main: TMain
     end
     object actnSyncTD: TAction
       Category = 'Edit'
-      Caption = 'Sync TD to SCM'
+      Caption = 'Sync DT to SCM'
       ImageIndex = 11
       ImageName = 'arrow_back'
       OnExecute = actnSyncTDExecute
@@ -10911,7 +10900,7 @@ object Main: TMain
     end
     object actnSyncSCM: TAction
       Category = 'Edit'
-      Caption = 'Sync SCM to TD'
+      Caption = 'Sync SCM to DT'
       ImageIndex = 15
       ImageName = 'arrow_forward'
       OnExecute = actnSyncSCMExecute
@@ -10941,7 +10930,7 @@ object Main: TMain
     end
     object actnReportTD: TAction
       Category = 'Reports'
-      Caption = 'Time Drops Report...'
+      Caption = 'Dolphin Timing Report...'
       Enabled = False
       ImageIndex = 12
       ImageName = 'file_report'
@@ -10962,7 +10951,7 @@ object Main: TMain
     end
     object actnBuildTDTables: TAction
       Category = 'Tools'
-      Caption = 'Re-Build TimeDrops Tables ... '
+      Caption = 'Re-Build Dolphin Tables ... '
       Enabled = False
       ImageIndex = 3
       ImageName = 'Settings'
@@ -10971,13 +10960,13 @@ object Main: TMain
     end
     object actnTDTableViewer: TAction
       Category = 'Tools'
-      Caption = 'Inspect Time-Drops Tables ...'
+      Caption = 'Inspect Dolphin Tables ...'
       ImageIndex = 12
       ImageName = 'file_report'
       OnExecute = actnTDTableViewerExecute
     end
     object actnClearAndScan: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'Clear and Scan ...'
       ImageIndex = 10
       ImageName = 'scan'
@@ -10985,7 +10974,7 @@ object Main: TMain
       OnUpdate = actnClearAndScanUpdate
     end
     object actnRestartDirectoryWatcher: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'Restart Directory Watcher'
       ImageIndex = 18
       ImageName = 'VisibilityOn'
@@ -10993,7 +10982,7 @@ object Main: TMain
       OnUpdate = actnRestartDirectoryWatcherUpdate
     end
     object actnActivatePatches: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'PATCH'
       Checked = True
       GroupIndex = 20
@@ -11003,7 +10992,7 @@ object Main: TMain
       OnUpdate = actnActivatePatchesUpdate
     end
     object actnAutoSync: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'AUTO SYNC'
       Checked = True
       GroupIndex = 21
@@ -11013,7 +11002,7 @@ object Main: TMain
       OnUpdate = actnAutoSyncUpdate
     end
     object actnExploreMeetsFolder: TAction
-      Category = 'TimeDrops'
+      Category = 'Dolphin'
       Caption = 'Explore '#39'Meets'#39' folder...'
       ImageIndex = 0
       ImageName = 'file_open'

@@ -4,7 +4,7 @@
         <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">SCM_DolphinTiming</ProjectName>
         <TargetedPlatforms>3</TargetedPlatforms>
@@ -112,8 +112,10 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <Icon_MainIcon>SCM_TimeDrops_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SCM_DolphinTiming_Icon.ico</Icon_MainIcon>
         <DCC_MapFile>3</DCC_MapFile>
+        <UWP_DelphiLogo44>..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png</UWP_DelphiLogo44>
+        <UWP_DelphiLogo150>..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png</UWP_DelphiLogo150>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -234,6 +236,7 @@
             <Form>About</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="dtReConstruct.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -263,6 +266,20 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="5">
+                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png" Configuration="Debug" Class="UWP_DelphiLogo150">
+                    <Platform Name="Win32">
+                        <RemoteDir>Assets\</RemoteDir>
+                        <RemoteName>Logo150x150.png</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png" Configuration="Debug" Class="UWP_DelphiLogo44">
+                    <Platform Name="Win32">
+                        <RemoteDir>Assets\</RemoteDir>
+                        <RemoteName>Logo44x44.png</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_TimeDrops_150x150.png" Configuration="Release" Class="UWP_DelphiLogo150"/>
                 <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_TimeDrops_44x44.png" Configuration="Release" Class="UWP_DelphiLogo44"/>
                 <DeployFile LocalName="Win32\Debug\SCM_DolphinTiming.exe" Configuration="Debug" Class="ProjectOutput">

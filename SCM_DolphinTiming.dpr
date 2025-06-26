@@ -41,7 +41,8 @@ uses
   uNoodleData in 'uNoodleData.pas',
   uNoodleInfo in 'uNoodleInfo.pas' {NoodleInfo},
   dlgSwimClubPicker in 'dlgSwimClubPicker.pas' {SwimClubPicker},
-  dlgAbout in 'dlgAbout.pas' {About};
+  dlgAbout in 'dlgAbout.pas' {About},
+  dtReConstruct in 'dtReConstruct.pas';
 
 {$R *.res}
 
