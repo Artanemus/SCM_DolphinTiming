@@ -1,13 +1,14 @@
-object DataDebug: TDataDebug
+object Options: TOptions
   Left = 0
   Top = 0
-  Caption = 'DataDebug'
-  ClientHeight = 635
-  ClientWidth = 971
+  BorderStyle = bsDialog
+  Caption = 'Application Options ...'
+  ClientHeight = 505
+  ClientWidth = 661
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -13
+  Font.Height = -16
   Font.Name = 'Segoe UI'
   Font.Style = []
   Icon.Data = {
@@ -8967,101 +8968,425 @@ object DataDebug: TDataDebug
     FFFFFFFFFFFFFFFEFEFEFF000000000000000000000000000000000000000000
     0000000000000000000000000000000000000000000000000000000000000000
     0000000000000000000000}
-  Position = poDesktopCenter
+  Position = poOwnerFormCenter
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnShow = FormShow
-  TextHeight = 17
-  object pgcntrlData: TPageControl
+  TextHeight = 21
+  object pnlHeader: TPanel
     Left = 0
     Top = 0
-    Width = 971
-    Height = 635
-    ActivePage = tabsheetNoodle
-    Align = alClient
+    Width = 661
+    Height = 67
+    Align = alTop
+    BevelOuter = bvNone
     TabOrder = 0
-    object grid: TTabSheet
-      Caption = 'Session'
-      object dbgridSession: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
+    object vimgDT: TVirtualImage
+      Left = 0
+      Top = 3
+      Width = 73
+      Height = 58
+      ImageCollection = IMG.imgcolDT
+      ImageWidth = 0
+      ImageHeight = 0
+      ImageIndex = 16
+      ImageName = 'SCMTimeDropsICON'
+    end
+    object lblHeaderTitle: TLabel
+      Left = 79
+      Top = 3
+      Width = 386
+      Height = 21
+      Caption = 'SwimClubMeet - Time Drops options and configuration.'
+    end
+  end
+  object pnlFooter: TPanel
+    Left = 0
+    Top = 464
+    Width = 661
+    Height = 41
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 2
+    object btnClose: TButton
+      Left = 574
+      Top = 6
+      Width = 80
+      Height = 32
+      Caption = 'Close'
+      TabOrder = 0
+      OnClick = btnCloseClick
+    end
+  end
+  object pnlBody: TPanel
+    Left = 0
+    Top = 67
+    Width = 661
+    Height = 397
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 1
+    object pgcntrl: TPageControl
+      Left = 0
+      Top = 0
+      Width = 661
+      Height = 397
+      ActivePage = TabSheet1
+      Align = alClient
+      TabOrder = 0
+      object tabSettings: TTabSheet
+        Caption = 'Settings'
+        ImageIndex = 1
+        object lblSwimmerAge: TLabel
+          Left = 427
+          Top = 315
+          Width = 71
+          Height = 21
+          Alignment = taRightJustify
+          Caption = 'Seed date.'
+          Enabled = False
+        end
+        object vimgAutoTimeSCM: TVirtualImage
+          Left = 248
+          Top = 89
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 70
+          ImageName = 'ActiveRTAutomatic'
+        end
+        object vimgAutoTimeTD: TVirtualImage
+          Left = 302
+          Top = 89
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 79
+          ImageName = 'AutoRaceTime_TD'
+        end
+        object vimgSplitSCM: TVirtualImage
+          Left = 248
+          Top = 143
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 67
+          ImageName = 'ActiveRTSplit'
+        end
+        object vimgSplitTD: TVirtualImage
+          Left = 302
+          Top = 143
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 78
+          ImageName = 'padTime_splitTime_TD'
+        end
+        object vimginfo1: TVirtualImage
+          Left = 356
+          Top = 89
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimginfo1MouseEnter
+          OnMouseLeave = vimginfo1MouseLeave
+        end
+        object vimgInfo2: TVirtualImage
+          Left = 356
+          Top = 143
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimgInfo2MouseEnter
+          OnMouseLeave = vimgInfo2MouseLeave
+        end
+        object vimgInfo3: TVirtualImage
+          Left = 279
+          Top = 221
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimgInfo3MouseEnter
+          OnMouseLeave = vimgInfo3MouseLeave
+        end
+        object vimgInfo4: TVirtualImage
+          Left = 601
+          Top = 221
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimgInfo4MouseEnter
+          OnMouseLeave = vimgInfo4MouseLeave
+        end
+        object lbledtDeviation: TLabeledEdit
+          Left = 20
+          Top = 16
+          Width = 48
+          Height = 29
+          Alignment = taCenter
+          EditLabel.Width = 421
+          EditLabel.Height = 29
+          EditLabel.Caption = 'Max watch time '#177' variance (acceptable deviation) in seconds.'
+          LabelPosition = lpRight
+          LabelSpacing = 10
+          TabOrder = 0
+          Text = '0.3'
+        end
+        object rgrpMeanTimeMethod: TRadioGroup
+          Left = 20
+          Top = 213
+          Width = 253
+          Height = 92
+          Caption = 'AutoCalc entrant'#39's race times ...'
+          ItemIndex = 0
+          Items.Strings = (
+            'Standard behaviour'
+            'SCM method')
+          TabOrder = 1
+        end
+        object chkbxRenameSession: TCheckBox
+          Left = 20
+          Top = 58
+          Width = 301
+          Height = 25
+          Caption = 'Enable rename Time Drops result files.'
+          Enabled = False
+          TabOrder = 2
+        end
+        object rgrpSwimmerAge: TRadioGroup
+          Left = 362
+          Top = 213
+          Width = 233
+          Height = 92
+          Caption = 'Calculate swimmer'#39's age ...'
+          Enabled = False
+          ItemIndex = 0
+          Items.Strings = (
+            'As assigned in SCM options.'
+            'Pick a seed date for age. ')
+          TabOrder = 3
+        end
+        object dtpickSwimmerAge: TDateTimePicker
+          Left = 504
+          Top = 311
+          Width = 129
+          Height = 29
+          Date = 45738.000000000000000000
+          Time = 0.546796909722616000
+          Enabled = False
+          TabOrder = 4
+        end
+        object chkbxFinalTime: TCheckBox
+          Left = 20
+          Top = 112
+          Width = 222
+          Height = 25
+          Caption = 'Use Time Drops '#39'Final Time'#39'.'
+          TabOrder = 5
+        end
+        object chkbxPadTime: TCheckBox
+          Left = 20
+          Top = 159
+          Width = 222
+          Height = 25
+          Caption = 'Use Time Drops '#39'Pad Time'#39'.'
+          TabOrder = 6
+        end
+      end
+      object tabsheetPaths: TTabSheet
+        Caption = 'File Paths'
+        object lblEventCSV: TLabel
+          Left = 3
+          Top = 65
+          Width = 448
+          Height = 21
+          Caption = 
+            'Export folder for '#39'Meet Program'#39' (used to initialize Time Drops)' +
+            ' ...'
+        end
+        object lblAppData: TLabel
+          Left = 3
+          Top = 189
+          Width = 396
+          Height = 21
+          Caption = 'Folder for application data (client datasets, noodles, etc) ...'
+        end
+        object lblMeetFolder: TLabel
+          Left = 3
+          Top = 3
+          Width = 268
+          Height = 21
+          Caption = 'Location of Time Drops '#39'Results'#39' files ...'
+        end
+        object lblReConstructDO4: TLabel
+          Left = 3
+          Top = 251
+          Width = 349
+          Height = 21
+          Caption = 'Export folder for re-constructed JSON result files ...'
+        end
+        object lblAppCaption1: TLabel
+          Left = 3
+          Top = 162
+          Width = 105
+          Height = 21
+          Caption = 'Other folders ...'
+          Enabled = False
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -16
+          Font.Name = 'Segoe UI'
+          Font.Style = [fsUnderline]
+          ParentFont = False
+        end
+        object btnedtMeetProgram: TButtonedEdit
+          Left = 3
+          Top = 92
+          Width = 647
+          Height = 29
+          Images = IMG.vimglistDTGrid
+          RightButton.ImageIndex = 1
+          RightButton.ImageName = 'Folders'
+          RightButton.Visible = True
+          TabOrder = 1
+          Text = 'c:\TimeDrops\Meets\'
+          OnRightButtonClick = btnedtMeetProgramRightButtonClick
+        end
+        object btnedtAppData: TButtonedEdit
+          Left = 3
+          Top = 216
+          Width = 647
+          Height = 29
+          Images = IMG.vimglistDTGrid
+          RightButton.ImageIndex = 1
+          RightButton.ImageName = 'Folders'
+          RightButton.Visible = True
+          TabOrder = 2
+          Text = 'c:\TimeDrops\AppData\'
+          OnRightButtonClick = btnedtAppDataRightButtonClick
+        end
+        object btnedtResults: TButtonedEdit
+          Left = 3
+          Top = 30
+          Width = 647
+          Height = 29
+          Images = IMG.vimglistDTGrid
+          RightButton.ImageIndex = 1
+          RightButton.ImageName = 'Folders'
+          RightButton.Visible = True
+          TabOrder = 0
+          Text = 'c:\TimeDrops\Meets'
+          OnRightButtonClick = btnedtResultsRightButtonClick
+        end
+        object btnedtReConstruct: TButtonedEdit
+          Left = 3
+          Top = 278
+          Width = 647
+          Height = 29
+          Images = IMG.vimglistDTGrid
+          RightButton.ImageIndex = 1
+          RightButton.ImageName = 'Folders'
+          RightButton.Visible = True
+          TabOrder = 3
+          Text = 'c:\TimeDrops\ReConstruct\'
+          OnRightButtonClick = btnedtReConstructRightButtonClick
+        end
+      end
+      object TabSheet1: TTabSheet
+        Caption = 'Actions'
+        ImageIndex = 2
+        object vimgInfo5: TVirtualImage
+          Left = 527
+          Top = 41
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimgInfo5MouseEnter
+          OnMouseLeave = vimgInfo5MouseLeave
+        end
+        object vimgInfo6: TVirtualImage
+          Left = 447
+          Top = 97
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          OnMouseEnter = vimgInfo6MouseEnter
+          OnMouseLeave = vimgInfo6MouseLeave
+        end
+        object chk_EnableLoginPrompt: TCheckBox
+          Left = 16
+          Top = 32
+          Width = 505
+          Height = 41
+          Caption = 
+            'Prompt to connect to the SwimClubMeet database server on startup' +
+            '.'
+          TabOrder = 0
+          WordWrap = True
+        end
+        object chk_EnableRescanPrompt: TCheckBox
+          Left = 16
+          Top = 87
+          Width = 425
+          Height = 42
+          Caption = 'Do an auto-scan of Time-Drops '#39'meets'#39' folder on startup.'
+          TabOrder = 1
+          WordWrap = True
+        end
+        object chkbEnableXNoodle: TCheckBox
+          Left = 16
+          Top = 159
+          Width = 361
+          Height = 22
+          Caption = 'Enable noodle creation across un-synced grids.'
+          Enabled = False
+          TabOrder = 2
+        end
       end
     end
-    object tabsheetEvent: TTabSheet
-      Caption = 'Event'
-      ImageIndex = 1
-      object dbgridEvent: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetHeat: TTabSheet
-      Caption = 'Heat'
-      ImageIndex = 2
-      object dbgridHeat: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetLane: TTabSheet
-      Caption = 'Lane'
-      ImageIndex = 3
-      object dbgridLane: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetNoodle: TTabSheet
-      Caption = 'Noodle'
-      ImageIndex = 4
-      object dbgridNoodle: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        DataSource = TDS.dsmNoodle
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
+  end
+  object BrowseFolderDlg: TFileOpenDialog
+    FavoriteLinks = <>
+    FileTypes = <>
+    Options = [fdoPickFolders, fdoDontAddToRecent]
+    Left = 548
+    Top = 11
+  end
+  object bhintOptions: TBalloonHint
+    Position = hpBelow
+    Left = 460
+    Top = 43
   end
 end

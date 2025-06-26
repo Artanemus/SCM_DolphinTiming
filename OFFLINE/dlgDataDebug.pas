@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, dmTDS, Data.DB, Vcl.Grids,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, dmDTData, Data.DB, Vcl.Grids,
   Vcl.DBGrids, Vcl.ComCtrls;
 
 type
@@ -13,14 +13,13 @@ type
     grid: TTabSheet;
     tabsheetEvent: TTabSheet;
     tabsheetHeat: TTabSheet;
-    tabsheetLane: TTabSheet;
+    tabsheetEntrant: TTabSheet;
     tabsheetNoodle: TTabSheet;
     dbgridSession: TDBGrid;
     dbgridEvent: TDBGrid;
     dbgridHeat: TDBGrid;
-    dbgridLane: TDBGrid;
+    dbgridEntrant: TDBGrid;
     dbgridNoodle: TDBGrid;
-    procedure FormShow(Sender: TObject);
   private
     { Private declarations }
   public
@@ -33,16 +32,5 @@ var
 implementation
 
 {$R *.dfm}
-
-procedure TDataDebug.FormShow(Sender: TObject);
-begin
-  // ASSERT connection
-  dbgridSession.DataSource := TDS.dsmSession;
-  dbgridEvent.DataSource := TDS.dsmEvent;
-  dbgridHeat.DataSource := TDS.dsmHeat;
-  dbgridLane.DataSource := TDS.dsmLane;
-  dbgridNoodle.DataSource := TDS.dsmNoodle;
-
-end;
 
 end.

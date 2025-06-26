@@ -1,13 +1,14 @@
-object DataDebug: TDataDebug
+object TreeViewSCM: TTreeViewSCM
   Left = 0
   Top = 0
-  Caption = 'DataDebug'
-  ClientHeight = 635
-  ClientWidth = 971
+  BorderStyle = bsDialog
+  Caption = 'QUICK SELECT...'
+  ClientHeight = 598
+  ClientWidth = 492
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -13
+  Font.Height = -16
   Font.Name = 'Segoe UI'
   Font.Style = []
   Icon.Data = {
@@ -8967,101 +8968,172 @@ object DataDebug: TDataDebug
     FFFFFFFFFFFFFFFEFEFEFF000000000000000000000000000000000000000000
     0000000000000000000000000000000000000000000000000000000000000000
     0000000000000000000000}
-  Position = poDesktopCenter
-  OnShow = FormShow
-  TextHeight = 17
-  object pgcntrlData: TPageControl
+  KeyPreview = True
+  Position = poOwnerFormCenter
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnKeyDown = FormKeyDown
+  TextHeight = 21
+  object TV: TTreeView
     Left = 0
     Top = 0
-    Width = 971
-    Height = 635
-    ActivePage = tabsheetNoodle
+    Width = 492
+    Height = 541
     Align = alClient
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'Segoe UI'
+    Font.Style = []
+    HideSelection = False
+    Images = IMG.vimglistTreeView
+    Indent = 30
+    ParentFont = False
+    ReadOnly = True
+    RowSelect = True
+    StateImages = IMG.vimglistStateImages
     TabOrder = 0
-    object grid: TTabSheet
-      Caption = 'Session'
-      object dbgridSession: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
+    OnDblClick = TVDblClick
+    Items.NodeData = {
+      070300000009540054007200650065004E006F00640065002D00000002000000
+      0000000004000000FFFFFFFF0000000000000000000300000001074500760065
+      006E0074002000310000002B000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+      FFFFFF000000000000000000010648006500610074002000310000002B000000
+      0000000000000000FFFFFFFFFFFFFFFF00000000000000000000000000010648
+      006500610074002000320000002B0000000000000000000000FFFFFFFFFFFFFF
+      FF00000000000000000000000000010648006500610074002000330000002D00
+      00000100000001000000FFFFFFFFFFFFFFFF0100000000000000000100000001
+      074500760065006E0074002000320000002B000000FFFFFFFFFFFFFFFFFFFFFF
+      FFFFFFFFFFFFFFFFFF0000000000000000000106480065006100740020003100
+      00002D0000000300000003000000FFFFFFFFFFFFFFFF03000000000000000000
+      00000001074500760065006E00740020003300}
+  end
+  object pnlFooter: TPanel
+    Left = 0
+    Top = 541
+    Width = 492
+    Height = 57
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    DesignSize = (
+      492
+      57)
+    object btnClose: TButton
+      Left = 392
+      Top = 11
+      Width = 100
+      Height = 34
+      Anchors = [akTop, akRight]
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = btnCloseClick
     end
-    object tabsheetEvent: TTabSheet
-      Caption = 'Event'
-      ImageIndex = 1
-      object dbgridEvent: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
+    object btnCancel: TButton
+      Left = 286
+      Top = 11
+      Width = 100
+      Height = 34
+      Anchors = [akTop, akRight]
+      Caption = 'Cancel'
+      TabOrder = 1
+      OnClick = btnCancelClick
     end
-    object tabsheetHeat: TTabSheet
-      Caption = 'Heat'
-      ImageIndex = 2
-      object dbgridHeat: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetLane: TTabSheet
-      Caption = 'Lane'
-      ImageIndex = 3
-      object dbgridLane: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetNoodle: TTabSheet
-      Caption = 'Noodle'
-      ImageIndex = 4
-      object dbgridNoodle: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        DataSource = TDS.dsmNoodle
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
+  end
+  object qryEvent: TFDQuery
+    ActiveStoredUsage = [auDesignTime]
+    UpdateOptions.AssignedValues = [uvEDelete, uvEInsert, uvEUpdate]
+    UpdateOptions.EnableDelete = False
+    UpdateOptions.EnableInsert = False
+    UpdateOptions.EnableUpdate = False
+    SQL.Strings = (
+      'DECLARE @SessionID int;'
+      'SET @SessionID = :SESSIONID;'
+      ''
+      'SELECT [EventID]'
+      '    , SUBSTRING(CONCAT ('
+      '            '#39'Event '#39
+      '            , [EventNum]'
+      '            , '#39'  '#39
+      '            , [Distance].[Caption]'
+      '            , '#39' '#39
+      '            , [Stroke].[Caption]'
+      '            , '#39' '#39
+      '            , [Event].[Caption]'
+      '            ), 1, 50) AS [EventCaption]'
+      '    , [EventNum]'
+      '    --, [Event].[Caption]'
+      '    , [SessionID]'
+      '    --, [RallyOpenDT]'
+      '    , [Event].[StrokeID]'
+      '    --, [RallyCloseDT]'
+      '    , [Event].[DistanceID]'
+      '    --, [OpenDT]'
+      '    , [EventStatusID]'
+      '--, [CloseDT]'
+      '--, [ScheduleDT]'
+      '    , [Distance].[EventTypeID]'
+      ''
+      'FROM [SwimClubMeet].[dbo].[Event]'
+      'INNER JOIN [SwimClubMeet].[dbo].[Stroke]'
+      '    ON [Event].[StrokeID] = [Stroke].[StrokeID]'
+      'INNER JOIN [SwimClubMeet].[dbo].[Distance]'
+      '    ON [Event].[DistanceID] = [Distance].[DistanceID]'
+      'WHERE SessionID = @SessionID'
+      'ORDER BY [EventNum];')
+    Left = 136
+    Top = 248
+    ParamData = <
+      item
+        Name = 'SESSIONID'
+        DataType = ftInteger
+        ParamType = ptInput
+        Value = 1
+      end>
+  end
+  object qryHeat: TFDQuery
+    ActiveStoredUsage = [auDesignTime]
+    IndexFieldNames = 'EventID'
+    MasterSource = dsEvent
+    MasterFields = 'EventID'
+    DetailFields = 'EventID'
+    UpdateOptions.AssignedValues = [uvEDelete, uvEInsert, uvEUpdate]
+    UpdateOptions.EnableDelete = False
+    UpdateOptions.EnableInsert = False
+    UpdateOptions.EnableUpdate = False
+    UpdateOptions.UpdateTableName = 'SwimClubMeet.dbo.HeatIndividual'
+    SQL.Strings = (
+      'SELECT [HeatID]'
+      '    , [HeatNum]'
+      '    , CONCAT ('
+      '        [HeatType].[Caption]'
+      '        , '#39' '#39
+      '        , [HeatNum]'
+      '        ) AS [HeatCaption]'
+      '    --, [HeatIndividual].[Caption]'
+      '    , [EventID]'
+      '    --, [ScheduleDT]'
+      '    --, [RallyOpenDT]'
+      '    , [HeatIndividual].[HeatTypeID]'
+      '    --, [RallyCloseDT]'
+      '    , [HeatStatusID]'
+      '--, [OpenDT]'
+      '--, [CloseDT]'
+      'FROM [SwimClubMeet].[dbo].[HeatIndividual]'
+      'INNER JOIN [SwimClubMeet].[dbo].[HeatType]'
+      '    ON [HeatIndividual].[HeatTypeID] = [HeatType].[HeatTypeID]'
+      'ORDER BY [HeatNum] ASC')
+    Left = 136
+    Top = 320
+  end
+  object dsEvent: TDataSource
+    DataSet = qryEvent
+    Left = 224
+    Top = 248
+  end
+  object dsHeat: TDataSource
+    DataSet = qryHeat
+    Left = 224
+    Top = 320
   end
 end
