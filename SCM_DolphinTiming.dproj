@@ -237,6 +237,12 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="dtReConstruct.pas"/>
+        <DCCReference Include="BIN\dtDlgOptionsCTS.pas">
+            <Form>DlgOptionsCTS</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="BIN\dtResults.pas"/>
+        <DCCReference Include="tdResultsCTS.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

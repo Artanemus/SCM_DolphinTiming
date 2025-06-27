@@ -42,7 +42,10 @@ uses
   uNoodleInfo in 'uNoodleInfo.pas' {NoodleInfo},
   dlgSwimClubPicker in 'dlgSwimClubPicker.pas' {SwimClubPicker},
   dlgAbout in 'dlgAbout.pas' {About},
-  dtReConstruct in 'dtReConstruct.pas';
+  dtReConstruct in 'dtReConstruct.pas',
+  dtDlgOptionsCTS in 'BIN\dtDlgOptionsCTS.pas' {DlgOptionsCTS},
+  dtResults in 'BIN\dtResults.pas',
+  tdResultsCTS in 'tdResultsCTS.pas';
 
 {$R *.res}
 

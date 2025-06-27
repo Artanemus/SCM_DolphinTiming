@@ -241,9 +241,10 @@ begin
     Settings.AcceptedDeviation := strToFloat(lbledtDeviation.Text);
   except on E: Exception do
     Settings.AcceptedDeviation := 0.3;
-  end;
-  Settings.UseTDfinalTime := chkbxFinalTime.Checked;
-  Settings.UseTDpadTime := chkbxPadTime.Checked;
+	end;
+  // not available in Dolphin Timing.
+	Settings.UseTDfinalTime := false; // chkbxFinalTime.Checked;
+	Settings.UseTDpadTime := false; // chkbxPadTime.Checked;
   Settings.DoLoginOnBoot := chk_EnableLoginPrompt.Checked;
 	Settings.DoClearAndScanOnBoot := chk_EnableRescanPrompt.Checked;
 

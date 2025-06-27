@@ -87,7 +87,6 @@ begin
     end; // END SPLITS.
 end;
 
-
 procedure ReadJsonLanes(JSONObj: ISuperObject; PK_HeatID: integer);
 var
   laneObject: ISuperObject;
@@ -493,7 +492,6 @@ begin
     end;
   end;
 end;
-
 
 procedure ProcessSession(AList: TStringDynArray; ASessionID: integer);
 var

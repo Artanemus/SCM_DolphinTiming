@@ -9031,7 +9031,7 @@ object Options: TOptions
       Top = 0
       Width = 661
       Height = 397
-      ActivePage = TabSheet1
+      ActivePage = tabSettings
       Align = alClient
       TabOrder = 0
       object tabSettings: TTabSheet
@@ -9056,6 +9056,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 70
           ImageName = 'ActiveRTAutomatic'
+          Visible = False
         end
         object vimgAutoTimeTD: TVirtualImage
           Left = 302
@@ -9067,6 +9068,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 79
           ImageName = 'AutoRaceTime_TD'
+          Visible = False
         end
         object vimgSplitSCM: TVirtualImage
           Left = 248
@@ -9078,6 +9080,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 67
           ImageName = 'ActiveRTSplit'
+          Visible = False
         end
         object vimgSplitTD: TVirtualImage
           Left = 302
@@ -9089,6 +9092,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 78
           ImageName = 'padTime_splitTime_TD'
+          Visible = False
         end
         object vimginfo1: TVirtualImage
           Left = 356
@@ -9100,6 +9104,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 77
           ImageName = 'info'
+          Visible = False
           OnMouseEnter = vimginfo1MouseEnter
           OnMouseLeave = vimginfo1MouseLeave
         end
@@ -9113,6 +9118,7 @@ object Options: TOptions
           ImageHeight = 0
           ImageIndex = 77
           ImageName = 'info'
+          Visible = False
           OnMouseEnter = vimgInfo2MouseEnter
           OnMouseLeave = vimgInfo2MouseLeave
         end
@@ -9207,6 +9213,7 @@ object Options: TOptions
           Height = 25
           Caption = 'Use Time Drops '#39'Final Time'#39'.'
           TabOrder = 5
+          Visible = False
         end
         object chkbxPadTime: TCheckBox
           Left = 20
@@ -9215,6 +9222,7 @@ object Options: TOptions
           Height = 25
           Caption = 'Use Time Drops '#39'Pad Time'#39'.'
           TabOrder = 6
+          Visible = False
         end
       end
       object tabsheetPaths: TTabSheet
@@ -9222,32 +9230,32 @@ object Options: TOptions
         object lblEventCSV: TLabel
           Left = 3
           Top = 65
-          Width = 448
+          Width = 497
           Height = 21
           Caption = 
-            'Export folder for '#39'Meet Program'#39' (used to initialize Time Drops)' +
-            ' ...'
+            'Export folder for '#39'Meet Program'#39' (used to initialize the Timing ' +
+            'System) ...'
         end
         object lblAppData: TLabel
           Left = 3
           Top = 189
-          Width = 396
+          Width = 388
           Height = 21
-          Caption = 'Folder for application data (client datasets, noodles, etc) ...'
+          Caption = 'Folder for application data (project saves, noodles, etc) ...'
         end
         object lblMeetFolder: TLabel
           Left = 3
           Top = 3
-          Width = 268
+          Width = 188
           Height = 21
-          Caption = 'Location of Time Drops '#39'Results'#39' files ...'
+          Caption = 'Location of '#39'Results'#39'  files ...'
         end
         object lblReConstructDO4: TLabel
           Left = 3
           Top = 251
-          Width = 349
+          Width = 306
           Height = 21
-          Caption = 'Export folder for re-constructed JSON result files ...'
+          Caption = 'Export folder for re-constructed result files ...'
         end
         object lblAppCaption1: TLabel
           Left = 3
@@ -9273,7 +9281,7 @@ object Options: TOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 1
-          Text = 'c:\TimeDrops\Meets\'
+          Text = 'c:\CTSDolphin\Meets\'
           OnRightButtonClick = btnedtMeetProgramRightButtonClick
         end
         object btnedtAppData: TButtonedEdit
@@ -9286,7 +9294,7 @@ object Options: TOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 2
-          Text = 'c:\TimeDrops\AppData\'
+          Text = 'c:\CTSDolphin\AppData\'
           OnRightButtonClick = btnedtAppDataRightButtonClick
         end
         object btnedtResults: TButtonedEdit
@@ -9299,7 +9307,7 @@ object Options: TOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 0
-          Text = 'c:\TimeDrops\Meets'
+          Text = 'c:\CTSDolphin\Meets'
           OnRightButtonClick = btnedtResultsRightButtonClick
         end
         object btnedtReConstruct: TButtonedEdit
@@ -9312,7 +9320,7 @@ object Options: TOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 3
-          Text = 'c:\TimeDrops\ReConstruct\'
+          Text = 'c:\CTSDolphin\ReConstruct\'
           OnRightButtonClick = btnedtReConstructRightButtonClick
         end
       end
@@ -9333,7 +9341,7 @@ object Options: TOptions
           OnMouseLeave = vimgInfo5MouseLeave
         end
         object vimgInfo6: TVirtualImage
-          Left = 447
+          Left = 503
           Top = 97
           Width = 32
           Height = 32
@@ -9359,9 +9367,9 @@ object Options: TOptions
         object chk_EnableRescanPrompt: TCheckBox
           Left = 16
           Top = 87
-          Width = 425
+          Width = 481
           Height = 42
-          Caption = 'Do an auto-scan of Time-Drops '#39'meets'#39' folder on startup.'
+          Caption = 'On startup, do an auto-scan of the Timing System '#39'meets'#39' folder.'
           TabOrder = 1
           WordWrap = True
         end

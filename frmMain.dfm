@@ -10609,11 +10609,13 @@ object Main: TMain
               end
               item
                 Action = actnSaveSession
+                Caption = '&Save SCM-DT Session ...'
                 ImageIndex = 1
                 ImageName = 'file_saveAlt'
               end
               item
                 Action = actnLoadSession
+                Caption = '&Load SCM-DT Session ...'
                 ImageIndex = 0
                 ImageName = 'file_open'
               end
@@ -10626,11 +10628,13 @@ object Main: TMain
             Items = <
               item
                 Action = actnSyncTD
+                Caption = '&Sync DT to SCM'
                 ImageIndex = 11
                 ImageName = 'arrow_back'
               end
               item
                 Action = actnSyncSCM
+                Caption = 'S&ync SCM to DT'
                 ImageIndex = 15
                 ImageName = 'arrow_forward'
               end
@@ -10684,11 +10688,13 @@ object Main: TMain
                 Items = <
                   item
                     Action = actnExportMeetProgram
+                    Caption = '&Export DT Meet Program (.csv) ...'
                     ImageIndex = 1
                     ImageName = 'file_saveAlt'
                   end
                   item
                     Action = actnReConstructTDResultFiles
+                    Caption = '&Generate Dolphin Timing results files  ...'
                     ImageIndex = 9
                     ImageName = 'build'
                   end>
@@ -10727,10 +10733,11 @@ object Main: TMain
               end
               item
                 Action = actnClearGrid
+                Caption = '&Clear the Dolphin grid ...'
                 ImageIndex = 10
                 ImageName = 'scan'
               end>
-            Caption = 'Dolphin'
+            Caption = '&Dolphin'
           end
           item
             Items = <
@@ -10748,6 +10755,7 @@ object Main: TMain
               end
               item
                 Action = actnReportTD
+                Caption = '&Dolphin Timing Report...'
                 ImageIndex = 12
                 ImageName = 'file_report'
               end>
@@ -10763,6 +10771,7 @@ object Main: TMain
               end
               item
                 Action = actnTDTableViewer
+                Caption = '&Inspect Dolphin Tables ...'
                 ImageIndex = 12
                 ImageName = 'file_report'
               end
@@ -10771,6 +10780,7 @@ object Main: TMain
               end
               item
                 Action = actnBuildTDTables
+                Caption = '&Re-Build Dolphin Tables ... '
                 ImageIndex = 3
                 ImageName = 'Settings'
               end>
@@ -10780,6 +10790,7 @@ object Main: TMain
             Items = <
               item
                 Action = actnAbout
+                Caption = '&About SCM Dolphin Timing ...'
                 ImageIndex = 8
                 ImageName = 'Help'
               end>
