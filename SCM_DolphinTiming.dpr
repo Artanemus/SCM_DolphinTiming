@@ -45,7 +45,8 @@ uses
   dtReConstruct in 'dtReConstruct.pas',
   dtDlgOptionsCTS in 'BIN\dtDlgOptionsCTS.pas' {DlgOptionsCTS},
   dtResults in 'BIN\dtResults.pas',
-  tdResultsCTS in 'tdResultsCTS.pas';
+  tdResultsCTS in 'tdResultsCTS.pas',
+  tdResultsCTSFile in 'tdResultsCTSFile.pas';
 
 {$R *.res}
 
