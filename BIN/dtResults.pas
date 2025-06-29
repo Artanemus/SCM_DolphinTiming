@@ -788,7 +788,7 @@ begin
 
     // Cacluate RaceTimeA for the ActiveRT. (artAutomatic)
 		// AND verify deviaiton AND assert fields [T1A, T2A, T3A]
-		TDS.CalcRaceTimeA(TDS.tblmLane, fAcceptedDeviation, fCalcMode);
+//		TDS.CalcRaceTimeA(TDS.tblmLane, fAcceptedDeviation, fCalcMode);
 
     // FINALLY place values into manual and automatic watch time fields.
     TDS.tblmLane.Edit;

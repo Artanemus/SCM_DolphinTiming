@@ -30,7 +30,7 @@ uses
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
   System.Types, System.IOUtils, System.Math, DirectoryWatcher,
   tdReConstructDlg, dmIMG, uNoodleFrame,
-	System.Generics.Collections, System.Generics.Defaults;
+	System.Generics.Collections, System.Generics.Defaults, tdResultsCTS;
 //	System.Diagnostics, System.IO;
 
 
@@ -222,9 +222,9 @@ implementation
 
 uses System.UITypes, System.DateUtils ,dlgSessionPicker, dlgOptions, dlgTreeViewSCM,
   dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData, tdMeetProgram,
-  tdMeetProgramPick, tdResults, uWatchTime, uAppUtils, tdLogin,
+	tdMeetProgramPick, uWatchTime, uAppUtils, tdLogin,
   Winapi.ShellAPI, dlgFDExplorer, dmSCM, dmTDS, dlgScanOptions, rptReportsSCM,
-  dlgSwimClubPicker, dlgAbout;
+	dlgSwimClubPicker, dlgAbout;
 
 const
 
@@ -754,14 +754,15 @@ procedure TMain.actnPushResultsExecute(Sender: TObject);
 var
   AFile, s: string;
   mr: TModalResult;
-  count: integer;
+	count: integer;
+	CTS: TResultsCTS;
 begin
   count := 0;
   s := '''
-  Selecting Ok will open a file explorer.
-  Choose any TimeDrops ''result'' files and PUSH to the grid.
-  New ''results'' will be added, modified ''results'' will adjust existing heats.
-  ''';
+		Selecting Ok will open a file explorer.
+		Choose any ''result'' file(s) and PUSH to the grid.
+		New ''results'' will be added, modified ''results'' will adjust existing heats.
+		''';
   mr := MessageBox(0, PChar(s), PChar('Push Results to Grid'), MB_ICONQUESTION or MB_OKCANCEL);
 
   if IsPositiveResult(mr) then
@@ -770,12 +771,14 @@ begin
     begin
       tdsGrid.BeginUpdate;
       try
-        begin
-          // terminate system watch folder.
-          for AFile in TDPushResultFile.Files do
-          begin
-            { Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
-            tdResults.ProcessFile(AFile);
+				CTS := TResultsCTS.Create;
+				CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+				begin
+					// terminate system watch folder.
+					for AFile in TDPushResultFile.Files do
+					begin
+						{ Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
+						CTS.ProcessFile(AFile);
             inc(Count);
           end;
           s := 'Pushed (' + IntToStr(Count) + ') results completed.';
@@ -784,7 +787,8 @@ begin
           fClearAndScan_Done := true;
         end;
       finally
-        tdsGrid.EndUpdate;
+				tdsGrid.EndUpdate;
+				FreeAndNil(CTS);
       end;
     end;
   end;
@@ -936,7 +940,8 @@ var
   dlg : TScanOptions;
   I: integer;
   LSearchOption: TSearchOption;
-  WildCardStr: String;
+	WildCardStr: String;
+	CTS: TResultsCTS;
 begin
   // Do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
@@ -946,7 +951,7 @@ begin
   if (not fClearAndScan_Done) or (fDoClearAndScanOnBoot) then
   begin
     mr := mrOK;
-    WildCardStr := 'Session*.JSON';
+		WildCardStr := 'Session*.JSON';
   end
   else
   begin
@@ -978,15 +983,15 @@ begin
 
         if Length(LList) > 0 then
         begin
-          TDS.DisableAllTDControls;
-          tdsGrid.BeginUpdate;
-          try
-            // NOTE: ProcessFile.
-            for I := 0 to Length(LList) - 1 do
-            begin
-              ProcessFile(LList[i]);
-            end;
-          finally
+					TDS.DisableAllTDControls;
+					tdsGrid.BeginUpdate;
+					try
+						CTS := TResultsCTS.Create;
+						CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+						for I := 0 to Length(LList) - 1 do
+							CTS.ProcessFile(LList[i]);
+					finally
+						FreeAndNil(CTS);
             TDS.EnableAllTDControls;
             tdsGrid.EndUpdate;
           end;
@@ -2467,32 +2472,39 @@ end;
 
 procedure TMain.OnFileChanged(Sender: TObject; const FileName: string; Action: DWORD);
 var
-  s, ActionDescription: string;
+	s, ActionDescription: string;
+	CTS: TResultsCTS;
 begin
-  // Determine the type of action
-  case Action of
-    FILE_ACTION_ADDED: ActionDescription := 'File added';
-    FILE_ACTION_REMOVED: ActionDescription := 'File removed';
-    FILE_ACTION_MODIFIED: ActionDescription := 'File modified';
-    FILE_ACTION_RENAMED_OLD_NAME: ActionDescription := 'File renamed (old name)';
-    FILE_ACTION_RENAMED_NEW_NAME: ActionDescription := 'File renamed (new name)';
-  else
-    ActionDescription := 'Unknown action';
-  end;
+	// Determine the type of action
+	case Action of
+		FILE_ACTION_ADDED: ActionDescription := 'File added';
+		FILE_ACTION_REMOVED: ActionDescription := 'File removed';
+		FILE_ACTION_MODIFIED: ActionDescription := 'File modified';
+		FILE_ACTION_RENAMED_OLD_NAME: ActionDescription := 'File renamed (old name)';
+		FILE_ACTION_RENAMED_NEW_NAME: ActionDescription := 'File renamed (new name)';
+	else
+		ActionDescription := 'Unknown action';
+	end;
 
-  // Handle the new file
-  s := UpperCase(ExtractFileExt(FileName));
+	// Handle the new file
+	s := UpperCase(ExtractFileExt(FileName));
 
-  if (s = '.JSON') then
-  begin
-    s := UpperCase(FileName);
-    if s.Contains('SESSION') then
-    begin
-      ShowMessage(Format('The meets folder was modified: %s (%s)', [FileName, ActionDescription]));
-      tdsGrid.BeginUpdate;
-      tdResults.ProcessFile(FileName);
-      tdsGrid.EndUpdate;
-    end;
+	if (s = '.DO3') or (s = '.DO4') then
+	begin
+		s := UpperCase(FileName);
+		if s.Contains('SESSION') then
+		begin
+			ShowMessage(Format('The meets folder was modified: %s (%s)', [FileName, ActionDescription]));
+			try
+				tdsGrid.BeginUpdate;
+				CTS := TResultsCTS.Create;
+				CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+				CTS.ProcessFile(FileName);
+			finally
+				FreeAndNil(CTS);
+				tdsGrid.EndUpdate;
+			end;
+		end;
   end;
 end;
 

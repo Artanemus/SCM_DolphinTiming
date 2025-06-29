@@ -7,10 +7,30 @@ dmTDS;
 
 
 type
+	TCTSLANE = record
+	LaneNum: integer;
+	IsEmpty: boolean;
+	IsDq: boolean;
+	TimeKeeper1: double;
+	TimeKeeper2: double;
+	TimeKeeper3: double;
+	Split1: double;
+	Split2: double;
+	Split3: double;
+	Split4: double;
+	Split5: double;
+	Split6: double;
+	Split7: double;
+	Split8: double;
+	Split9: double;
+	Split10: double;
+
+	end;
+
   TCTSFile = record
   private
 		fSessionNum, fEventNum, fHeatNum, fRaceNum: integer;
-    fHash: string;
+		fHash: string;
     fRound: char;
     fFileType: scmDTFileType;
     fFileName: string; // full path and NameOFIle:
@@ -18,15 +38,20 @@ type
     fSList: TStringList;
 		fPrepared: boolean;
 
+//		fLanes: Array[1..10] of TCTSLane;
+
 		function ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 
 		function GetSessionNum(): integer;
-    function GetEventNum(): integer;
+		function GetEventNum(): integer;
     function GetHeatNum(): integer;
     function GetRaceNum(): integer;
     function GetHash(): string;
     function GetRound(): char;
 		function GetFileType(): scmDTFileType;
+		function GetFileDate(): TDateTime;
+		function GetLane(Index: Integer): TCTSLANE;
+//		procedure SetLane(Index: Integer; const Value: TCTSLANE);
 
 		function sListHeaderEventNum: integer;
 		function sListHeaderGenderChar(): char;
@@ -34,9 +59,9 @@ type
 		function sListFooterHashStr(): string;
 		function sListHeaderSessionNum(): integer;
 		function sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
-    function sListBodyLane(LineIndex: integer): integer;
-    function sListBodyTimeKeepers(LineIndex: integer;
-      var ATimeKeepers: array of double): boolean;
+		function sListBodyLane(LineIndex: integer): integer;
+		function sListBodyTimeKeepers(LineIndex: integer;
+			var ATimeKeepers: array of double): boolean;
 
   public
 		class operator Initialize(out Dest: TCTSFile);
@@ -49,8 +74,12 @@ type
 		property EventNum: integer read FEventNum;
 		property HeatNum: integer read FHeatNum;
 		property RaceNum: integer read fRaceNum;
+		property FileCreatedOn: TDateTime read GetFileDate;
+		property Lane[Index: Integer]: TCTSLANE read GetLane; // write	SetLane;
 
 		property Prepared: boolean read fPrepared;
+
+
 
 	end;
 
@@ -125,6 +154,16 @@ begin
     result := StrToIntDef(Fields[1], 0);
 end;
 
+function TCTSFile.GetFileDate: TDateTime;
+var
+dt: TDateTimeInfoRec;
+begin
+	result := 0;
+	if fFileName.IsEmpty then exit;
+	if FileGetDateTimeInfo(fFileName, dt) then
+		result := dt.CreationTime;
+end;
+
 function TCTSFile.GetFileType(): scmDTFileType;
 begin
 	result := scmDTFileType.ftUnknown;
@@ -193,6 +232,45 @@ begin
 		// Extract the first field - SessionID
     result := StrToIntDef(HeatNumStr, 0);
 	end;
+end;
+
+function TCTSFile.GetLane(Index: Integer): TCTSLANE;
+var
+  lane: TCTSLane;
+	TimeKeepers: array of double;
+  Splits: array of double;
+begin
+lane.LaneNum := 0;
+  Result := lane;
+  lane.IsEmpty := true;
+  lane.IsDq := false;
+	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
+	if Index in [1..10] then  // CTS Dolphin - Max is 10 lanes ?
+  begin
+    lane.LaneNum := sListBodyLane(Index);
+    if sListBodyTimeKeepers(Index, TimeKeepers) then
+    begin
+      lane.TimeKeeper1 := TimeKeepers[0];
+      lane.TimeKeeper2 := TimeKeepers[1];
+      lane.TimeKeeper3 := TimeKeepers[2];
+      if (TimeKeepers[0] <> 0) or (TimeKeepers[1] <> 0) or (TimeKeepers[2] <> 0)
+        then
+        lane.IsEmpty := false;
+    end;
+		if sListBodySplits(Index, Splits) then
+    begin
+      lane.Split1 := Splits[0];
+			lane.Split2 := Splits[1];
+      lane.Split3 := Splits[2];
+      lane.Split4 := Splits[3];
+      lane.Split5 := Splits[4];
+      lane.Split6 := Splits[5];
+      lane.Split7 := Splits[6];
+      lane.Split8 := Splits[7];
+      lane.Split9 := Splits[8];
+      lane.Split10 := Splits[9];
+    end;
+  end;
 end;
 
 function TCTSFile.GetRaceNum: integer;
@@ -342,6 +420,13 @@ begin
 	fPrepared := true;
 end;
 
+(*
+  procedure TCTSFile.SetLane(Index: Integer; const Value: TCTSLANE);
+  begin
+  	// TODO -cMM: TCTSFile.SetLane default body inserted
+  end;
+
+*)
 
 
 function TCTSFile.sListHeaderEventNum: integer;
@@ -542,10 +627,10 @@ begin
       if s <> '' then
       begin
         // Try to parse the time
-        ATimeValue := ConvertSecondsStrToTime(s);
+				ATimeValue := ConvertSecondsStrToTime(s);
         if ATimeValue > 0 then
         begin
-          ATimeKeepers[I - 1] := ATimeValue;
+					ATimeKeepers[I - 1] := ATimeValue;
           Found := true;
         end;
       end
