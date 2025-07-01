@@ -366,7 +366,7 @@ procedure TResultsCTS.ProcFile(AFileName: string);
 var
 	CTSFile: TCTSFile; // type record.
 begin
-	CTSFile.Prepare(AFileName);
+	CTSFile.Prepare(AFileName, fNumOfLanes);
 	if CTSFile.Prepared then
 	begin
 		if CTSFile.SessionNum <> 0 then

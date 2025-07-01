@@ -142,8 +142,8 @@ type
     procedure actnRptSCMEventBasicUpdate(Sender: TObject);
     procedure actnSaveSessionExecute(Sender: TObject);
     procedure actnSaveSessionUpdate(Sender: TObject);
-    procedure actnScanMeetsFolderExecute(Sender: TObject);
-    procedure actnScanMeetsFolderUpdate(Sender: TObject);
+		procedure actnScanMeetsFolderExecute(Sender: TObject);
+		procedure actnScanMeetsFolderUpdate(Sender: TObject);
     procedure actnSCMSessionExecute(Sender: TObject);
     procedure actnSCMSessionUpdate(Sender: TObject);
     procedure actnSelectSwimClubExecute(Sender: TObject);
@@ -224,48 +224,60 @@ uses System.UITypes, System.DateUtils ,dlgSessionPicker, dlgOptions, dlgTreeView
   dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData, tdMeetProgram,
 	tdMeetProgramPick, uWatchTime, uAppUtils, tdLogin,
   Winapi.ShellAPI, dlgFDExplorer, dmSCM, dmTDS, dlgScanOptions, rptReportsSCM,
-	dlgSwimClubPicker, dlgAbout;
+	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile;
 
 const
 
   CAPTION_RECONSTRUCT = '%s files ...';
 
 
-
+// ==========================================================================
+// Used by FileNameComparer. WIT: Sorts directory....
+// ==========================================================================
 function ExtractSessionEventHeat(const FileName: string; out SessionID,
-  EventNum, HeatNum: Integer): Boolean;
+	EventNum, HeatNum: Integer): Boolean;
 var
   fn: string;
-  Fields: TArray<string>;
+	Fields: TArray<string>;
+	CTS: TCTSFile; // type record.
 begin
-  // Example: parse FileName to extract SessionID, EventNum, HeatNum
-  // You must implement this based on your filename format
+	// Parse FileName to extract SessionID, EventNum, HeatNum
+	// Must implement this based on filename format (DO3, DO4)
   // Return True if successful, False otherwise
-  result := false;
-  // remove path from filename
-  fn := ExtractFileName(FileName);
-  Fields := System.StrUtils.SplitString(fn, '_');
-  if Length(Fields) > 1 then
-  begin
-    // Strip non-numeric characters from Fields[1]
-    Fields[0] := StripNonNumeric(Fields[0]);
-    SessionID := StrToIntDef(Fields[0], 0);
-    if (SessionID <> 0) then
-    begin
-      // Filename syntax used by Time Drops: SessionSSSS_Event_EEEE_HeatHHHH_RaceRRRR_XXX.json
-      if Length(Fields) > 2 then
-      begin
-        EventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
-        if Length(Fields) > 3 then
-        begin
-          HeatNum := StrToIntDef(StripNonNumeric(Fields[2]), 0);
-          //      if Length(Fields) > 4 then
-          //        RaceNum := StrToIntDef(StripNonNumeric(Fields[3]), 0);
-          result := true;
-        end;
-      end;
-    end;
-  end;
+	result := false;
+	CTS.Prepare(FileName); // Param 2: NumOfLanes set to default. IGNORED HERE.
+	SessionID := CTS.SessionNum;
+	EventNum := CTS.EventNum;
+	HeatNum := CTS.HeatNum;
+  if (SessionID > 0) and (EventNum > 0) and (HeatNum > 0) then result := true;
+
+(*  // TimeDrops compare method
+
+		fn := ExtractFileName(FileName); // remove path from filename
+  	Fields := System.StrUtils.SplitString(fn, '_');
+  	if Length(Fields) > 1 then
+  	begin
+  		// Strip non-numeric characters from Fields[1]
+  		Fields[0] := StripNonNumeric(Fields[0]);
+  		SessionID := StrToIntDef(Fields[0], 0);
+  		if (SessionID <> 0) then
+  		begin
+  			// Filename syntax used by Time Drops: SessionSSSS_Event_EEEE_HeatHHHH_RaceRRRR_XXX.json
+  			if Length(Fields) > 2 then
+  			begin
+  				EventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
+					if Length(Fields) > 3 then
+  				begin
+  					HeatNum := StrToIntDef(StripNonNumeric(Fields[2]), 0);
+  					//      if Length(Fields) > 4 then
+  					//        RaceNum := StrToIntDef(StripNonNumeric(Fields[3]), 0);
+  					result := true;
+  				end;
+  			end;
+  		end;
+  	end;
+
+*)
 end;
 
 function FileNameComparer(const Left, Right: string): Integer;
@@ -283,7 +295,6 @@ begin
   if Result = 0 then
     Result := H1 - H2;
 end;
-
 
 
 procedure TMain.actnAboutExecute(Sender: TObject);
@@ -946,22 +957,42 @@ begin
   // Do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
   WildCardStr := '';
-
-
-  if (not fClearAndScan_Done) or (fDoClearAndScanOnBoot) then
+	if (not fClearAndScan_Done) or (fDoClearAndScanOnBoot) then
   begin
-    mr := mrOK;
-		WildCardStr := 'Session*.JSON';
-  end
-  else
-  begin
-    dlg := TScanOptions.Create(Self);
-    mr := dlg.ShowModal;
-    if dlg.rgrpScanOptions.ItemIndex = 0 then
-      WildCardStr := 'Session*.JSON'
-    else
-      WildCardStr := 'Session' + dlg.edtSessionID.Text + '*.JSON';
-    dlg.free;
+		mr := mrOK;
+		WildCardStr := '*.DO3; *.DO4';
+		if Assigned(Settings) then
+		begin
+			if Settings.DTUseFileType = 1 then WildCardStr := '*.DO3'
+			else if Settings.DTUseFileType = 2 then WildCardStr := '*.DO4';
+		end;
+	end
+	else
+	begin
+		dlg := TScanOptions.Create(Self);
+		mr := dlg.ShowModal;
+		if dlg.rgrpScanOptions.ItemIndex = 0 then
+		begin
+			WildCardStr := '*.DO3; *.DO4';
+			if Assigned(Settings) then
+			begin
+				if Settings.DTUseFileType = 1 then WildCardStr := '*.DO3'
+				else if Settings.DTUseFileType = 2 then WildCardStr := '*.DO4';
+			end;
+		end
+		else
+    begin
+			WildCardStr := dlg.edtSessionID.Text + '-*.DO3; '
+				+ dlg.edtSessionID.Text + '-*.DO4;';
+      if Assigned(Settings) then
+      begin
+        if Settings.DTUseFileType = 1 then
+					WildCardStr := dlg.edtSessionID.Text + '-*.DO3'
+        else if Settings.DTUseFileType = 2 then
+					WildCardStr := dlg.edtSessionID.Text + '-*.DO4';
+      end;
+    end;
+		dlg.free;
   end;
 
   if IsPositiveResult(mr) then

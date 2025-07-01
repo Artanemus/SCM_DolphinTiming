@@ -3,7 +3,7 @@ object ScanOptions: TScanOptions
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Time Drops Scan.'
-  ClientHeight = 306
+  ClientHeight = 427
   ClientWidth = 360
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,7 +21,7 @@ object ScanOptions: TScanOptions
     Left = 0
     Top = 0
     Width = 360
-    Height = 97
+    Height = 65
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
@@ -30,7 +30,7 @@ object ScanOptions: TScanOptions
       Left = 10
       Top = 10
       Width = 340
-      Height = 77
+      Height = 45
       Margins.Left = 10
       Margins.Top = 10
       Margins.Right = 10
@@ -38,26 +38,23 @@ object ScanOptions: TScanOptions
       Align = alClient
       Alignment = taCenter
       Caption = 
-        'Scan for '#39'results'#39' files in the TimeDrops the '#39'meets'#39' folder. Se' +
-        'arch for modified or new '#39'results'#39' files.'
+        'Scan for '#39'results'#39' files in  the '#39'meets'#39' folder. Search for modi' +
+        'fied or new '#39'results'#39' files.'
       Layout = tlCenter
       WordWrap = True
-      ExplicitWidth = 300
-      ExplicitHeight = 63
+      ExplicitHeight = 55
     end
   end
   object pnlBody: TPanel
     Left = 0
-    Top = 97
+    Top = 65
     Width = 360
-    Height = 160
+    Height = 313
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitLeft = 240
-    ExplicitTop = 232
-    ExplicitWidth = 185
-    ExplicitHeight = 41
+    ExplicitTop = 97
+    ExplicitHeight = 160
     object lblSessionID: TLabel
       Left = 173
       Top = 120
@@ -89,17 +86,30 @@ object ScanOptions: TScanOptions
       TabOrder = 1
       Text = '9999'
     end
+    object rgrpFileType: TRadioGroup
+      Left = 43
+      Top = 155
+      Width = 134
+      Height = 137
+      Caption = 'File types ...'
+      Items.Strings = (
+        'Both'
+        '.DO3'
+        '.DO4')
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 2
+    end
   end
   object pnlFooter: TPanel
     Left = 0
-    Top = 257
+    Top = 378
     Width = 360
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 392
-    ExplicitWidth = 624
+    ExplicitTop = 257
     object btnOk: TButton
       Left = 183
       Top = 8

@@ -52,6 +52,8 @@ type
     vimgInfo5: TVirtualImage;
     vimgInfo6: TVirtualImage;
     chkbEnableXNoodle: TCheckBox;
+    tsCTS: TTabSheet;
+    rgrpFileType: TRadioGroup;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtMeetProgramRightButtonClick(Sender: TObject);
@@ -88,7 +90,7 @@ implementation
 
 procedure TOptions.btnCloseClick(Sender: TObject);
 begin
-  ModalResult := mrOk;
+	ModalResult := mrOk;
 end;
 
 procedure TOptions.btnedtAppDataRightButtonClick(Sender: TObject);
@@ -173,7 +175,7 @@ end;
 
 procedure TOptions.FormDestroy(Sender: TObject);
 begin
-  SaveToSettings;
+	SaveToSettings;
 end;
 
 procedure TOptions.FormCreate(Sender: TObject);
@@ -185,7 +187,21 @@ end;
 
 procedure TOptions.FormShow(Sender: TObject);
 begin
-  LoadSettings;
+	LoadSettings;
+	if Assigned(Settings) then
+	begin
+		case Settings.DTUseFileType of
+			0:
+				rgrpFileType.ItemIndex := 0; //BOTH (default)
+			1:
+				rgrpFileType.ItemIndex := 1; // *.DO3
+			2:
+				rgrpFileType.ItemIndex := 2; // *.DO4
+		else
+			rgrpFileType.ItemIndex := 0;
+		end;
+	end;
+
 end;
 
 procedure TOptions.LoadFromSettings;
@@ -249,6 +265,11 @@ begin
 	Settings.DoClearAndScanOnBoot := chk_EnableRescanPrompt.Checked;
 
 	Settings.EnableXNoodle := chkbEnableXNoodle.Checked;
+
+	if rgrpFileType.ItemIndex in [1,2] then
+		Settings.DTUseFileType := rgrpFileType.ItemIndex
+	else Settings.DTUseFileType := 0;
+
   Settings.SaveToFile();
 end;
 

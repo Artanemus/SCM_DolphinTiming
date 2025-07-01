@@ -8,7 +8,7 @@ uses
   uAppUtils;
 
 type
-  TScanOptions = class(TForm)
+	TScanOptions = class(TForm)
     pnlHeader: TPanel;
     pnlBody: TPanel;
     pnlFooter: TPanel;
@@ -18,6 +18,7 @@ type
     lblSessionID: TLabel;
     btnOk: TButton;
     btnCancel: TButton;
+    rgrpFileType: TRadioGroup;
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
@@ -52,24 +53,35 @@ procedure TScanOptions.FormCreate(Sender: TObject);
 begin
   edtSessionID.Text := '';
   fSessionID := 0;
-  if Assigned(Settings) then
-  begin
-    if Settings.ScanOption in [0,1] then
-      rgrpScanOptions.ItemIndex := Settings.ScanOption
-    else
-      rgrpScanOptions.ItemIndex := -1;
-    edtSessionID.Text := IntToStr(Settings.ScanOptionSessionID);
-  end;
+	if Assigned(Settings) then
+	begin
+		if Settings.ScanOption in [0,1] then
+			rgrpScanOptions.ItemIndex := Settings.ScanOption
+		else
+			rgrpScanOptions.ItemIndex := -1;
+		edtSessionID.Text := IntToStr(Settings.ScanOptionSessionID);
+
+		case Settings.DTUseFileType of
+			0:
+				rgrpFileType.ItemIndex := 0; //BOTH (default)
+			1:
+				rgrpFileType.ItemIndex := 1; // *.DO3
+			2:
+				rgrpFileType.ItemIndex := 2; // *.DO4
+		else
+			rgrpFileType.ItemIndex := 0;
+		end;
+	end;
 end;
 
 procedure TScanOptions.btnCancelClick(Sender: TObject);
 begin
-  ModalResult := mrCancel;
+	ModalResult := mrCancel;
 end;
 
 procedure TScanOptions.btnOkClick(Sender: TObject);
 var
-i: integer;
+  i: integer;
 begin
   if length(edtSessionID.Text) > 0 then
   begin
@@ -78,8 +90,17 @@ begin
     // textfield even when this property is set
     i := StrToIntDef(uAppUtils.StripNonNumeric(edtSessionID.Text), 0);
     fSessionID := i;
-  end else fSessionID := 0;
-  ModalResult := mrOk;
+  end
+  else
+    fSessionID := 0;
+
+  if Assigned(Settings) then
+  begin
+    if rgrpFileType.ItemIndex in [0..2] then
+      Settings.DTUseFileType := rgrpFileType.ItemIndex;
+  end;
+
+	ModalResult := mrOk;
 end;
 
 procedure TScanOptions.FormKeyDown(Sender: TObject; var Key: Word; Shift:

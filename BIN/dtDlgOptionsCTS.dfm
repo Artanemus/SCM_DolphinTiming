@@ -8453,7 +8453,7 @@ object DlgOptionsCTS: TDlgOptionsCTS
         end
         object rgrpMeanTimeMethod: TRadioGroup
           Left = 20
-          Top = 138
+          Top = 104
           Width = 269
           Height = 95
           Caption = 'Calculate race times.'
@@ -8466,10 +8466,11 @@ object DlgOptionsCTS: TDlgOptionsCTS
         object chkbxRenameSession: TCheckBox
           Left = 20
           Top = 58
-          Width = 181
+          Width = 261
           Height = 25
-          Caption = 'Enable rename DT files.'
+          Caption = 'Enable auto-rename results files.'
           TabOrder = 2
+          Visible = False
         end
         object rgrpPrecedence: TRadioGroup
           Left = 20
@@ -8486,6 +8487,21 @@ object DlgOptionsCTS: TDlgOptionsCTS
               'Use the DT filename to extract Session, Event && Heat (DO4) data' +
               '.')
           TabOrder = 3
+          Visible = False
+        end
+        object rgrpFileType: TRadioGroup
+          Left = 303
+          Top = 104
+          Width = 138
+          Height = 137
+          Caption = 'File types ...'
+          Items.Strings = (
+            '.DO4'
+            '.DO3'
+            'Both')
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 4
         end
       end
       object tabsheetPaths: TTabSheet

@@ -9031,7 +9031,7 @@ object Options: TOptions
       Top = 0
       Width = 661
       Height = 397
-      ActivePage = tabSettings
+      ActivePage = tabsheetPaths
       Align = alClient
       TabOrder = 0
       object tabSettings: TTabSheet
@@ -9226,7 +9226,7 @@ object Options: TOptions
         end
       end
       object tabsheetPaths: TTabSheet
-        Caption = 'File Paths'
+        Caption = 'CTS File Paths'
         object lblEventCSV: TLabel
           Left = 3
           Top = 65
@@ -9281,7 +9281,7 @@ object Options: TOptions
           RightButton.ImageName = 'Folders'
           RightButton.Visible = True
           TabOrder = 1
-          Text = 'c:\CTSDolphin\Meets\'
+          Text = 'c:\CTSDolphin\EventCVS\'
           OnRightButtonClick = btnedtMeetProgramRightButtonClick
         end
         object btnedtAppData: TButtonedEdit
@@ -9341,7 +9341,7 @@ object Options: TOptions
           OnMouseLeave = vimgInfo5MouseLeave
         end
         object vimgInfo6: TVirtualImage
-          Left = 503
+          Left = 399
           Top = 97
           Width = 32
           Height = 32
@@ -9367,9 +9367,9 @@ object Options: TOptions
         object chk_EnableRescanPrompt: TCheckBox
           Left = 16
           Top = 87
-          Width = 481
+          Width = 377
           Height = 42
-          Caption = 'On startup, do an auto-scan of the Timing System '#39'meets'#39' folder.'
+          Caption = 'On startup, do an auto-scan of the '#39'meets'#39' folder.'
           TabOrder = 1
           WordWrap = True
         end
@@ -9381,6 +9381,24 @@ object Options: TOptions
           Caption = 'Enable noodle creation across un-synced grids.'
           Enabled = False
           TabOrder = 2
+        end
+      end
+      object tsCTS: TTabSheet
+        Caption = 'CTS Misc.'
+        ImageIndex = 3
+        object rgrpFileType: TRadioGroup
+          Left = 23
+          Top = 16
+          Width = 202
+          Height = 137
+          Caption = 'Select file types to use ...'
+          Items.Strings = (
+            'Both'
+            '.DO3'
+            '.DO4')
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
         end
       end
     end

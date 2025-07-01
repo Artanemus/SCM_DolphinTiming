@@ -35,23 +35,24 @@ type
     fFileType: scmDTFileType;
     fFileName: string; // full path and NameOFIle:
     fNameOfFile: string; // name + file extension.
-    fSList: TStringList;
+		fSList: TStringList;
 		fPrepared: boolean;
-
-//		fLanes: Array[1..10] of TCTSLane;
+		fNumOfLanes: integer;
+		FMaxNumOfSplits: integer;
+		FMaxNumOfTimeKeepers: integer;
 
 		function ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 
+		function GetIsLaneEmpty(Index: Integer): boolean;
 		function GetSessionNum(): integer;
 		function GetEventNum(): integer;
-    function GetHeatNum(): integer;
-    function GetRaceNum(): integer;
-    function GetHash(): string;
-    function GetRound(): char;
+		function GetHeatNum(): integer;
+		function GetRaceNum(): integer;
+		function GetHash(): string;
+		function GetRound(): char;
 		function GetFileType(): scmDTFileType;
 		function GetFileDate(): TDateTime;
 		function GetLane(Index: Integer): TCTSLANE;
-//		procedure SetLane(Index: Integer; const Value: TCTSLANE);
 
 		function sListHeaderEventNum: integer;
 		function sListHeaderGenderChar(): char;
@@ -67,7 +68,7 @@ type
 		class operator Initialize(out Dest: TCTSFile);
 		class operator Finalize(var Dest: TCTSFile);
 
-		procedure Prepare(AFileName: string);
+		procedure Prepare(AFileName: string; NumOfLane: integer = 10);
 
 		property FileType: scmDTFileType read GetFileType;
 		property SessionNum: integer read FSessionNum;
@@ -76,10 +77,11 @@ type
 		property RaceNum: integer read fRaceNum;
 		property FileCreatedOn: TDateTime read GetFileDate;
 		property Lane[Index: Integer]: TCTSLANE read GetLane; // write	SetLane;
-
+		property IsLaneEmpty[Index: Integer]: boolean read GetIsLaneEmpty;
 		property Prepared: boolean read fPrepared;
-
-
+		property NumOfLanes: integer read FNumOfLanes write FNumOfLanes;
+		property MaxNumOfSplits: integer read FMaxNumOfSplits write FMaxNumOfSplits;
+		property MaxNumOfTimeKeepers: integer read FMaxNumOfTimeKeepers write FMaxNumOfTimeKeepers;
 
 	end;
 
@@ -100,6 +102,9 @@ begin
 	Dest.fPrepared := false;
 	Dest.fFileName := '';
 	Dest.fNameOfFile := '';
+	Dest.fNumOfLanes := 10;
+	Dest.FMaxNumOfSplits := 10;
+	Dest.FMaxNumOfTimeKeepers := 3;
 end;
 
 function TCTSFile.ConvertSecondsStrToTime(ASecondsStr: string): TTime;
@@ -234,32 +239,51 @@ begin
 	end;
 end;
 
-function TCTSFile.GetLane(Index: Integer): TCTSLANE;
+function TCTSFile.GetIsLaneEmpty(Index: Integer): boolean;
 var
   lane: TCTSLane;
-	TimeKeepers: array of double;
-  Splits: array of double;
+  TimeKeepers: array of double;
 begin
-lane.LaneNum := 0;
-  Result := lane;
-  lane.IsEmpty := true;
-  lane.IsDq := false;
-	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
-	if Index in [1..10] then  // CTS Dolphin - Max is 10 lanes ?
+  result := false;
+	if Index in [1..fNumOfLanes] then // CTS Dolphin - Max is 10 lanes ?
   begin
-    lane.LaneNum := sListBodyLane(Index);
     if sListBodyTimeKeepers(Index, TimeKeepers) then
     begin
-      lane.TimeKeeper1 := TimeKeepers[0];
-      lane.TimeKeeper2 := TimeKeepers[1];
-      lane.TimeKeeper3 := TimeKeepers[2];
-      if (TimeKeepers[0] <> 0) or (TimeKeepers[1] <> 0) or (TimeKeepers[2] <> 0)
-        then
-        lane.IsEmpty := false;
+      if (lane.TimeKeeper1 = 0) and (lane.TimeKeeper2 = 0) and
+      (lane.TimeKeeper3 = 0) then
+        result := true;
     end;
+  end;
+end;
+
+function TCTSFile.GetLane(Index: Integer): TCTSLANE;
+var
+	lane: TCTSLane;
+	TimeKeepers: array of double;
+	Splits: array of double;
+begin
+	lane.LaneNum := 0;
+	Result := lane;
+	lane.IsEmpty := true;
+	lane.IsDq := false;
+	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
+	if Index in [1..fNumOfLanes] then  // CTS Dolphin - Max is 10 lanes ?
+	begin
+		SetLength(Splits, FMaxNumOfSplits);
+		SetLength(TimeKeepers, FMaxNumOfTimeKeepers);
+		lane.LaneNum := sListBodyLane(Index);
+		if sListBodyTimeKeepers(Index, TimeKeepers) then
+		begin
+			lane.TimeKeeper1 := TimeKeepers[0];
+			lane.TimeKeeper2 := TimeKeepers[1];
+			lane.TimeKeeper3 := TimeKeepers[2];
+			if (TimeKeepers[0] <> 0) or (TimeKeepers[1] <> 0)
+					or (TimeKeepers[2] <> 0) then
+				lane.IsEmpty := false;
+		end;
 		if sListBodySplits(Index, Splits) then
     begin
-      lane.Split1 := Splits[0];
+			lane.Split1 := Splits[0];
 			lane.Split2 := Splits[1];
       lane.Split3 := Splits[2];
       lane.Split4 := Splits[3];
@@ -334,7 +358,7 @@ begin
     result := StrToIntDef(Fields[0], 0);
 end;
 
-procedure TCTSFile.Prepare(AFileName: string);
+procedure TCTSFile.Prepare(AFileName: string; NumOfLane: integer);
 var
 	Fields: TArray<string>;
 begin
@@ -346,6 +370,7 @@ begin
 	fPrepared := false;
 	fNameOfFile := ExtractFileName(AFileName);
 	fFileType := GetFileType();
+	fNumOfLanes := NumOfLanes;
 
 	case fFileType of
 		ftUnknown:
@@ -361,7 +386,10 @@ begin
 					if (fSessionNum <> 0) then
 					begin
 						if Length(Fields) > 2 then
+						begin
 							fEventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
+							// DO3 doesn't contain event number in filename.
+						end;
 					end;
 					// DO3 type has no racenum.
 					fRaceNum := -1;
@@ -419,15 +447,6 @@ begin
 
 	fPrepared := true;
 end;
-
-(*
-  procedure TCTSFile.SetLane(Index: Integer; const Value: TCTSLANE);
-  begin
-  	// TODO -cMM: TCTSFile.SetLane default body inserted
-  end;
-
-*)
-
 
 function TCTSFile.sListHeaderEventNum: integer;
 var
@@ -510,7 +529,8 @@ begin
   end;
 end;
 
-function TCTSFile.sListBodySplits(LineIndex: integer; var ASplits: array of double): boolean;
+function TCTSFile.sListBodySplits(LineIndex: integer; var ASplits:
+	array of double): boolean;
 var
   Fields: TArray<string>;
   i, SplitIndex: Integer;
@@ -536,7 +556,7 @@ begin
   Found := False;
 
   // Initialize splits - zero indicates no race time recorded.
-  for i := Low(ASplits) to High(ASplits) do
+	for i := Low(ASplits) to High(ASplits) do
     ASplits[i] := 0;
 
   // Only DO4 captures split data
@@ -548,7 +568,7 @@ begin
 
   // Check if there are splits available (Fields[4] and beyond are split-times)
   if Length(Fields) <= 4 then
-    Exit; // NO SPLITS..
+		Exit; // NO SPLITS..
 
   // Extract split data
   for i := 4 to Length(Fields) - 1 do
@@ -597,7 +617,7 @@ function TCTSFile.sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers:
 	array of double): boolean;
 var
   Fields: TArray<string>;
-  i: integer;
+	i, indx: integer;
   ATimeValue: TDateTime;
   s: string;
   Found: boolean;
@@ -614,24 +634,26 @@ begin
   // Split string by the ';' character
   s := fSList[LineIndex];
   Fields := SplitString(fSList[LineIndex], ';');
-  // Initialize timekeepers - zero indicates no race time recorded
-  for I := Low(ATimeKeepers) to High(ATimeKeepers) do
+	// Initialize timekeepers - zero indicates no race time recorded
+	for I := Low(ATimeKeepers) to High(ATimeKeepers) do
 		ATimeKeepers[I] := 0;
-  // Extract timekeepers data.
-  // Fields[4] and beyond are split-times.
-  for I := 1 to 3 do
-  begin
-    if Length(Fields) > I then
-    begin
-      s := Fields[I];
-      if s <> '' then
-      begin
-        // Try to parse the time
-				ATimeValue := ConvertSecondsStrToTime(s);
+	for I := 1 to 3 do // Fields[4] and beyond are split-times.
+	begin
+		if Length(Fields) > I then
+		begin
+			s := Fields[I];
+			if s <> '' then
+			begin
+				// Try to parse the time
+				ATimeValue := ConvertSecondsStrToTime(s); // Extract timekeepers data.
         if ATimeValue > 0 then
-        begin
-					ATimeKeepers[I - 1] := ATimeValue;
-          Found := true;
+				begin
+					indx := I-1;
+					if indx in [Low(ATimeKeepers)..High(ATimeKeepers)] then
+					begin // test: within bounds?
+						ATimeKeepers[indx] := ATimeValue;
+						Found := true;
+					end;
         end;
       end
     end;
@@ -639,8 +661,5 @@ begin
   if Found then
     result := true;
 end;
-
-
-
 
 end.

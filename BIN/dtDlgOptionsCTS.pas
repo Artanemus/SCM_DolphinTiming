@@ -33,6 +33,7 @@ type
     vimgDT: TVirtualImage;
     BrowseFolderDlg: TFileOpenDialog;
     rgrpPrecedence: TRadioGroup;
+    rgrpFileType: TRadioGroup;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtEventCSVRightButtonClick(Sender: TObject);
