@@ -172,10 +172,10 @@ end;
 function TCTSFile.GetFileType(): scmDTFileType;
 begin
 	result := scmDTFileType.ftUnknown;
-	if fFileName.IsEmpty then exit;
-	if fFileName.Contains('.DO3') then
+	if fNameOfFile.IsEmpty then exit;
+	if fNameOfFile.Contains('.DO3') then
 		result := ftDO3
-	else if fFileName.Contains('.DO4') then
+	else if fNameOfFile.Contains('.DO4') then
 		result := ftDO4;
 end;
 
@@ -197,16 +197,16 @@ begin
     ftDO4:
       begin
         if Length(Fields) > 3 then
-        begin
-					// The fourthfield has a '.' delimiter for the string and the '.do4' part
+				begin
+					// The fourth field has Race Number.
           HashStr := Copy(Fields[3], 1, Pos('.', Fields[3]) - 1);
         end;
       end;
     ftDO3:
       begin
         if Length(Fields) > 2 then
-        begin
-          // The third field has a '.' delimiter for the string and the '.do3' part
+				begin
+					// The third field has a valid hash number.
           HashStr := Copy(Fields[2], 1, Pos('.', Fields[2]) - 1);
         end;
 			end;
@@ -261,13 +261,20 @@ var
 	lane: TCTSLane;
 	TimeKeepers: array of double;
 	Splits: array of double;
+	LaneCount: integer;
 begin
+
 	lane.LaneNum := 0;
 	Result := lane;
 	lane.IsEmpty := true;
 	lane.IsDq := false;
+	LaneCount := fNumOfLanes; // MAX number of lanes = 10 lanes. (Default)
+
+	// check out of bounds... line 1 header info , last line footer with HASH.
+	if (fSList.Count - 2) < fNumOfLanes then
+		LaneCount := fSList.Count - 2;
 	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
-	if Index in [1..fNumOfLanes] then  // CTS Dolphin - Max is 10 lanes ?
+	if Index in [1..LaneCount] then  // CTS Dolphin - Max is 10 lanes ?
 	begin
 		SetLength(Splits, FMaxNumOfSplits);
 		SetLength(TimeKeepers, FMaxNumOfTimeKeepers);
@@ -359,15 +366,17 @@ begin
 end;
 
 procedure TCTSFile.Prepare(AFileName: string; NumOfLane: integer);
-var
-	Fields: TArray<string>;
 begin
-	// AFileName has path and name of file.
+	// A FileName is fully assigned - it has path and name of file and extension.
+	// A NameOfFile is name part + file extension
 	fSessionNum := 0;
 	fEventNum := 0;
 	fHeatNum := 0;
 	fRaceNum := 0;
+	fHash := '';
+
 	fPrepared := false;
+	fFileName := AFileName;
 	fNameOfFile := ExtractFileName(AFileName);
 	fFileType := GetFileType();
 	fNumOfLanes := NumOfLanes;
@@ -377,51 +386,23 @@ begin
 			exit;
 		ftDO3: // use the file header for heat data eg. 088-000-00F0147.do3
 			begin
-				Fields := SplitString(AFileName, '-');
-				if Length(Fields) > 1 then
-				begin
-					// Strip non-numeric characters from Fields[1]
-					Fields[0] := StripNonNumeric(Fields[0]);
-					fSessionNum := StrToIntDef(Fields[0], 0);
-					if (fSessionNum <> 0) then
-					begin
-						if Length(Fields) > 2 then
-						begin
-							fEventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
-							// DO3 doesn't contain event number in filename.
-						end;
-					end;
-					// DO3 type has no racenum.
-					fRaceNum := -1;
-				end;
+				fSessionNum := GetSessionNum;
+				fEventNum := GetEventNum;
+				fHash := GetHash;
+				fRaceNum := -1; // DO3 type has no race number.
 			end;
 		ftDO4: // all fields found in filename. eg. 113-001-001A-0001.DO4
 			begin
-				Fields := SplitString(AFileName, '-');
-				if Length(Fields) > 1 then
-				begin
-					// Strip non-numeric characters from Fields[1]
-					Fields[0] := StripNonNumeric(Fields[0]);
-					fSessionNum := StrToIntDef(Fields[0], 0);
-					if (fSessionNum <> 0) then
-					begin
-						if Length(Fields) > 2 then
-							fEventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
-						if Length(Fields) > 3 then
-							fHeatNum := StrToIntDef(StripNonNumeric(Fields[2]), 0);
-						if Length(Fields) > 4 then
-							fRaceNum := StrToIntDef(StripNonNumeric(Fields[3]), 0);
-					end;
-				end;
+				fSessionNum := GetSessionNum;
+				fEventNum := GetEventNum;
+				fHeatNum := GetHeatNum;
+				fRaceNum := GetRaceNum;
+				fRound := GetRound;
 			end;
 	end;
 
-	if not Assigned(fSList) then
-	begin
-		// unexpected error throw exception
-		{TODO -oBSA -cGeneral : Throw exception error}
-		exit;
-	end;
+	if not Assigned(fSList) then exit;  // unexpected error. It should be assigned.
+	if fFileType = ftUnknown then exit;
 
 	fSList.Clear;
 	if FileExists(AFileName) then
@@ -442,6 +423,7 @@ begin
 			if fSessionNum = 0 then	fSessionNum := sListHeaderSessionNum;
 			if fEventNum = 0 then fEventNum := sListHeaderEventNum;
 			if fHeatNum = 0 then fHeatNum := sListHeaderHeatNum;
+			fHash := sListFooterHashStr;
 		end;
 	end;
 
@@ -601,7 +583,8 @@ var
   Fields: TArray<string>;
   s: string;
 begin
-  result := 0;
+	result := 0;
+  // check for out of bounds...
   // Split string by the ';' character
   Fields := SplitString(fSList[LineIndex], ';');
   if Length(Fields) = 0 then exit;   // Input string is empty - err.

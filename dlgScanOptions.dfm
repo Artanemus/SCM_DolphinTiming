@@ -3,8 +3,8 @@ object ScanOptions: TScanOptions
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Time Drops Scan.'
-  ClientHeight = 427
-  ClientWidth = 360
+  ClientHeight = 275
+  ClientWidth = 451
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,16 +20,17 @@ object ScanOptions: TScanOptions
   object pnlHeader: TPanel
     Left = 0
     Top = 0
-    Width = 360
+    Width = 451
     Height = 65
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitWidth = 360
     object lblHeader: TLabel
       AlignWithMargins = True
       Left = 10
       Top = 10
-      Width = 340
+      Width = 431
       Height = 45
       Margins.Left = 10
       Margins.Top = 10
@@ -42,21 +43,22 @@ object ScanOptions: TScanOptions
         'fied or new '#39'results'#39' files.'
       Layout = tlCenter
       WordWrap = True
-      ExplicitHeight = 55
+      ExplicitWidth = 300
+      ExplicitHeight = 42
     end
   end
   object pnlBody: TPanel
     Left = 0
     Top = 65
-    Width = 360
-    Height = 313
+    Width = 451
+    Height = 161
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 97
-    ExplicitHeight = 160
+    ExplicitWidth = 360
+    ExplicitHeight = 313
     object lblSessionID: TLabel
-      Left = 173
+      Left = 140
       Top = 120
       Width = 72
       Height = 21
@@ -64,7 +66,7 @@ object ScanOptions: TScanOptions
       Caption = 'Session ID'
     end
     object rgrpScanOptions: TRadioGroup
-      Left = 43
+      Left = 10
       Top = 6
       Width = 273
       Height = 105
@@ -78,7 +80,7 @@ object ScanOptions: TScanOptions
       TabOrder = 0
     end
     object edtSessionID: TEdit
-      Left = 251
+      Left = 218
       Top = 117
       Width = 65
       Height = 29
@@ -87,11 +89,12 @@ object ScanOptions: TScanOptions
       Text = '9999'
     end
     object rgrpFileType: TRadioGroup
-      Left = 43
-      Top = 155
+      Left = 306
+      Top = 6
       Width = 134
       Height = 137
       Caption = 'File types ...'
+      ItemIndex = 0
       Items.Strings = (
         'Both'
         '.DO3'
@@ -103,15 +106,16 @@ object ScanOptions: TScanOptions
   end
   object pnlFooter: TPanel
     Left = 0
-    Top = 378
-    Width = 360
+    Top = 226
+    Width = 451
     Height = 49
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 257
+    ExplicitTop = 378
+    ExplicitWidth = 360
     object btnOk: TButton
-      Left = 183
+      Left = 228
       Top = 8
       Width = 83
       Height = 33
@@ -120,7 +124,7 @@ object ScanOptions: TScanOptions
       OnClick = btnOkClick
     end
     object btnCancel: TButton
-      Left = 94
+      Left = 139
       Top = 8
       Width = 83
       Height = 33

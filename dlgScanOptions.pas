@@ -20,17 +20,20 @@ type
     btnCancel: TButton;
     rgrpFileType: TRadioGroup;
     procedure FormDestroy(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
+		procedure FormCreate(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
-    FfSessionID: Integer;
-    procedure SetfSessionID(const Value: Integer);
+		fSessionID: Integer;
+		FWildCard: string;
+		procedure SetSessionID(const Value: Integer);
     { Private declarations }
-  public
-    property fSessionID: Integer read FfSessionID write SetfSessionID;
-    { Public declarations }
+	public
+		property SessionID: Integer read fSessionID write SetSessionID;
+		property WildCard: string read FWildCard;
+
+		{ Public declarations }
   end;
 
 var
@@ -45,14 +48,15 @@ begin
   if Assigned(Settings) then
   begin
     Settings.ScanOption := rgrpScanOptions.ItemIndex;
-    Settings.ScanOptionSessionID := fSessionID;
+    Settings.ScanOptionSessionID := SessionID;
   end;
 end;
 
 procedure TScanOptions.FormCreate(Sender: TObject);
 begin
-  edtSessionID.Text := '';
-  fSessionID := 0;
+	edtSessionID.Text := '';
+	fSessionID := 0;
+	FWildCard := '';
 	if Assigned(Settings) then
 	begin
 		if Settings.ScanOption in [0,1] then
@@ -76,6 +80,8 @@ end;
 
 procedure TScanOptions.btnCancelClick(Sender: TObject);
 begin
+	fSessionID := 0;
+	fWildCard := '';
 	ModalResult := mrCancel;
 end;
 
@@ -85,20 +91,33 @@ var
 begin
   if length(edtSessionID.Text) > 0 then
   begin
-    // NumbersOnly = true;
+    // TEdit.NumbersOnly = true;
     // Note, however, that a user can paste non-numeric characters in the
     // textfield even when this property is set
-    i := StrToIntDef(uAppUtils.StripNonNumeric(edtSessionID.Text), 0);
-    fSessionID := i;
+		i := StrToIntDef(uAppUtils.StripNonNumeric(edtSessionID.Text), 0);
+		fSessionID := i;
   end
   else
-    fSessionID := 0;
+		fSessionID := 0;
 
   if Assigned(Settings) then
   begin
     if rgrpFileType.ItemIndex in [0..2] then
-      Settings.DTUseFileType := rgrpFileType.ItemIndex;
-  end;
+			Settings.DTUseFileType := rgrpFileType.ItemIndex
+		else 	Settings.DTUseFileType := 0;
+	end;
+
+	case rgrpFileType.ItemIndex of
+		0: fWildCard := '*.DO?';
+		1: fWildCard := '*.DO3';
+		2: fWildCard := '*.DO4';
+		else fWildCard := '';
+	end;
+
+	if (rgrpScanOptions.ItemIndex = 1) and (fSessionID <> 0)
+		and (not fWildCard.IsEmpty()) then
+		// scan for secific session...
+		fWildCard := IntToStr(fSessionID) + '-' + fWildCard;
 
 	ModalResult := mrOk;
 end;
@@ -108,14 +127,20 @@ procedure TScanOptions.FormKeyDown(Sender: TObject; var Key: Word; Shift:
 begin
   if Key = VK_Escape then
   begin
-    Key := 0;
+		fSessionID := 0;
+		fWildCard := '';
+		Key := 0;
     ModalResult := mrCancel;
   end;
 end;
 
-procedure TScanOptions.SetfSessionID(const Value: Integer);
+procedure TScanOptions.SetSessionID(const Value: Integer);
 begin
-  FfSessionID := Value;
+	fSessionID := Value;
+	if (fSessionID <= 0) then
+			edtSessionID.Text := ''
+	else
+		edtSessionID.Text := IntToStr(fSessionID);
 end;
 
 

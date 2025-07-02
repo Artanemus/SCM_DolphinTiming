@@ -140,10 +140,10 @@ var
   LList: TStringDynArray;
   LSearchOption: TSearchOption;
   fileMask: string;
-  I: Integer;
+//  I: Integer;
 begin
-  fileMask := '*.JSON';
-  result := false;
+	fileMask := '*.DO?';
+	result := false;
   // do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
   try
@@ -155,14 +155,14 @@ begin
       result := true;
       exit;
     end;
-    for I := LOW(LList) to HIGH(LList) do
-    begin
-      if LList[I].Contains('Session') then
-      begin
-        result := true;
-        exit;
-      end;
-    end;
+//    for I := LOW(LList) to HIGH(LList) do
+//    begin
+//			if LList[I].Contains('.DO3') or LList[I].Contains('.DO4') then
+//      begin
+//        result := true;
+//        exit;
+//      end;
+//    end;
 
   except
     { Catch the possible exceptions }

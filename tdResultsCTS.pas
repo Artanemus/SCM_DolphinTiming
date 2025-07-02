@@ -28,8 +28,6 @@ type
 
 	end;
 
-
-
 	// Main Process entry points
 
 

@@ -144,7 +144,7 @@ type
     procedure actnSaveSessionUpdate(Sender: TObject);
 		procedure actnScanMeetsFolderExecute(Sender: TObject);
 		procedure actnScanMeetsFolderUpdate(Sender: TObject);
-    procedure actnSCMSessionExecute(Sender: TObject);
+		procedure actnSCMSessionExecute(Sender: TObject);
     procedure actnSCMSessionUpdate(Sender: TObject);
     procedure actnSelectSwimClubExecute(Sender: TObject);
     procedure actnSelectSwimClubUpdate(Sender: TObject);
@@ -176,7 +176,8 @@ type
 
   private
   var
-    fClearAndScan_Done: Boolean;
+		fScanMeets_Done: Boolean;
+		fClearGrid_Done: Boolean;
     { Private declarations }
     fDirectoryWatcher: TDirectoryWatcher;
     { User preference: On boot-up, populated the TDS data tables with any
@@ -194,16 +195,16 @@ type
     procedure UpdateCellIcons(ADataset: TDataSet; ARow: Integer; AActiveRT:
         scmActiveRT);
   protected
-    procedure MSG_ClearAndScan(var Msg: TMessage); message SCM_CLEARANDSCAN_TIMEDROPS;
-    // perform either RESCAN or CLEARANDRESCAN based on Msg.wParam
-    // 1 = RESCAN, 2 = CLEARANDRESCAN (destrucive).
-    // make silent based on Msg.lParam
-    // 0 = verbose, 1 = silent.
-    procedure MSG_ClearGrid(var Msg: TMessage); message SCM_CLEAR_TIMEDROPS;
-    procedure MSG_Connect(var Msg: TMessage); message SCM_CONNECT;
-    procedure MSG_PushResults(var Msg: TMessage); message SCM_PUSH_TIMEDROPS;
-    procedure MSG_ScanMeets(var Msg: TMessage); message SCM_SCAN_TIMEDROPS;
-    procedure MSG_UpdateUISCM(var Msg: TMessage); message SCM_UPDATEUI_SCM;
+//    procedure MSG_ClearAndScan(var Msg: TMessage); message SCM_CLEARANDSCAN_TIMEDROPS;
+		// perform either RESCAN or CLEARANDRESCAN based on Msg.wParam
+		// 1 = RESCAN, 2 = CLEARANDRESCAN (destrucive).
+		// make silent based on Msg.lParam
+		// 0 = verbose, 1 = silent.
+		procedure MSG_ClearGrid(var Msg: TMessage); message SCM_CLEAR_TIMEDROPS;
+		procedure MSG_ScanMeets(var Msg: TMessage); message SCM_SCAN_TIMEDROPS;
+		procedure MSG_Connect(var Msg: TMessage); message SCM_CONNECT;
+		procedure MSG_PushResults(var Msg: TMessage); message SCM_PUSH_TIMEDROPS;
+		procedure MSG_UpdateUISCM(var Msg: TMessage); message SCM_UPDATEUI_SCM;
     procedure MSG_UpdateUITDS(var Msg: TMessage); message SCM_UPDATEUI_TDS;
     procedure MSG_UpdateUINOODLES(var Msg: TMessage); message SCM_UPDATE_NOODLES;
 
@@ -237,8 +238,6 @@ const
 function ExtractSessionEventHeat(const FileName: string; out SessionID,
 	EventNum, HeatNum: Integer): Boolean;
 var
-  fn: string;
-	Fields: TArray<string>;
 	CTS: TCTSFile; // type record.
 begin
 	// Parse FileName to extract SessionID, EventNum, HeatNum
@@ -249,35 +248,7 @@ begin
 	SessionID := CTS.SessionNum;
 	EventNum := CTS.EventNum;
 	HeatNum := CTS.HeatNum;
-  if (SessionID > 0) and (EventNum > 0) and (HeatNum > 0) then result := true;
-
-(*  // TimeDrops compare method
-
-		fn := ExtractFileName(FileName); // remove path from filename
-  	Fields := System.StrUtils.SplitString(fn, '_');
-  	if Length(Fields) > 1 then
-  	begin
-  		// Strip non-numeric characters from Fields[1]
-  		Fields[0] := StripNonNumeric(Fields[0]);
-  		SessionID := StrToIntDef(Fields[0], 0);
-  		if (SessionID <> 0) then
-  		begin
-  			// Filename syntax used by Time Drops: SessionSSSS_Event_EEEE_HeatHHHH_RaceRRRR_XXX.json
-  			if Length(Fields) > 2 then
-  			begin
-  				EventNum := StrToIntDef(StripNonNumeric(Fields[1]), 0);
-					if Length(Fields) > 3 then
-  				begin
-  					HeatNum := StrToIntDef(StripNonNumeric(Fields[2]), 0);
-  					//      if Length(Fields) > 4 then
-  					//        RaceNum := StrToIntDef(StripNonNumeric(Fields[3]), 0);
-  					result := true;
-  				end;
-  			end;
-  		end;
-  	end;
-
-*)
+	if (SessionID > 0) and (EventNum > 0) and (HeatNum > 0) then result := true;
 end;
 
 function FileNameComparer(const Left, Right: string): Integer;
@@ -407,7 +378,7 @@ end;
 procedure TMain.actnClearAndScanExecute(Sender: TObject);
 begin
   actnClearGridExecute(actnClearGrid);
-  actnScanMeetsFolderExecute(actnClearGrid);
+	actnScanMeetsFolderExecute(actnClearGrid);
 end;
 
 procedure TMain.actnClearAndScanUpdate(Sender: TObject);
@@ -426,34 +397,34 @@ procedure TMain.actnClearGridExecute(Sender: TObject);
 var
   mr: TModalResult;
 begin
-  if (not fClearAndScan_Done) then
+	if (not fClearGrid_Done) then
     mr := mrOk
   else
     // Because this proc is destructive - confirmation is required.
-    mr := MessageDlg('Do you want to EMPTY TimeDrop''s' + sLineBreak + 'data tables and CLEAR the grid? ',
+    mr := MessageDlg('Do you want to EMPTY the timing system''s' + sLineBreak + 'data tables and CLEAR the grid? ',
       mtConfirmation, [mbYes, mbNo], 0, mbNo);
   if IsPositiveResult(mr) then
   begin
-    // Test DT directory exists...
-    if DirectoryExists(Settings.MeetsFolder) then
-    begin
-      if DirHasResultFiles(Settings.MeetsFolder) then
-      begin
-        TDS.DisableAllTDControls;
-        tdsGrid.BeginUpdate;
-        try
-          TDS.EmptyAllTDDataSets;
-        finally
-          TDS.EnableAllTDControls;
-          tdsGrid.EndUpdate;
-          // Assert : remove display of lbl_tdsGridOverlay.
-          fClearAndScan_Done := true;
-          // paint the TDS grid.
-          PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0);
-        end;
-      end;
-    end;
-  end;
+		// Test DT directory exists...  REDUNDANT?
+//    if DirectoryExists(Settings.MeetsFolder) then
+//		begin
+//			if DirHasResultFiles(Settings.MeetsFolder) then
+//			begin
+				TDS.DisableAllTDControls;
+				tdsGrid.BeginUpdate;
+				try
+					TDS.EmptyAllTDDataSets;
+				finally
+					TDS.EnableAllTDControls;
+					tdsGrid.EndUpdate;
+					// Assert : remove display of lbl_tdsGridOverlay.
+					fClearGrid_Done := true;
+					// paint the TDS grid.
+//					PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0);
+				end;
+//			end;
+//    end;
+	end;
 end;
 
 procedure TMain.actnClearGridUpdate(Sender: TObject);
@@ -795,7 +766,7 @@ begin
           s := 'Pushed (' + IntToStr(Count) + ') results completed.';
           MessageDlg(s, mtInformation, [mbOK], 0);
           // Assert : remove display of lbl_tdsGridOverlay.
-          fClearAndScan_Done := true;
+          fScanMeets_Done := true;
         end;
       finally
 				tdsGrid.EndUpdate;
@@ -948,7 +919,7 @@ procedure TMain.actnScanMeetsFolderExecute(Sender: TObject);
 var
   mr: TModalResult;
   LList: TStringDynArray;
-  dlg : TScanOptions;
+	dlg : TScanOptions;
   I: integer;
   LSearchOption: TSearchOption;
 	WildCardStr: String;
@@ -956,69 +927,53 @@ var
 begin
   // Do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
-  WildCardStr := '';
-	if (not fClearAndScan_Done) or (fDoClearAndScanOnBoot) then
-  begin
-		mr := mrOK;
-		WildCardStr := '*.DO3; *.DO4';
-		if Assigned(Settings) then
-		begin
-			if Settings.DTUseFileType = 1 then WildCardStr := '*.DO3'
-			else if Settings.DTUseFileType = 2 then WildCardStr := '*.DO4';
-		end;
-	end
-	else
+	WildCardStr := '*.DO?'; // default value.
+
+	if Assigned(Settings) then
 	begin
+		if Settings.DTUseFileType = 1 then WildCardStr := '*.DO3'
+		else if Settings.DTUseFileType = 2 then WildCardStr := '*.DO4';
+	end;
+
+	if (not fScanMeets_Done) then
+		mr := mrOK
+	else
+	begin  // user gets to pick what to scan?
 		dlg := TScanOptions.Create(Self);
 		mr := dlg.ShowModal;
-		if dlg.rgrpScanOptions.ItemIndex = 0 then
-		begin
-			WildCardStr := '*.DO3; *.DO4';
-			if Assigned(Settings) then
-			begin
-				if Settings.DTUseFileType = 1 then WildCardStr := '*.DO3'
-				else if Settings.DTUseFileType = 2 then WildCardStr := '*.DO4';
-			end;
-		end
-		else
-    begin
-			WildCardStr := dlg.edtSessionID.Text + '-*.DO3; '
-				+ dlg.edtSessionID.Text + '-*.DO4;';
-      if Assigned(Settings) then
-      begin
-        if Settings.DTUseFileType = 1 then
-					WildCardStr := dlg.edtSessionID.Text + '-*.DO3'
-        else if Settings.DTUseFileType = 2 then
-					WildCardStr := dlg.edtSessionID.Text + '-*.DO4';
-      end;
-    end;
+		if not dlg.WildCard.IsEmpty then
+			WildCardStr := dlg.WildCard; // dlg does all the heavy lifting here.
 		dlg.free;
-  end;
+	end;
 
   if IsPositiveResult(mr) then
   begin
     // Test DT directory exists...
     if DirectoryExists(Settings.MeetsFolder) then
     begin
-      if DirHasResultFiles(Settings.MeetsFolder) then
+			if DirHasResultFiles(Settings.MeetsFolder) then
       begin
-        try
+				try
           // For files use GetFiles method
-          LList := TDirectory.GetFiles(Settings.MeetsFolder, WildCardStr, LSearchOption);
+					LList := TDirectory.GetFiles(Settings.MeetsFolder, WildCardStr, LSearchOption);
         except
           // Catch the possible exceptions
         end;
 
         // ... SORT before processing files:
-        TArray.Sort<string>(LList, TComparer<string>.Construct(FileNameComparer));
+				TArray.Sort<string>(LList, TComparer<string>.Construct(FileNameComparer));
 
-        if Length(LList) > 0 then
+				if Length(LList) > 0 then
         begin
 					TDS.DisableAllTDControls;
 					tdsGrid.BeginUpdate;
 					try
 						CTS := TResultsCTS.Create;
-						CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+
+						// If SCM isn't connected - the default 10 number of lanes will be used.
+						if Assigned(SCM) and SCM.DataIsActive then
+							CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+
 						for I := 0 to Length(LList) - 1 do
 							CTS.ProcessFile(LList[i]);
 					finally
@@ -1027,9 +982,9 @@ begin
             tdsGrid.EndUpdate;
           end;
         end;
-        fClearAndScan_Done :=  true;
-        PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0); // Update UI.
-      end;
+				fScanMeets_Done :=  true;
+//				PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0); // Update UI.
+			end;
     end;
   end;
 end;
@@ -1725,7 +1680,8 @@ begin
   vimgStrokeBug.ImageIndex := -1;
   fDoLoginOnBoot := false; // login to DB Server.
   fDoClearAndScanOnBoot := false; // EmptyDataSets and scan 'meets' folder.
-  fClearAndScan_Done := false;
+	fScanMeets_Done := false;
+	fClearGrid_Done := false;
   FSyncSCMVerbose := true;
   FSyncTDSVerbose := true;
 
@@ -2003,9 +1959,14 @@ begin
     PostMessage(Self.Handle, SCM_UPDATEUI_SCM, 0 , 0 );
 
   // Fill the grid with available 'results'
-  if fDoClearAndScanOnBoot and (not fClearAndScan_Done )then
-    // calling ... sets fDoClearAndScanOnBoot := false.
-    PostMessage(Self.Handle, SCM_CLEARANDSCAN_TIMEDROPS, 0, 0)
+	if fDoClearAndScanOnBoot then
+	begin
+		if (not fClearGrid_Done ) then
+			PostMessage(Self.Handle, SCM_CLEAR_TIMEDROPS, 0, 0);
+		// calling ... sets fDoClearAndScanOnBoot := false.
+		if (not fScanMeets_Done )then
+			PostMessage(Self.Handle, SCM_SCAN_TIMEDROPS, 0, 0);
+	end
   else
     // Assert UI display is up-to-date.
     PostMessage(Self.Handle, SCM_UPDATEUI_TDS, 0 , 0 );
@@ -2058,18 +2019,21 @@ begin
   Settings.LoadFromFile();
 end;
 
-procedure TMain.MSG_ClearAndScan(var Msg: TMessage);
-begin
-  // Destructive - call on boot.
-  if actnClearAndScan.Enabled and (not fClearAndScan_Done) then
-    actnClearAndScanExecute(Self);
-end;
+(*
+  procedure TMain.MSG_ClearAndScan(var Msg: TMessage);
+  begin
+  	// Destructive - call on boot.
+  	if actnClearAndScan.Enabled and (not fScanMeets_Done) then
+  		actnClearAndScanExecute(Self);
+  end;
+
+*)
 
 procedure TMain.MSG_ClearGrid(var Msg: TMessage);
 begin
   // Destructive - call on boot.
   if actnClearGrid.Enabled then
-    actnClearGridExecute(Self);
+		actnClearGridExecute(Self);
 end;
 
 procedure TMain.MSG_Connect(var Msg: TMessage);
@@ -2089,7 +2053,7 @@ procedure TMain.MSG_ScanMeets(var Msg: TMessage);
 begin
   // Scan meet's folder - non destructive. (Refresh TDS Data).
   if actnScanMeetsFolder.Enabled then
-    actnScanMeetsFolderExecute(Self);
+		actnScanMeetsFolderExecute(Self);
 end;
 
 procedure TMain.MSG_UpdateUINOODLES(var Msg: TMessage);
@@ -2384,7 +2348,7 @@ begin
   pnlTool2.Visible := true;
   lblEventDetailsTD.Visible := true;
 
-  if not fClearAndScan_Done then
+  if not fScanMeets_Done then
   begin
     lbl_tdsGridOverlay.Caption := 'A scan of the ''meets''' + sLineBreak +
     'folder is needed...' + sLineBreak +
@@ -2521,23 +2485,21 @@ begin
 	s := UpperCase(ExtractFileExt(FileName));
 
 	if (s = '.DO3') or (s = '.DO4') then
-	begin
-		s := UpperCase(FileName);
-		if s.Contains('SESSION') then
-		begin
-			ShowMessage(Format('The meets folder was modified: %s (%s)', [FileName, ActionDescription]));
-			try
-				tdsGrid.BeginUpdate;
-				CTS := TResultsCTS.Create;
-				CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
-				CTS.ProcessFile(FileName);
-			finally
-				FreeAndNil(CTS);
-				tdsGrid.EndUpdate;
-			end;
-		end;
-  end;
-end;
+  begin
+    s := UpperCase(FileName);
+    ShowMessage(Format('The meets folder was modified: %s (%s)', [FileName,
+      ActionDescription]));
+    try
+      tdsGrid.BeginUpdate;
+			CTS := TResultsCTS.Create;
+      CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
+      CTS.ProcessFile(FileName);
+    finally
+      FreeAndNil(CTS);
+      tdsGrid.EndUpdate;
+    end;
+	end;
+	end;
 
 procedure TMain.scmGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
   Value: string);

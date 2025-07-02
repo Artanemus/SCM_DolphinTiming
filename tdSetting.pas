@@ -69,11 +69,11 @@ begin
 //  Password := '';
 //  OSAuthent := false;
   LoginTimeOut := CONNECTIONTIMEOUT;
-  MeetsFolder := 'c:\TimeDrops\Meets';
+	MeetsFolder := 'c:\CTSDolphin\Meets';
   MeetProgramType := 0; // Export a basic meet program (Minimalistic).
-  ProgramFolder := 'c:\TimeDrops\Meets';
-  AppDataFolder := 'c:\TimeDrops\AppData';
-  ReConstructFolder := 'c:\TimeDrops\ReConstruct';
+	ProgramFolder := 'c:\CTSDolphin\EventCVS';
+	AppDataFolder := 'c:\CTSDolphin\AppData';
+	ReConstructFolder := 'c:\CTSDolphin\ReConstruct';
   AcceptedDeviation := 0.3;
   RaceNumber := 0;
   // 0 = default DT method : 1 = extended SCM method.
@@ -92,7 +92,7 @@ begin
   ScanOption := 0; // Scan All 'results' files in 'meets' folder.
 	ScanOptionSessionID := 0;
 	EnableXNoodle := false;
-	DTUseFileType :=0;
+	DTUseFileType :=0; // 0=BOTH, 1=DO3, 2=DO4.
   {
   ForceDirectories creates a new directory as specified in Dir,
   which must be a fully-qualified path name. If the directories given in
@@ -103,7 +103,7 @@ end;
 
 function TPrgSetting.GetDefaultSettingsFilename(): string;
 begin
-  result := TPath.Combine(GetSettingsFolder(), 'initTimeDrops.json');
+	result := TPath.Combine(GetSettingsFolder(), 'initCTSDolphin.json');
 end;
 
 function TPrgSetting.GetSettingsFolder(): string;
@@ -117,7 +117,7 @@ begin
 {$ELSE}
   // GETHOMEPATH = C:Users\<username>\AppData\Roaming (WINDOWS)
   // Should also work on ANDROID.
-  Result := TPath.Combine(TPath.GetHomePath(), 'Artanemus\SwimClubMeet\TimeDrops');
+	Result := TPath.Combine(TPath.GetHomePath(), 'Artanemus\SwimClubMeet\CTSDolphin');
 {$ENDIF}
 
 end;
