@@ -244,7 +244,8 @@ begin
 	// Must implement this based on filename format (DO3, DO4)
   // Return True if successful, False otherwise
 	result := false;
-	CTS.Prepare(FileName); // Param 2: NumOfLanes set to default. IGNORED HERE.
+	CTS.Prepare(FileName);
+	if not CTS.Prepared then exit;
 	SessionID := CTS.SessionNum;
 	EventNum := CTS.EventNum;
 	HeatNum := CTS.HeatNum;
@@ -754,7 +755,6 @@ begin
       tdsGrid.BeginUpdate;
       try
 				CTS := TResultsCTS.Create;
-				CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
 				begin
 					// terminate system watch folder.
 					for AFile in TDPushResultFile.Files do
@@ -969,11 +969,6 @@ begin
 					tdsGrid.BeginUpdate;
 					try
 						CTS := TResultsCTS.Create;
-
-						// If SCM isn't connected - the default 10 number of lanes will be used.
-						if Assigned(SCM) and SCM.DataIsActive then
-							CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
-
 						for I := 0 to Length(LList) - 1 do
 							CTS.ProcessFile(LList[i]);
 					finally
@@ -2492,8 +2487,7 @@ begin
     try
       tdsGrid.BeginUpdate;
 			CTS := TResultsCTS.Create;
-      CTS.NumOfLanes := SCM.qrySwimClub.FieldByName('NumOfLanes').AsInteger;
-      CTS.ProcessFile(FileName);
+			CTS.ProcessFile(FileName);
     finally
       FreeAndNil(CTS);
       tdsGrid.EndUpdate;

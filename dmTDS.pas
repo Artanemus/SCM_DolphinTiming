@@ -109,7 +109,7 @@ type
 
 
 const
-  XMLDataSubFolder = 'GitHub\SCM_TimeDrops\XML\';
+	XMLDataSubFolder = 'GitHub\SCM_DolphinTiming\XML\';
 
 var
   TDS: TTDS;
@@ -324,16 +324,16 @@ begin
 	tblmLane.FieldDefs.Add('Split9', ftTime);
 	tblmLane.FieldDefs.Add('Split10', ftTime);
 
-	tblmLane.FieldDefs.Add('SplitDist1', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist2', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist3', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist4', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist5', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist6', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist7', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist8', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist9', ftTime);
-	tblmLane.FieldDefs.Add('SplitDist10', ftTime);
+	tblmLane.FieldDefs.Add('SplitDist1', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist2', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist3', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist4', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist5', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist6', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist7', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist8', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist9', ftFloat);
+	tblmLane.FieldDefs.Add('SplitDist10', ftFloat);
 
 
 	tblmLane.CreateDataSet;

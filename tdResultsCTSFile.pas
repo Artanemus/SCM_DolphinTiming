@@ -9,6 +9,7 @@ dmTDS;
 type
 	TCTSLANE = record
 	LaneNum: integer;
+	IsValid: boolean;
 	IsEmpty: boolean;
 	IsDq: boolean;
 	TimeKeeper1: double;
@@ -68,7 +69,7 @@ type
 		class operator Initialize(out Dest: TCTSFile);
 		class operator Finalize(var Dest: TCTSFile);
 
-		procedure Prepare(AFileName: string; NumOfLane: integer = 10);
+		procedure Prepare(AFileName: string);
 
 		property FileType: scmDTFileType read GetFileType;
 		property SessionNum: integer read FSessionNum;
@@ -79,7 +80,7 @@ type
 		property Lane[Index: Integer]: TCTSLANE read GetLane; // write	SetLane;
 		property IsLaneEmpty[Index: Integer]: boolean read GetIsLaneEmpty;
 		property Prepared: boolean read fPrepared;
-		property NumOfLanes: integer read FNumOfLanes write FNumOfLanes;
+		property NumOfLanes: integer read FNumOfLanes;
 		property MaxNumOfSplits: integer read FMaxNumOfSplits write FMaxNumOfSplits;
 		property MaxNumOfTimeKeepers: integer read FMaxNumOfTimeKeepers write FMaxNumOfTimeKeepers;
 
@@ -102,7 +103,7 @@ begin
 	Dest.fPrepared := false;
 	Dest.fFileName := '';
 	Dest.fNameOfFile := '';
-	Dest.fNumOfLanes := 10;
+	Dest.fNumOfLanes := 0;
 	Dest.FMaxNumOfSplits := 10;
 	Dest.FMaxNumOfTimeKeepers := 3;
 end;
@@ -245,15 +246,16 @@ var
   TimeKeepers: array of double;
 begin
   result := false;
+	if fNumOfLanes = 0 then exit;
 	if Index in [1..fNumOfLanes] then // CTS Dolphin - Max is 10 lanes ?
-  begin
-    if sListBodyTimeKeepers(Index, TimeKeepers) then
-    begin
-      if (lane.TimeKeeper1 = 0) and (lane.TimeKeeper2 = 0) and
-      (lane.TimeKeeper3 = 0) then
-        result := true;
-    end;
-  end;
+	begin
+		if sListBodyTimeKeepers(Index, TimeKeepers) then
+		begin
+			if (lane.TimeKeeper1 = 0) and (lane.TimeKeeper2 = 0) and
+			(lane.TimeKeeper3 = 0) then
+				result := true;
+		end;
+	end;
 end;
 
 function TCTSFile.GetLane(Index: Integer): TCTSLANE;
@@ -261,24 +263,46 @@ var
 	lane: TCTSLane;
 	TimeKeepers: array of double;
 	Splits: array of double;
-	LaneCount: integer;
+	NumOfFirstLane, num: integer;
 begin
 
-	lane.LaneNum := 0;
-	Result := lane;
 	lane.IsEmpty := true;
 	lane.IsDq := false;
-	LaneCount := fNumOfLanes; // MAX number of lanes = 10 lanes. (Default)
+	lane.LaneNum := 0;
+	lane.IsValid := false;
+	lane.TimeKeeper1:= 0; // double;
+	lane.TimeKeeper2:= 0; // double;
+	lane.TimeKeeper3:= 0; // double;
+	lane.Split1:= 0; // double;
+	lane.Split2:= 0; // double;
+	lane.Split3:= 0; // double;
+	lane.Split4:= 0; // double;
+	lane.Split5:= 0; // double;
+	lane.Split6:= 0; // double;
+	lane.Split7:= 0; // double;
+	lane.Split8:= 0; // double;
+	lane.Split9:= 0; // double;
+	lane.Split10:= 0; // double;
 
-	// check out of bounds... line 1 header info , last line footer with HASH.
-	if (fSList.Count - 2) < fNumOfLanes then
-		LaneCount := fSList.Count - 2;
+	Result := lane;
+
+	if fNumOfLanes = 0 then exit;  // value assigned in routine Prepare.
+
+	NumOfFirstLane := sListBodyLane(1); // get lane number of first lane in list.
+	num := sListBodyLane(Index); // extract requested lane number.
+	if NumOfFirstLane = 0 then // check for zero indexed lanes.
+		num := num +1;  // adjust
+
+	if (num <> index) or (num > fNumOfLanes)  then exit; // unexpected error
+
+	lane.LaneNum := num;
+
 	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
-	if Index in [1..LaneCount] then  // CTS Dolphin - Max is 10 lanes ?
+	if Index in [1..fNumOfLanes] then  // CTS Dolphin - Max is 10 lanes ?
 	begin
 		SetLength(Splits, FMaxNumOfSplits);
 		SetLength(TimeKeepers, FMaxNumOfTimeKeepers);
-		lane.LaneNum := sListBodyLane(Index);
+
 		if sListBodyTimeKeepers(Index, TimeKeepers) then
 		begin
 			lane.TimeKeeper1 := TimeKeepers[0];
@@ -301,7 +325,10 @@ begin
       lane.Split9 := Splits[8];
       lane.Split10 := Splits[9];
     end;
-  end;
+	end;
+
+	lane.IsValid := true;
+	result := lane;
 end;
 
 function TCTSFile.GetRaceNum: integer;
@@ -365,7 +392,7 @@ begin
     result := StrToIntDef(Fields[0], 0);
 end;
 
-procedure TCTSFile.Prepare(AFileName: string; NumOfLane: integer);
+procedure TCTSFile.Prepare(AFileName: string);
 begin
 	// A FileName is fully assigned - it has path and name of file and extension.
 	// A NameOfFile is name part + file extension
@@ -373,13 +400,13 @@ begin
 	fEventNum := 0;
 	fHeatNum := 0;
 	fRaceNum := 0;
+	fNumOfLanes := 0;
 	fHash := '';
 
 	fPrepared := false;
 	fFileName := AFileName;
 	fNameOfFile := ExtractFileName(AFileName);
 	fFileType := GetFileType();
-	fNumOfLanes := NumOfLanes;
 
 	case fFileType of
 		ftUnknown:
@@ -402,28 +429,32 @@ begin
 	end;
 
 	if not Assigned(fSList) then exit;  // unexpected error. It should be assigned.
-	if fFileType = ftUnknown then exit;
 
 	fSList.Clear;
 	if FileExists(AFileName) then
+	begin
 		fSList.LoadFromFile(AFilename); // open the file and extract a list of strings.
+		if not fSList.IsEmpty then
+		begin
+			if fSList.Count > 3 then
+				fNumOfLanes := fSList.Count - 2; // exclude header and footer lines.
 
-	// Use line1 data (Header info) to extract final fields.
-	case fFileType of
-		ftUnknown:
-			exit;
-		ftDO3:
-		begin
-			if fSessionNum = 0 then fSessionNum := sListHeaderSessionNum;
-			if fEventNum = 0 then fEventNum := sListHeaderEventNum;
-			fHeatNum := sListHeaderHeatNum;
-		end;
-		ftDO4:
-		begin
-			if fSessionNum = 0 then	fSessionNum := sListHeaderSessionNum;
-			if fEventNum = 0 then fEventNum := sListHeaderEventNum;
-			if fHeatNum = 0 then fHeatNum := sListHeaderHeatNum;
-			fHash := sListFooterHashStr;
+			// Use line1 data (Header info) to extract final fields.
+			case fFileType of
+				ftDO3:
+				begin
+					if fSessionNum = 0 then fSessionNum := sListHeaderSessionNum;
+					if fEventNum = 0 then fEventNum := sListHeaderEventNum;
+					fHeatNum := sListHeaderHeatNum;
+				end;
+				ftDO4:
+				begin
+					if fSessionNum = 0 then	fSessionNum := sListHeaderSessionNum;
+					if fEventNum = 0 then fEventNum := sListHeaderEventNum;
+					if fHeatNum = 0 then fHeatNum := sListHeaderHeatNum;
+					fHash := sListFooterHashStr;
+				end;
+			end;
 		end;
 	end;
 
