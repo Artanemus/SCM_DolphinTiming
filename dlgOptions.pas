@@ -29,7 +29,7 @@ type
     pnlHeader: TPanel;
     rgrpMeanTimeMethod: TRadioGroup;
     tabSettings: TTabSheet;
-    tabsheetPaths: TTabSheet;
+    tabFilePaths: TTabSheet;
     vimgDT: TVirtualImage;
     BrowseFolderDlg: TFileOpenDialog;
     rgrpSwimmerAge: TRadioGroup;
@@ -44,7 +44,7 @@ type
     bhintOptions: TBalloonHint;
     vimginfo1: TVirtualImage;
     vimgInfo2: TVirtualImage;
-    TabSheet1: TTabSheet;
+    tabActions: TTabSheet;
     chk_EnableLoginPrompt: TCheckBox;
     chk_EnableRescanPrompt: TCheckBox;
     vimgInfo3: TVirtualImage;
@@ -54,6 +54,7 @@ type
     chkbEnableXNoodle: TCheckBox;
     tsCTS: TTabSheet;
     rgrpFileType: TRadioGroup;
+    tabTDS: TTabSheet;
     procedure btnCloseClick(Sender: TObject);
     procedure btnedtAppDataRightButtonClick(Sender: TObject);
     procedure btnedtMeetProgramRightButtonClick(Sender: TObject);
@@ -183,6 +184,11 @@ begin
   // INIT ...
 	pgcntrl.TabIndex := 0;
 	chkbEnableXNoodle.Checked;  // ASSERT.
+{$IFDEF DEBUG}
+	lblReConstructDO4.Visible := false;
+	btnedtReConstruct.Visible := False;
+  tabTDS.Visible := true;
+{$ENDIF}
 end;
 
 procedure TOptions.FormShow(Sender: TObject);

@@ -63,13 +63,13 @@ procedure StartWatcher(fDirectoryWatcher: TDirectoryWatcher; FOnFileChanged: TFi
 var
 watchFolder: string;
 begin
-  watchFolder := ExpandEnvVars('%SYSTEMDRIVE%\TimeDrops\Meets'); // default folder.
+	watchFolder := ExpandEnvVars('%SYSTEMDRIVE%\CTSDolphin\Meets'); // default folder.
   if (not Assigned(fDirectoryWatcher)) then
   begin
     if Assigned(Settings) then
     begin
       if FileExists(Settings.MeetsFolder) then
-        watchFolder := Settings.MeetsFolder;
+				watchFolder := Settings.MeetsFolder;
     end;
 
     // restart file system watcher...

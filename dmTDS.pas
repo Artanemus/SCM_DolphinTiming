@@ -39,6 +39,9 @@ type
 		fMasterDetailActive: Boolean;
 		FPatchesEnabled: Boolean;  // TForm.dtfrmExec ...   // Both DataModules
 		msgHandle: HWND;
+
+		bmSess, bmEv, bmHt: integer; // bookmarks
+
 		procedure POST_LaneToLane(LaneNum: Integer);
 		procedure POST_Noodle(NoodleID: Integer);
 		procedure POST_Record(EventType: scmEventType = etUnknown);
@@ -98,6 +101,10 @@ type
 		// Tests IsEmpty, IsNull, [T1M .. T3M] [T1A .. T3A] STATE.
 		function ValidateWatchTime(ADataSet: TDataSet; TimeKeeperIndx: integer; art:
 				scmActiveRT): boolean;
+
+		function BookmarkSet(): boolean;
+		function BookmarkCue(): boolean;
+
 		// Read/Write Application Data State to file
 		procedure WriteToBinary(AFileName: string);
 		property Connection: TFDConnection read FConnection write FConnection; //---
@@ -148,16 +155,56 @@ begin
 	end;
 end;
 
+function TTDS.BookmarkCue: boolean;
+begin
+  Result := False;
+  if not fDataIsActive then Exit;
+	if bmSess = 0 then Exit;
+	Result := LocateTSessionNum(bmSess);
+	if not result then begin tblmSession.First; exit; end;
+	if (bmEv = 0) then Exit;
+	Result := LocateTEventNum(tblmSession.FieldByName('SessionID').AsInteger, bmEv);
+	if not result then begin tblmEvent.First; exit; end;
+	if (bmHt = 0) then Exit;
+	Result := LocateTHeatNum(tblmEvent.FieldByName('EventID').AsInteger, bmHt);
+end;
+
+function TTDS.BookmarkSet: boolean;
+begin
+	bmSess := 0;
+	bmEv := 0;
+	bmHt := 0;
+	result := false;
+	if fDataIsActive then
+	begin
+		if not TDS.tblmSession.IsEmpty then
+		begin
+			bmSess := TDS.tblmSession.FieldByName('SessionNum').AsInteger;
+			if not TDS.tblmEvent.IsEmpty then
+			begin
+				bmEv := TDS.tblmEvent.FieldByName('EventNum').AsInteger;
+				if not TDS.tblmHeat.IsEmpty then
+				begin
+					bmHt := TDS.tblmHeat.FieldByName('HeatNum').AsInteger;
+					result := true; // success - fully assigned.
+				end;
+			end;
+		end;
+	end;
+end;
+
+
 procedure TTDS.BuildAppData;
+{$IFDEF DEBUG}
 var
 	fn: TFileName;
-
 	function GetDocumentDir_TPath: string;
 	begin
 		Result := TPath.GetDocumentsPath;
 		// TPath functions usually don't include the trailing delimiter,
 		Result := IncludeTrailingPathDelimiter(Result);
 	end;
+{$ENDIF}
 
 begin
 	fDataIsActive := false;
@@ -180,6 +227,7 @@ begin
 	// session id and date...
 	tblmSession.FieldDefs.Add('Caption', ftString, 64);
 	tblmSession.CreateDataSet;
+
 {$IFDEF DEBUG}
 	// save schema ...
 	fn := GetDocumentDir_TPath() +  XMLDataSubFolder + 'AppDataSession.xml';

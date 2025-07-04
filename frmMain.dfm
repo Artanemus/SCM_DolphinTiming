@@ -2,7 +2,7 @@ object Main: TMain
   Left = 0
   Top = 0
   BorderStyle = bsSingle
-  Caption = 'SwimClubMeet - TimeDrops'
+  Caption = 'SwimClubMeet - CTS Dolphin Timing'
   ClientHeight = 833
   ClientWidth = 1460
   Color = clBtnFace
@@ -10544,6 +10544,20 @@ object Main: TMain
           ExplicitWidth = 494
         end
       end
+      object pbarResults: TProgressBar
+        Left = 0
+        Top = 748
+        Width = 527
+        Height = 17
+        Align = alBottom
+        DoubleBuffered = False
+        ParentDoubleBuffered = False
+        Style = pbstMarquee
+        MarqueeInterval = 1
+        Step = 1
+        TabOrder = 4
+        Visible = False
+      end
     end
   end
   object StatBar: TStatusBar
@@ -10566,14 +10580,22 @@ object Main: TMain
     StyleElements = [seClient, seBorder]
   end
   object TDPushResultFile: TFileOpenDialog
-    DefaultExtension = '.JSON'
-    DefaultFolder = '%SYSTEMDRIVE%\TimeDrops\Meets\'
+    DefaultExtension = '.DO?'
+    DefaultFolder = '%SYSTEMDRIVE%\CTSDolphin\Meets\'
     FavoriteLinks = <>
-    FileNameLabel = 'TimeDrops '#39'results'#39' file. '
+    FileNameLabel = 'CTS Dolphin Timing '#39'results'#39' file. '
     FileTypes = <
       item
-        DisplayName = 'TimeDrops result file. (.JSON)'
-        FileMask = '*.JSON'
+        DisplayName = 'Any Dolphin Timing result files.'
+        FileMask = '*.DO?'
+      end
+      item
+        DisplayName = 'Dolphin Timing *.DO3 files.'
+        FileMask = '*.DO3'
+      end
+      item
+        DisplayName = 'Dolphin Timing *.DO4 files.'
+        FileMask = '*.DO4'
       end
       item
         DisplayName = 'All file types.'
@@ -10581,7 +10603,7 @@ object Main: TMain
       end>
     OkButtonLabel = 'PUSH'
     Options = [fdoStrictFileTypes, fdoAllowMultiSelect, fdoPathMustExist, fdoFileMustExist]
-    Title = 'Push TimeDrops '#39'results'#39' files to grid...'
+    Title = 'Push Dolphin Timing '#39'results'#39' files to the grid...'
     Left = 56
     Top = 416
   end
@@ -10609,13 +10631,13 @@ object Main: TMain
               end
               item
                 Action = actnSaveSession
-                Caption = '&Save SCM-DT Session ...'
+                Caption = '&Save SCM-CTS Session ...'
                 ImageIndex = 1
                 ImageName = 'file_saveAlt'
               end
               item
                 Action = actnLoadSession
-                Caption = '&Load SCM-DT Session ...'
+                Caption = '&Load SCM-CTS Session ...'
                 ImageIndex = 0
                 ImageName = 'file_open'
               end
@@ -10877,7 +10899,7 @@ object Main: TMain
     end
     object actnSaveSession: TAction
       Category = 'File'
-      Caption = 'Save SCM-DT Session ...'
+      Caption = 'Save SCM-CTS Session ...'
       Enabled = False
       ImageIndex = 1
       ImageName = 'file_saveAlt'
@@ -10886,7 +10908,7 @@ object Main: TMain
     end
     object actnLoadSession: TAction
       Category = 'File'
-      Caption = 'Load SCM-DT Session ...'
+      Caption = 'Load SCM-CTS Session ...'
       Enabled = False
       ImageIndex = 0
       ImageName = 'file_open'

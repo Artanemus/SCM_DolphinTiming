@@ -169,9 +169,12 @@ procedure ReConstructLanes(sl: TStringList; adtFileType: scmDTFileType; ADataSet
 var
   laneValue: Variant;
   s, lane, dtstr: string;
-  rt, rtk: TDateTime;
-  fs: TFormatSettings;
-  msec: integer;
+	rt: TDateTime;
+{$IFDEF DEBUG}
+	rtk: TDateTime;
+	msec: integer;
+{$ENDIF}
+	fs: TFormatSettings;
 begin
   if ADataSet.IsEmpty then exit;
 

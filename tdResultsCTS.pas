@@ -307,6 +307,7 @@ begin
 
 end;
 
+{$HINTS OFF}
 procedure TResultsCTS.ProcSess(var CTSFile: TCTSFile);
 var
 	PK: integer;
@@ -353,6 +354,7 @@ begin
 
 	if (PK <> 0) then ProcEvent(PK, CTSFile);
 end;
+{$HINTS ON}
 
 procedure TResultsCTS.ProcFile(AFileName: string);
 var

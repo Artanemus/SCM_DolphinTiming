@@ -39,6 +39,8 @@ type
 		fSList: TStringList;
 		fPrepared: boolean;
 		fNumOfLanes: integer;
+		fGender: char;
+
 		FMaxNumOfSplits: integer;
 		FMaxNumOfTimeKeepers: integer;
 
@@ -106,6 +108,7 @@ begin
 	Dest.fNumOfLanes := 0;
 	Dest.FMaxNumOfSplits := 10;
 	Dest.FMaxNumOfTimeKeepers := 3;
+	Dest.fGender := 'X';
 end;
 
 function TCTSFile.ConvertSecondsStrToTime(ASecondsStr: string): TTime;
@@ -446,6 +449,7 @@ begin
 					if fSessionNum = 0 then fSessionNum := sListHeaderSessionNum;
 					if fEventNum = 0 then fEventNum := sListHeaderEventNum;
 					fHeatNum := sListHeaderHeatNum;
+					fGender := sListHeaderGenderChar;
 				end;
 				ftDO4:
 				begin
@@ -453,6 +457,7 @@ begin
 					if fEventNum = 0 then fEventNum := sListHeaderEventNum;
 					if fHeatNum = 0 then fHeatNum := sListHeaderHeatNum;
 					fHash := sListFooterHashStr;
+					fGender := sListHeaderGenderChar;
 				end;
 			end;
 		end;

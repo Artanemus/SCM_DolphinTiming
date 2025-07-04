@@ -9031,7 +9031,7 @@ object Options: TOptions
       Top = 0
       Width = 661
       Height = 397
-      ActivePage = tabsheetPaths
+      ActivePage = tabTDS
       Align = alClient
       TabOrder = 0
       object tabSettings: TTabSheet
@@ -9039,92 +9039,16 @@ object Options: TOptions
         ImageIndex = 1
         object lblSwimmerAge: TLabel
           Left = 427
-          Top = 315
+          Top = 203
           Width = 71
           Height = 21
           Alignment = taRightJustify
           Caption = 'Seed date.'
           Enabled = False
         end
-        object vimgAutoTimeSCM: TVirtualImage
-          Left = 248
-          Top = 89
-          Width = 48
-          Height = 48
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 70
-          ImageName = 'ActiveRTAutomatic'
-          Visible = False
-        end
-        object vimgAutoTimeTD: TVirtualImage
-          Left = 302
-          Top = 89
-          Width = 48
-          Height = 48
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 79
-          ImageName = 'AutoRaceTime_TD'
-          Visible = False
-        end
-        object vimgSplitSCM: TVirtualImage
-          Left = 248
-          Top = 143
-          Width = 48
-          Height = 48
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 67
-          ImageName = 'ActiveRTSplit'
-          Visible = False
-        end
-        object vimgSplitTD: TVirtualImage
-          Left = 302
-          Top = 143
-          Width = 48
-          Height = 48
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 78
-          ImageName = 'padTime_splitTime_TD'
-          Visible = False
-        end
-        object vimginfo1: TVirtualImage
-          Left = 356
-          Top = 89
-          Width = 32
-          Height = 32
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 77
-          ImageName = 'info'
-          Visible = False
-          OnMouseEnter = vimginfo1MouseEnter
-          OnMouseLeave = vimginfo1MouseLeave
-        end
-        object vimgInfo2: TVirtualImage
-          Left = 356
-          Top = 143
-          Width = 32
-          Height = 32
-          ImageCollection = IMG.imgcolDT
-          ImageWidth = 0
-          ImageHeight = 0
-          ImageIndex = 77
-          ImageName = 'info'
-          Visible = False
-          OnMouseEnter = vimgInfo2MouseEnter
-          OnMouseLeave = vimgInfo2MouseLeave
-        end
         object vimgInfo3: TVirtualImage
           Left = 279
-          Top = 221
+          Top = 109
           Width = 32
           Height = 32
           ImageCollection = IMG.imgcolDT
@@ -9137,7 +9061,7 @@ object Options: TOptions
         end
         object vimgInfo4: TVirtualImage
           Left = 601
-          Top = 221
+          Top = 109
           Width = 32
           Height = 32
           ImageCollection = IMG.imgcolDT
@@ -9164,7 +9088,7 @@ object Options: TOptions
         end
         object rgrpMeanTimeMethod: TRadioGroup
           Left = 20
-          Top = 213
+          Top = 101
           Width = 253
           Height = 92
           Caption = 'AutoCalc entrant'#39's race times ...'
@@ -9176,16 +9100,17 @@ object Options: TOptions
         end
         object chkbxRenameSession: TCheckBox
           Left = 20
-          Top = 58
+          Top = 266
           Width = 301
           Height = 25
           Caption = 'Enable rename Time Drops result files.'
           Enabled = False
           TabOrder = 2
+          Visible = False
         end
         object rgrpSwimmerAge: TRadioGroup
           Left = 362
-          Top = 213
+          Top = 101
           Width = 233
           Height = 92
           Caption = 'Calculate swimmer'#39's age ...'
@@ -9198,7 +9123,7 @@ object Options: TOptions
         end
         object dtpickSwimmerAge: TDateTimePicker
           Left = 504
-          Top = 311
+          Top = 199
           Width = 129
           Height = 29
           Date = 45738.000000000000000000
@@ -9206,30 +9131,12 @@ object Options: TOptions
           Enabled = False
           TabOrder = 4
         end
-        object chkbxFinalTime: TCheckBox
-          Left = 20
-          Top = 112
-          Width = 222
-          Height = 25
-          Caption = 'Use Time Drops '#39'Final Time'#39'.'
-          TabOrder = 5
-          Visible = False
-        end
-        object chkbxPadTime: TCheckBox
-          Left = 20
-          Top = 159
-          Width = 222
-          Height = 25
-          Caption = 'Use Time Drops '#39'Pad Time'#39'.'
-          TabOrder = 6
-          Visible = False
-        end
       end
-      object tabsheetPaths: TTabSheet
-        Caption = 'CTS File Paths'
+      object tabFilePaths: TTabSheet
+        Caption = 'File Paths'
         object lblEventCSV: TLabel
           Left = 3
-          Top = 65
+          Top = 73
           Width = 497
           Height = 21
           Caption = 
@@ -9252,7 +9159,7 @@ object Options: TOptions
         end
         object lblReConstructDO4: TLabel
           Left = 3
-          Top = 251
+          Top = 259
           Width = 306
           Height = 21
           Caption = 'Export folder for re-constructed result files ...'
@@ -9273,7 +9180,7 @@ object Options: TOptions
         end
         object btnedtMeetProgram: TButtonedEdit
           Left = 3
-          Top = 92
+          Top = 100
           Width = 647
           Height = 29
           Images = IMG.vimglistDTGrid
@@ -9312,7 +9219,7 @@ object Options: TOptions
         end
         object btnedtReConstruct: TButtonedEdit
           Left = 3
-          Top = 278
+          Top = 286
           Width = 647
           Height = 29
           Images = IMG.vimglistDTGrid
@@ -9324,7 +9231,7 @@ object Options: TOptions
           OnRightButtonClick = btnedtReConstructRightButtonClick
         end
       end
-      object TabSheet1: TTabSheet
+      object tabActions: TTabSheet
         Caption = 'Actions'
         ImageIndex = 2
         object vimgInfo5: TVirtualImage
@@ -9384,7 +9291,7 @@ object Options: TOptions
         end
       end
       object tsCTS: TTabSheet
-        Caption = 'CTS Misc.'
+        Caption = 'CTS Dolphin'
         ImageIndex = 3
         object rgrpFileType: TRadioGroup
           Left = 23
@@ -9399,6 +9306,104 @@ object Options: TOptions
           ParentShowHint = False
           ShowHint = True
           TabOrder = 0
+        end
+      end
+      object tabTDS: TTabSheet
+        Caption = 'TimeDrops'
+        ImageIndex = 4
+        object vimgAutoTimeSCM: TVirtualImage
+          Left = 248
+          Top = 41
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 70
+          ImageName = 'ActiveRTAutomatic'
+          Visible = False
+        end
+        object vimgAutoTimeTD: TVirtualImage
+          Left = 302
+          Top = 41
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 79
+          ImageName = 'AutoRaceTime_TD'
+          Visible = False
+        end
+        object vimgSplitSCM: TVirtualImage
+          Left = 248
+          Top = 95
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 67
+          ImageName = 'ActiveRTSplit'
+          Visible = False
+        end
+        object vimgSplitTD: TVirtualImage
+          Left = 302
+          Top = 95
+          Width = 48
+          Height = 48
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 78
+          ImageName = 'padTime_splitTime_TD'
+          Visible = False
+        end
+        object vimginfo1: TVirtualImage
+          Left = 356
+          Top = 41
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          Visible = False
+          OnMouseEnter = vimginfo1MouseEnter
+          OnMouseLeave = vimginfo1MouseLeave
+        end
+        object vimgInfo2: TVirtualImage
+          Left = 356
+          Top = 95
+          Width = 32
+          Height = 32
+          ImageCollection = IMG.imgcolDT
+          ImageWidth = 0
+          ImageHeight = 0
+          ImageIndex = 77
+          ImageName = 'info'
+          Visible = False
+          OnMouseEnter = vimgInfo2MouseEnter
+          OnMouseLeave = vimgInfo2MouseLeave
+        end
+        object chkbxFinalTime: TCheckBox
+          Left = 20
+          Top = 64
+          Width = 222
+          Height = 25
+          Caption = 'Use Time Drops '#39'Final Time'#39'.'
+          TabOrder = 0
+          Visible = False
+        end
+        object chkbxPadTime: TCheckBox
+          Left = 20
+          Top = 111
+          Width = 222
+          Height = 25
+          Caption = 'Use Time Drops '#39'Pad Time'#39'.'
+          TabOrder = 1
+          Visible = False
         end
       end
     end

@@ -108,6 +108,7 @@ type
     sbtnAutoSync: TSpeedButton;
     actnAutoSync: TAction;
     actnExploreMeetsFolder: TAction;
+    pbarResults: TProgressBar;
 		procedure actnAboutExecute(Sender: TObject);
 		procedure actnAboutUpdate(Sender: TObject);
 		procedure actnExploreMeetsFolderUpdate(Sender: TObject);
@@ -742,9 +743,10 @@ var
 begin
   count := 0;
   s := '''
-		Selecting Ok will open a file explorer.
-		Choose any ''result'' file(s) and PUSH to the grid.
-		New ''results'' will be added, modified ''results'' will adjust existing heats.
+		Select Ok to open a file explorer.
+		Choose any ''result'' file(s), from any location and PUSH to the grid.
+		New ''results'' will be added to the grid.
+		Modified ''results'' will make changes to existing heats.
 		''';
   mr := MessageBox(0, PChar(s), PChar('Push Results to Grid'), MB_ICONQUESTION or MB_OKCANCEL);
 
@@ -920,12 +922,12 @@ var
   mr: TModalResult;
   LList: TStringDynArray;
 	dlg : TScanOptions;
-  I: integer;
+	I: integer;
   LSearchOption: TSearchOption;
 	WildCardStr: String;
 	CTS: TResultsCTS;
 begin
-  // Do not do recursive extract into subfolders
+	// Do not do recursive extract into subfolders
   LSearchOption := TSearchOption.soTopDirectoryOnly;
 	WildCardStr := '*.DO?'; // default value.
 
@@ -946,9 +948,12 @@ begin
 		dlg.free;
 	end;
 
-  if IsPositiveResult(mr) then
-  begin
-    // Test DT directory exists...
+	if IsPositiveResult(mr) then
+	begin
+		// snapshot of the current location within resultsGrid.
+		TDS.BookmarkSet;
+
+		// Test DT directory exists...
     if DirectoryExists(Settings.MeetsFolder) then
     begin
 			if DirHasResultFiles(Settings.MeetsFolder) then
@@ -964,21 +969,39 @@ begin
 				TArray.Sort<string>(LList, TComparer<string>.Construct(FileNameComparer));
 
 				if Length(LList) > 0 then
-        begin
+				begin
+          // create the progress dlg.
 					TDS.DisableAllTDControls;
 					tdsGrid.BeginUpdate;
+					CTS := TResultsCTS.Create;
 					try
-						CTS := TResultsCTS.Create;
+
+						pbarResults.Max := Length(LList) - 1; // display the progress bar
+						pbarResults.Min := 0;
+						pbarResults.Position := 0;
+						pbarResults.Style := pbstMarquee;
+						pbarResults.Visible :=  true;
+						application.ProcessMessages; // aids in display of progress bar.
 						for I := 0 to Length(LList) - 1 do
+						begin
 							CTS.ProcessFile(LList[i]);
+							pbarResults.Position := I;
+							application.ProcessMessages;
+						end;
 					finally
 						FreeAndNil(CTS);
-            TDS.EnableAllTDControls;
-            tdsGrid.EndUpdate;
+
+						pbarResults.Visible :=  false; // hide the progress bar
+						TDS.tblmSession.First;
+						TDS.EnableAllTDControls;
+						TDS.BookmarkCue;
+						tdsGrid.EndUpdate;
           end;
         end;
 				fScanMeets_Done :=  true;
 //				PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0); // Update UI.
+				StatBar.SimpleText := 'Scan of ''meets'' folder completed.';
+				Timer1.Enabled := true;
 			end;
     end;
   end;
@@ -1103,15 +1126,15 @@ var
   aTDSSessionNum, aTDSEventNum, aTDSHeatNum: integer;
 begin
   scmGrid.BeginUpdate;
-  aTDSSessionNum := TDS.tblmSession.FieldByName('SessionID').AsInteger;
+  aTDSSessionNum := TDS.tblmSession.FieldByName('SessionNum').AsInteger;
   aTDSEventNum := TDS.tblmEvent.FieldByName('EventNum').AsInteger;
 	aTDSHeatNum := TDS.tblmHeat.FieldByName('HeatNum').AsInteger;
 	
 	// PART 1 : ensure we are using the correct session.
-  if actnAutoSync.Checked then
+	if actnAutoSync.Checked then
 	begin // Does the current SCM session match the TD session? 
 		if SCM.qrySession.FieldByName('SessionID').AsInteger <> aTDSSessionNum then
-      found :=
+			found :=
 				SCM.LocateSessionID(TDS.tblmSession.FieldByName('SessionNum').AsInteger)
 		else found := true;
     if not found then
@@ -1216,7 +1239,9 @@ procedure TMain.actnFireDACExplorerExecute(Sender: TObject);
 var
 	ExplorerPath: string;
 	IniFilePath: string;
+{$IFDEF DEBUG}
 	BDSBinPath: string;
+{$ENDIF}
 	dlg: TFDExplorer;
 begin
 
@@ -2345,9 +2370,9 @@ begin
 
   if not fScanMeets_Done then
   begin
-    lbl_tdsGridOverlay.Caption := 'A scan of the ''meets''' + sLineBreak +
+		lbl_tdsGridOverlay.Caption := 'A scan of the ''meets''' + sLineBreak +
     'folder is needed...' + sLineBreak +
-    'Perform a ''Scan Meets Folder''.';
+    'Perform a ''Re-Scan Meets Folder''.';
   end
   else
   begin
