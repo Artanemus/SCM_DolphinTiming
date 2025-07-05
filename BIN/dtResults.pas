@@ -183,11 +183,14 @@ begin
 end;
 
 function TdtUtils.GetDTFileTypeOfFile(const AFileName: string): scmDTFileType;
+var
+s: string;
 begin
-  result := scmDTFileType.ftUnknown;
-	if AfileName.Contains('.DO3') then
+	result := scmDTFileType.ftUnknown;
+	s := UpperCase(AFileName); // StringHelper is case dependent.
+	if s.Contains('.DO3') then
 		result := ftDO3
-	else if AfileName.Contains('.DO4') then
+	else if s.Contains('.DO4') then
 		result := ftDO4;
 end;
 

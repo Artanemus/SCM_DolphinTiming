@@ -155,15 +155,6 @@ begin
       result := true;
       exit;
     end;
-//    for I := LOW(LList) to HIGH(LList) do
-//    begin
-//			if LList[I].Contains('.DO3') or LList[I].Contains('.DO4') then
-//      begin
-//        result := true;
-//        exit;
-//      end;
-//    end;
-
   except
     { Catch the possible exceptions }
     MessageBox(0, PChar('Incorrect path or search mask'),

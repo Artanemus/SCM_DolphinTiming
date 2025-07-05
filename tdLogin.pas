@@ -188,7 +188,7 @@ end;
 procedure TLogin.ReadLoginParams();
 var
   iFile: TIniFile;
-  iniFileName, UseOsAuthentication: string;
+	iniFileName, UseOsAuthentication: string;
 begin
   // scmFDManager SHOULD point to this connection definition file...
   // %AppData%\Artanemus\scm\FDConnectionDefs.ini
@@ -199,8 +199,8 @@ begin
   edtUser_Name.Text := iFile.ReadString('MSSQL_SwimClubMeet', 'User_Name', '');
   edtPassword.Text := iFile.ReadString('MSSQL_SwimClubMeet', 'Password', '');
   UseOsAuthentication := iFile.ReadString('MSSQL_SwimClubMeet', 'OSAuthent', 'Yes');
-  UseOsAuthentication := LowerCase(UseOsAuthentication);
-  if UseOsAuthentication.Contains('yes') or UseOsAuthentication.Contains('true') then
+	UseOsAuthentication := LowerCase(UseOsAuthentication); //  StringHelper is case dependent.
+	if UseOsAuthentication.Contains('yes') or UseOsAuthentication.Contains('true') then
     chkbOSAuthent.Checked := true else chkbOSAuthent.Checked := false;
   iFile.Free;
 end;

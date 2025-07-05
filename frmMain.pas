@@ -30,7 +30,7 @@ uses
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
   System.Types, System.IOUtils, System.Math, DirectoryWatcher,
   tdReConstructDlg, dmIMG, uNoodleFrame,
-	System.Generics.Collections, System.Generics.Defaults, tdResultsCTS;
+	System.Generics.Collections, System.Generics.Defaults, tdResultsCTS, System.Character;
 //	System.Diagnostics, System.IO;
 
 
@@ -206,7 +206,7 @@ type
 		procedure MSG_Connect(var Msg: TMessage); message SCM_CONNECT;
 		procedure MSG_PushResults(var Msg: TMessage); message SCM_PUSH_TIMEDROPS;
 		procedure MSG_UpdateUISCM(var Msg: TMessage); message SCM_UPDATEUI_SCM;
-    procedure MSG_UpdateUITDS(var Msg: TMessage); message SCM_UPDATEUI_TDS;
+		procedure MSG_UpdateUITDS(var Msg: TMessage); message SCM_UPDATEUI_TDS;
     procedure MSG_UpdateUINOODLES(var Msg: TMessage); message SCM_UPDATE_NOODLES;
 
   public
@@ -239,18 +239,59 @@ const
 function ExtractSessionEventHeat(const FileName: string; out SessionID,
 	EventNum, HeatNum: Integer): Boolean;
 var
-	CTS: TCTSFile; // type record.
+	Fields: TArray<string>;
+	s: string;
+	achar: char;
+	isDO4: boolean;
 begin
 	// Parse FileName to extract SessionID, EventNum, HeatNum
 	// Must implement this based on filename format (DO3, DO4)
-  // Return True if successful, False otherwise
+	// Return True if successful, False otherwise
+	SessionID := -1;
+	EventNum := -1;
+	HeatNum := -1;
+	isDO4 := false;
 	result := false;
-	CTS.Prepare(FileName);
-	if not CTS.Prepared then exit;
-	SessionID := CTS.SessionNum;
-	EventNum := CTS.EventNum;
-	HeatNum := CTS.HeatNum;
-	if (SessionID > 0) and (EventNum > 0) and (HeatNum > 0) then result := true;
+	s := UpperCase(FileName);
+	if s.Contains('.DO4') then isDO4 := true; // This function is case-sensitive.
+	// Split string by the '-' character
+	Fields := System.strUtils.SplitString(FileName, '-');
+	if Length(Fields) > 0 then
+		// Extract the first field - SessionID
+		SessionID := StrToIntDef(Fields[0], 0);
+	if Length(Fields) > 1 then
+		// Extract the first field - SessionID
+		EventNum := StrToIntDef(Fields[1], 0);
+	if isDO4 then
+	begin
+		if Length(Fields) > 2 then
+			// remove the 'Round' character ['A', 'P', 'F'].
+			HeatNum := StrToIntDef(StripAlphaChars(Fields[2]), 0);
+	end
+	else
+	begin
+		HeatNum := 0; // DO3's filename doesn't offer a heat number.
+		if (EventNum = 0) or  (EventNum = -1)  then // Onus file naming.
+		begin  // attempt to assign heat number
+			s:= '';
+			if Length(Fields) > 2 then // use the hash as heat number.
+			begin
+				for Achar in Fields[2] do
+				begin
+					if Achar = '.' then break;  // exclude file extension.
+					if Achar.IsDigit then // Efficient digit check
+					begin
+						s := s + Achar;
+					end;
+				end;
+				HeatNum := StrToIntDef(s, 0);
+			end;
+		end;
+	end;
+
+
+	HeatNum := 0;
+	if (SessionID >= 0) and (EventNum >= 0) and (HeatNum >= 0) then result := true;
 end;
 
 function FileNameComparer(const Left, Right: string): Integer;
@@ -741,7 +782,7 @@ var
 	count: integer;
 	CTS: TResultsCTS;
 begin
-  count := 0;
+	count := 0;
   s := '''
 		Select Ok to open a file explorer.
 		Choose any ''result'' file(s), from any location and PUSH to the grid.
@@ -752,10 +793,16 @@ begin
 
   if IsPositiveResult(mr) then
   begin
-    if TDPushResultFile.Execute() then
-    begin
+		if TDPushResultFile.Execute() then
+		begin
       tdsGrid.BeginUpdate;
-      try
+			pbarResults.Max := TDPushResultFile.Files.Count - 1; // display the progress bar
+			pbarResults.Min := 0;
+			pbarResults.Position := 0;
+			pbarResults.Style := pbstMarquee;
+			pbarResults.Visible :=  true;
+			application.ProcessMessages; // aids in display of progress bar.
+			try
 				CTS := TResultsCTS.Create;
 				begin
 					// terminate system watch folder.
@@ -763,14 +810,17 @@ begin
 					begin
 						{ Calls - PrepareExtraction, ProcessEvent, ProcessHeat, ProcessEntrant }
 						CTS.ProcessFile(AFile);
-            inc(Count);
-          end;
-          s := 'Pushed (' + IntToStr(Count) + ') results completed.';
-          MessageDlg(s, mtInformation, [mbOK], 0);
+						pbarResults.Position := Count;
+						application.ProcessMessages;
+						inc(Count);
+					end;
+					s := 'Pushed (' + IntToStr(Count) + ') results completed.';
+					MessageDlg(s, mtInformation, [mbOK], 0);
           // Assert : remove display of lbl_tdsGridOverlay.
           fScanMeets_Done := true;
         end;
-      finally
+			finally
+				pbarResults.Visible :=  false; // hide the progress bar
 				tdsGrid.EndUpdate;
 				FreeAndNil(CTS);
       end;
@@ -963,7 +1013,7 @@ begin
 					LList := TDirectory.GetFiles(Settings.MeetsFolder, WildCardStr, LSearchOption);
         except
           // Catch the possible exceptions
-        end;
+				end;
 
         // ... SORT before processing files:
 				TArray.Sort<string>(LList, TComparer<string>.Construct(FileNameComparer));
@@ -975,7 +1025,6 @@ begin
 					tdsGrid.BeginUpdate;
 					CTS := TResultsCTS.Create;
 					try
-
 						pbarResults.Max := Length(LList) - 1; // display the progress bar
 						pbarResults.Min := 0;
 						pbarResults.Position := 0;
@@ -990,7 +1039,6 @@ begin
 						end;
 					finally
 						FreeAndNil(CTS);
-
 						pbarResults.Visible :=  false; // hide the progress bar
 						TDS.tblmSession.First;
 						TDS.EnableAllTDControls;
@@ -999,7 +1047,6 @@ begin
           end;
         end;
 				fScanMeets_Done :=  true;
-//				PostMessage(self.Handle, SCM_UPDATEUI_TDS, 0, 0); // Update UI.
 				StatBar.SimpleText := 'Scan of ''meets'' folder completed.';
 				Timer1.Enabled := true;
 			end;
@@ -2071,8 +2118,8 @@ end;
 
 procedure TMain.MSG_ScanMeets(var Msg: TMessage);
 begin
-  // Scan meet's folder - non destructive. (Refresh TDS Data).
-  if actnScanMeetsFolder.Enabled then
+	// Scan meet's folder - non destructive. (Refresh TDS Data).
+	if actnScanMeetsFolder.Enabled then
 		actnScanMeetsFolderExecute(Self);
 end;
 
@@ -2490,6 +2537,16 @@ var
 	s, ActionDescription: string;
 	CTS: TResultsCTS;
 begin
+	if (not Assigned(TDS)) or (not TDS.DataIsActive) then
+	begin
+		s := '''
+			The meets folder was modified: %s (%s).
+			Unable to process the result file as the database is not active.
+			''';
+		ShowMessage(Format(s, [FileName,	ActionDescription]));
+		exit;
+	end;
+
 	// Determine the type of action
 	case Action of
 		FILE_ACTION_ADDED: ActionDescription := 'File added';
@@ -2505,20 +2562,34 @@ begin
 	s := UpperCase(ExtractFileExt(FileName));
 
 	if (s = '.DO3') or (s = '.DO4') then
-  begin
-    s := UpperCase(FileName);
-    ShowMessage(Format('The meets folder was modified: %s (%s)', [FileName,
-      ActionDescription]));
-    try
-      tdsGrid.BeginUpdate;
+	begin
+		if not fScanMeets_Done then
+		begin
+		s := '''
+			The meets folder was modified: %s (%s).
+			Note: A full scan of the meets folder may be required to see all availabe result files.
+			''';
+		end
+		else
+			s := 'The meets folder was modified: %s (%s).';
+
+		ShowMessage(Format(s, [FileName, ActionDescription]));
+		try
+			tdsGrid.BeginUpdate;
 			CTS := TResultsCTS.Create;
 			CTS.ProcessFile(FileName);
-    finally
-      FreeAndNil(CTS);
-      tdsGrid.EndUpdate;
-    end;
+		finally
+			FreeAndNil(CTS);
+			if not fScanMeets_Done then
+			begin
+				fScanMeets_Done := true;
+				lbl_tdsGridOverlay.Visible := false;  // ASSERT LABEL/PANEL STATE.
+				lbl_tdsGridOverlay.Caption := '';
+			end;
+			tdsGrid.EndUpdate;
+		end;
 	end;
-	end;
+end;
 
 procedure TMain.scmGridGetDisplText(Sender: TObject; ACol, ARow: Integer; var
   Value: string);

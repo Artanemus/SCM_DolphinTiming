@@ -3,7 +3,7 @@ unit tdResultsCTSFile;
 interface
 
 uses System.Types, System.StrUtils,	uAppUtils, SCMDefines, System.Classes,
-dmTDS;
+dmTDS, System.Character;
 
 
 type
@@ -174,12 +174,15 @@ begin
 end;
 
 function TCTSFile.GetFileType(): scmDTFileType;
+var
+s: string;
 begin
 	result := scmDTFileType.ftUnknown;
 	if fNameOfFile.IsEmpty then exit;
-	if fNameOfFile.Contains('.DO3') then
+	s := UpperCase(fNameOfFile); // This function is case-sensitive.
+	if s.Contains('.DO3') then
 		result := ftDO3
-	else if fNameOfFile.Contains('.DO4') then
+	else if s.Contains('.DO4') then
 		result := ftDO4;
 end;
 
@@ -224,23 +227,43 @@ function TCTSFile.GetHeatNum: integer;
 var
 	Fields: TArray<string>;
 	HeatNumStr: string;
+	Achar: char;
 begin
   result := 0;
 	if fNameOfFile.IsEmpty then exit;
   // only Dolphin Timing v4 Files have 'Heat Number' information in FileName.
-  if (fFileType <> ftDO4) then exit;
-  // example of fNameOfFile
-  // - 088-001-001A-0001.do4
-  // - 088-000-00F0147.do3
-  // Split string by the '-' character
-	Fields := SplitString(fNameOfFile, '-');
-  if Length(Fields) > 2 then
-  begin
-    // remove the 'Round' character ['A', 'P', 'F'].
-    HeatNumStr := StripAlphaChars(Fields[2]);
-		// Extract the first field - SessionID
-    result := StrToIntDef(HeatNumStr, 0);
+	if (fFileType = ftDO4) then
+	begin
+		// example of fNameOfFile
+		// - 088-001-001A-0001.do4
+		// - 088-000-00F0147.do3
+		// Split string by the '-' character
+		Fields := SplitString(fNameOfFile, '-');
+		if Length(Fields) > 2 then
+		begin
+			// remove the 'Round' character ['A', 'P', 'F'].
+			HeatNumStr := StripAlphaChars(Fields[2]);
+			// Extract the first field - SessionID
+			result := StrToIntDef(HeatNumStr, 0);
+		end;
+	end
+	else
+	begin
+		if EventNum = 0 then // Onus numbering in filename.
+		begin
+			HeatNumStr := '';
+			for Achar in Fields[2] do
+			begin
+				if Achar = '.' then break;  // exclude file extension.
+				if Achar.IsDigit then // Efficient digit check
+				begin
+					HeatNumStr := HeatNumStr + Achar;
+				end;
+			end;
+			result := StrToIntDef(HeatNumStr, 0);
+		end;
 	end;
+
 end;
 
 function TCTSFile.GetIsLaneEmpty(Index: Integer): boolean;
