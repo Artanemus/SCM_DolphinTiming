@@ -5,8 +5,10 @@ interface
 uses System.Types, System.StrUtils,	uAppUtils, SCMDefines, System.Classes,
 dmTDS, System.Character;
 
-
 type
+
+	TctsBase = (ctsbUnknown, ctsbZero, ctsbOne);
+
 	TCTSLANE = record
 	LaneNum: integer;
 	IsValid: boolean;
@@ -25,24 +27,26 @@ type
 	Split8: double;
 	Split9: double;
 	Split10: double;
-
 	end;
 
-  TCTSFile = record
-  private
+
+	TCTSFile = record
+	private
 		fSessionNum, fEventNum, fHeatNum, fRaceNum: integer;
 		fHash: string;
-    fRound: char;
-    fFileType: scmDTFileType;
-    fFileName: string; // full path and NameOFIle:
-    fNameOfFile: string; // name + file extension.
+		fRound: char;
+		fFileType: scmDTFileType;
+		fFileName: string; // full path and NameOFIle:
+		fNameOfFile: string; // name + file extension.
 		fSList: TStringList;
 		fPrepared: boolean;
 		fNumOfLanes: integer;
 		fGender: char;
+		fBase: TctsBase;
 
 		FMaxNumOfSplits: integer;
 		FMaxNumOfTimeKeepers: integer;
+		fLaneNumZeroBased: boolean;
 
 		function ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 
@@ -67,7 +71,9 @@ type
 		function sListBodyTimeKeepers(LineIndex: integer;
 			var ATimeKeepers: array of double): boolean;
 
-  public
+		function CheckLaneNumBase(): TctsBase;
+
+	public
 		class operator Initialize(out Dest: TCTSFile);
 		class operator Finalize(var Dest: TCTSFile);
 
@@ -85,6 +91,8 @@ type
 		property NumOfLanes: integer read FNumOfLanes;
 		property MaxNumOfSplits: integer read FMaxNumOfSplits write FMaxNumOfSplits;
 		property MaxNumOfTimeKeepers: integer read FMaxNumOfTimeKeepers write FMaxNumOfTimeKeepers;
+		property LaneNumZeroBased: boolean read fLaneNumZeroBased;
+
 
 	end;
 
@@ -109,11 +117,28 @@ begin
 	Dest.FMaxNumOfSplits := 10;
 	Dest.FMaxNumOfTimeKeepers := 3;
 	Dest.fGender := 'X';
+	Dest.fBase := ctsbUnknown; // indicates un-asigned.
+end;
+
+function TCTSFile.CheckLaneNumBase: TctsBase;
+var
+	num: integer;
+begin
+	result := ctsbUnknown;
+	if Assigned(fSList) then
+	begin
+		if fSList.Count < 3 then exit;  // header, footer and one lane.
+		num := sListBodyLane(1); // get lane number of first lane in the list.
+		case num of
+			0: result := ctsbZero;
+			1..10: result := ctsbOne; // accept range. Gutter lanes may be excluded.
+		end;
+	end;
 end;
 
 function TCTSFile.ConvertSecondsStrToTime(ASecondsStr: string): TTime;
 var
-  TotalSeconds: Double;
+	TotalSeconds: Double;
   Hours, Minutes, Seconds, Milliseconds: Word;
 begin
   Result := 0; // Initialize the result to zero
@@ -153,8 +178,8 @@ var
 begin
   result := 0;
 	if fNameOfFile.IsEmpty then exit;
-  // Split string by the '-' character
-  // example of fFileName
+	// Split string by the '-' character. Zero event numbers are accepted.
+	// example of fFileName
   // - 088-001-001A-0001.do4
   // - 088-000-00F0147.do3
 	Fields := SplitString(fNameOfFile, '-');
@@ -227,11 +252,11 @@ function TCTSFile.GetHeatNum: integer;
 var
 	Fields: TArray<string>;
 	HeatNumStr: string;
-	Achar: char;
 begin
   result := 0;
 	if fNameOfFile.IsEmpty then exit;
-  // only Dolphin Timing v4 Files have 'Heat Number' information in FileName.
+	// Only Dolphin Timing v4 Files have a heat number set within the fileName.
+	//  Zero heat numbers are accepted here.
 	if (fFileType = ftDO4) then
 	begin
 		// example of fNameOfFile
@@ -246,24 +271,7 @@ begin
 			// Extract the first field - SessionID
 			result := StrToIntDef(HeatNumStr, 0);
 		end;
-	end
-	else
-	begin
-		if EventNum = 0 then // Onus numbering in filename.
-		begin
-			HeatNumStr := '';
-			for Achar in Fields[2] do
-			begin
-				if Achar = '.' then break;  // exclude file extension.
-				if Achar.IsDigit then // Efficient digit check
-				begin
-					HeatNumStr := HeatNumStr + Achar;
-				end;
-			end;
-			result := StrToIntDef(HeatNumStr, 0);
-		end;
 	end;
-
 end;
 
 function TCTSFile.GetIsLaneEmpty(Index: Integer): boolean;
@@ -289,9 +297,8 @@ var
 	lane: TCTSLane;
 	TimeKeepers: array of double;
 	Splits: array of double;
-	NumOfFirstLane, num: integer;
+	num: integer;
 begin
-
 	lane.IsEmpty := true;
 	lane.IsDq := false;
 	lane.LaneNum := 0;
@@ -311,21 +318,20 @@ begin
 	lane.Split10:= 0; // double;
 
 	Result := lane;
+	// Assigment of fNumOfLanes done in routine Prepare.
+	if fNumOfLanes = 0 then exit;
+	// TList is base 0 indexed. TList has header, body (lanes), footer.
+	// TList line 2 (index 1) holds the watch-times for lane 1.
+	// Return the CTS lane number. Dependant on base may be [0...9] or [1..10]
+	num := sListBodyLane(Index);
+	if (num = -1) then exit; // unexpected error.
 
-	if fNumOfLanes = 0 then exit;  // value assigned in routine Prepare.
-
-	NumOfFirstLane := sListBodyLane(1); // get lane number of first lane in list.
-	num := sListBodyLane(Index); // extract requested lane number.
-	if NumOfFirstLane = 0 then // check for zero indexed lanes.
-		num := num +1;  // adjust
-
-	if (num <> index) or (num > fNumOfLanes)  then exit; // unexpected error
-
-	lane.LaneNum := num;
-
-	{TODO -oBSA -cGeneral : Check max number of lanes for CTS. }
-	if Index in [1..fNumOfLanes] then  // CTS Dolphin - Max is 10 lanes ?
+	// Assigment of fBase done in routine Prepare.
+	if fbase = ctsbZero then num := num + 1;  // adjust so humans can understand.
+	{TODO -oBSA -cGeneral : Check what is the documented max number of lanes for CTS. }
+	if num in [1..fNumOfLanes] then // Final bounds check.
 	begin
+		lane.LaneNum := num; // Assign lane number ... fully qualified.
 		SetLength(Splits, FMaxNumOfSplits);
 		SetLength(TimeKeepers, FMaxNumOfTimeKeepers);
 
@@ -351,10 +357,9 @@ begin
       lane.Split9 := Splits[8];
       lane.Split10 := Splits[9];
     end;
+		lane.IsValid := true;
+		result := lane;
 	end;
-
-	lane.IsValid := true;
-	result := lane;
 end;
 
 function TCTSFile.GetRaceNum: integer;
@@ -427,6 +432,7 @@ begin
 	fHeatNum := 0;
 	fRaceNum := 0;
 	fNumOfLanes := 0;
+	fBase := ctsbUnknown; // indicates un-assigned.
 	fHash := '';
 
 	fPrepared := false;
@@ -485,6 +491,9 @@ begin
 			end;
 		end;
 	end;
+
+	if fNumOfLanes > 2 then // header, body(Lanes), footer. Minimum lines is 3.
+		fBase := CheckLaneNumBase();
 
 	fPrepared := true;
 end;
@@ -640,19 +649,19 @@ end;
 function TCTSFile.sListBodyLane(LineIndex: integer): integer;
 var
   Fields: TArray<string>;
-  s: string;
+	s: string;
 begin
-	result := 0;
-  // check for out of bounds...
+	result := -1;
+// check for out of bounds...
   // Split string by the ';' character
   Fields := SplitString(fSList[LineIndex], ';');
   if Length(Fields) = 0 then exit;   // Input string is empty - err.
-  // examples.
-  // DO4 - 'Lane1;55.98;;'
+	// examples. (note: zero based lanes are possible)
+	// DO4 - 'Lane1;55.98;;'
 	// DO3 - '1;95.25;;'
-  s := StripAlphaChars(Fields[0]);
+	s := StripNonNumeric(Fields[0]); // accepts ['0'..'9']
   if Length(s) > 0 then
-    result := StrToIntDef(s, 0); // Extract the lane as an integer
+		result := StrToIntDef(s, -1); // Extract the lane as an integer.
 end;
 
 function TCTSFile.sListBodyTimeKeepers(LineIndex: integer; var ATimeKeepers:

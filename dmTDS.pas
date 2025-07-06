@@ -653,9 +653,11 @@ begin
 	result := false;
 	// Exit if the table is not active or if AEventNum is 0
 	if (not tblmEvent.Active) or (tblmEvent.IsEmpty) then exit;
-	if (AEventNum = 0) then exit;
-	// Store the original index field names
-	indexStr := tblmEvent.IndexFieldNames;
+(*
+		 BSA 2025.07.06 Allow zero event numbers for both DO3 and DO4
+  		DEPRECIATED - if (AEventNum = 0) then exit;
+*)
+	indexStr := tblmEvent.IndexFieldNames; // Store the original index field names
 	LOptions := [];
 	tblmEvent.IndexFieldNames := 'SessionID;EventNum';
 	result := tblmEvent.Locate('SessionID;EventNum', VarArrayOf([ASessionID,
@@ -696,7 +698,10 @@ begin
 	result := false;
 	// Exit if the table is not active or if AHeatNum is 0
 	if (not tblmHeat.Active) or tblmHeat.IsEmpty then exit;
-	if (AHeatNum = 0) then exit;
+(*
+		BSA 2025.07.06 Allow zero event numbers for both DO3 and DO4
+		DEPRECIATED - if (AHeatNum = 0) then exit;
+*)
 	indexStr := tblmHeat.IndexFieldNames; // Store the original index field names
 	LOptions := [];
 	tblmHeat.IndexFieldNames := 'EventID;HeatNum';
@@ -720,6 +725,8 @@ begin
 	result := false;
 	// Exit if the table is not active or if AHeatNum is 0
 	if (not tblmLane.Active) or (tblmLane.IsEmpty) then exit;
+	// All zero based lane numbering was converted to base one - on file process.
+	//  ... therefore 0 indicates error.
 	if ALaneNum = 0 then exit;
 	// Store the original index field names
 	indexStr := tblmLane.IndexFieldNames;

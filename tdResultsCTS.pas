@@ -3,7 +3,7 @@ unit tdResultsCTS;
 interface
 
 uses XSuperJSON, XSuperObject, dmTDS, System.Types, System.StrUtils,
-	uAppUtils, SCMDefines, System.Classes, tdResultsCTSFile;
+	uAppUtils, SCMDefines, System.Classes, tdResultsCTSFile, System.UITypes;
 
 type
 
@@ -169,6 +169,7 @@ begin
 
 	for I := 1 to CTSFile.NumOflanes do
 	begin
+		// Routine handles zero based lane numbering - converts to base one.
 		lane := CTSFile.Lane[I];
 		if lane.LaneNum <> 0 then
 		begin
@@ -359,12 +360,24 @@ end;
 procedure TResultsCTS.ProcFile(AFileName: string);
 var
 	CTSFile: TCTSFile; // type record.
+	s: string;
 begin
 	// Performs eccential tasks including, calculates the number of lanes.
 	CTSFile.Prepare(AFileName);
 	if CTSFile.Prepared then
 	begin
-		if CTSFile.SessionNum <> 0 then ProcSess(CTSFile);
+		if CTSFile.SessionNum <> 0 then
+			ProcSess(CTSFile)
+		else
+		begin
+			s := '''
+				%s cannot be processed as the given session number is zero.
+				Events, heats or lames can be numbered zero, but not sessions.
+				Rename your results file and try again.
+				''';
+			s := Format(s, [AFileName]);
+			MessageDlg(s, mtError, [mbOK], 0);
+		end;
 	end;
 end;
 
