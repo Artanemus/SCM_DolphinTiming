@@ -1,4 +1,4 @@
-unit tdMeetProgramPick;
+unit dlgExportCSV;
 
 interface
 
@@ -8,16 +8,14 @@ uses
   Vcl.VirtualImage, tdSetting;
 
 type
-  TMeetProgramPick = class(TForm)
+  TExportCSV = class(TForm)
     lblEventCSV: TLabel;
     btnedtMeetProgram: TButtonedEdit;
     BrowseFolderDlg: TFileOpenDialog;
-    rgrpMeetProgramType: TRadioGroup;
     pnlFooter: TPanel;
     pnlBody: TPanel;
     vimgInfo1: TVirtualImage;
     BalloonHint1: TBalloonHint;
-    vimgInfo2: TVirtualImage;
     btnOk: TButton;
     btnCancel: TButton;
     procedure btnCancelClick(Sender: TObject);
@@ -27,8 +25,6 @@ type
     procedure FormShow(Sender: TObject);
     procedure vimgInfo1MouseEnter(Sender: TObject);
     procedure vimgInfo1MouseLeave(Sender: TObject);
-    procedure vimgInfo2MouseEnter(Sender: TObject);
-    procedure vimgInfo2MouseLeave(Sender: TObject);
   private
     procedure LoadFromSettings;
     procedure LoadSettings;
@@ -38,13 +34,13 @@ type
   end;
 
 var
-  MeetProgramPick: TMeetProgramPick;
+  ExportCSV: TExportCSV;
 
 implementation
 
 {$R *.dfm}
 
-procedure TMeetProgramPick.btnedtMeetProgramRightButtonClick(Sender: TObject);
+procedure TExportCSV.btnedtMeetProgramRightButtonClick(Sender: TObject);
 
 begin
   // Default folder to browse for TD "meet program" files.
@@ -56,45 +52,36 @@ begin
   end;
 end;
 
-procedure TMeetProgramPick.vimgInfo1MouseEnter(Sender: TObject);
+procedure TExportCSV.vimgInfo1MouseEnter(Sender: TObject);
 begin
   BalloonHint1.Title := 'Export Folder ...';
-  BalloonHint1.Description := '''
-    The SCM_TimeDrops writes a file to the given folder with the name “meet_program.json”.
-    This file contains JSON which can be read by the Time Drops system to initalize
-    and/or update it's application state.
-  ''';
+	BalloonHint1.Description := '''
+		To begin, the SwimClubMeet database must be connected.
+		Using the current selected SCM session, the application writes a CSV file
+		to the given folder.
+		This file contains data which can be read by the Dolphin Timing system to
+		initalize and/or update it's application state.
+		''';
   BalloonHint1.ShowHint(vimgInfo1);
 end;
 
-procedure TMeetProgramPick.vimgInfo1MouseLeave(Sender: TObject);
+procedure TExportCSV.vimgInfo1MouseLeave(Sender: TObject);
 begin
   BalloonHint1.HideHint;
 end;
 
-procedure TMeetProgramPick.vimgInfo2MouseEnter(Sender: TObject);
-begin
-  BalloonHint1.Title := 'Meet Program Type ...';
-  BalloonHint1.Description := '''
-    The basic meet program has the minimum allowed JSON data. (Minimalistic).
-    The detailed version contains all the JSON data as per the Kotlin class
-    definition given in "TimeDrops Interface Specifications".
-  ''';
-  BalloonHint1.ShowHint(TControl(Sender));
-end;
-
-procedure TMeetProgramPick.btnCancelClick(Sender: TObject);
+procedure TExportCSV.btnCancelClick(Sender: TObject);
 begin
   ModalResult := mrCancel;
 end;
 
-procedure TMeetProgramPick.btnOkClick(Sender: TObject);
+procedure TExportCSV.btnOkClick(Sender: TObject);
 begin
   SaveToSettings;
   ModalResult := mrOk;
 end;
 
-procedure TMeetProgramPick.FormKeyDown(Sender: TObject; var Key: Word; Shift:
+procedure TExportCSV.FormKeyDown(Sender: TObject; var Key: Word; Shift:
     TShiftState);
 begin
   if Key = VK_ESCAPE then
@@ -104,23 +91,17 @@ begin
   end;
 end;
 
-procedure TMeetProgramPick.FormShow(Sender: TObject);
+procedure TExportCSV.FormShow(Sender: TObject);
 begin
   LoadSettings;
 end;
 
-procedure TMeetProgramPick.vimgInfo2MouseLeave(Sender: TObject);
-begin
-  BalloonHint1.HideHint;
-end;
-
-procedure TMeetProgramPick.LoadFromSettings;
+procedure TExportCSV.LoadFromSettings;
 begin
   btnedtMeetProgram.Text := Settings.ProgramFolder;
-  rgrpMeetProgramType.ItemIndex := Settings.MeetProgramType;
 end;
 
-procedure TMeetProgramPick.LoadSettings;
+procedure TExportCSV.LoadSettings;
 begin
   if Settings = nil then
     Settings := TPrgSetting.Create;
@@ -133,11 +114,10 @@ begin
   LoadFromSettings();
 end;
 
-procedure TMeetProgramPick.SaveToSettings;
+procedure TExportCSV.SaveToSettings;
 begin
   Settings.ProgramFolder := btnedtMeetProgram.Text;
-  Settings.MeetProgramType := rgrpMeetProgramType.ItemIndex;
-  Settings.SaveToFile();
+	Settings.SaveToFile();
 end;
 
 end.

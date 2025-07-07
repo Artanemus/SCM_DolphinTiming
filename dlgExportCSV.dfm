@@ -1,9 +1,9 @@
-object MeetProgramPick: TMeetProgramPick
+object ExportCSV: TExportCSV
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  Caption = 'Export Time Drops Meet Program...'
-  ClientHeight = 329
+  Caption = 'Export Dolphin Timing CSV Meet Program...'
+  ClientHeight = 172
   ClientWidth = 655
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,12 +18,13 @@ object MeetProgramPick: TMeetProgramPick
   TextHeight = 21
   object pnlFooter: TPanel
     Left = 0
-    Top = 272
+    Top = 115
     Width = 655
     Height = 57
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitTop = 272
     object btnOk: TButton
       Left = 281
       Top = 6
@@ -48,10 +49,11 @@ object MeetProgramPick: TMeetProgramPick
     Left = 0
     Top = 0
     Width = 655
-    Height = 272
+    Height = 115
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 272
     object lblEventCSV: TLabel
       Left = 3
       Top = 33
@@ -72,19 +74,6 @@ object MeetProgramPick: TMeetProgramPick
       OnMouseEnter = vimgInfo1MouseEnter
       OnMouseLeave = vimgInfo1MouseLeave
     end
-    object vimgInfo2: TVirtualImage
-      Left = 239
-      Top = 131
-      Width = 28
-      Height = 28
-      ImageCollection = IMG.imgcolDT
-      ImageWidth = 0
-      ImageHeight = 0
-      ImageIndex = 77
-      ImageName = 'info'
-      OnMouseEnter = vimgInfo2MouseEnter
-      OnMouseLeave = vimgInfo2MouseLeave
-    end
     object btnedtMeetProgram: TButtonedEdit
       Left = 3
       Top = 60
@@ -95,20 +84,8 @@ object MeetProgramPick: TMeetProgramPick
       RightButton.ImageName = 'Folders'
       RightButton.Visible = True
       TabOrder = 0
-      Text = 'c:\TimeDrops\Meets\'
+      Text = 'c:\CTSDolphin\EventCSV\'
       OnRightButtonClick = btnedtMeetProgramRightButtonClick
-    end
-    object rgrpMeetProgramType: TRadioGroup
-      Left = 3
-      Top = 120
-      Width = 230
-      Height = 113
-      Caption = 'Select type...'
-      ItemIndex = 0
-      Items.Strings = (
-        'Basic Meet Program'
-        'Detailed Meet Program')
-      TabOrder = 1
     end
   end
   object BrowseFolderDlg: TFileOpenDialog
@@ -126,11 +103,11 @@ object MeetProgramPick: TMeetProgramPick
     OkButtonLabel = 'Select Folder'
     Options = [fdoPickFolders, fdoDontAddToRecent]
     Title = 'Select Time Drops'#39#39' "Meet Program" folder.'
-    Left = 364
-    Top = 19
+    Left = 292
+    Top = 11
   end
   object BalloonHint1: TBalloonHint
-    Left = 448
-    Top = 17
+    Left = 384
+    Top = 9
   end
 end

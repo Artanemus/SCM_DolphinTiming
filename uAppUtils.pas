@@ -19,7 +19,7 @@ function ExpandEnvVars(const Value: string): string;
 
 implementation
 
-uses System.Character, DateUtils, Data.DB, tdResults;
+uses System.Character, DateUtils, Data.DB; //, tdResults;
 
 function ExpandEnvVars(const Value: string): string;
 var

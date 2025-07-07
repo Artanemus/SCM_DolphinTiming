@@ -224,9 +224,9 @@ implementation
 
 uses System.UITypes, System.DateUtils ,dlgSessionPicker, dlgOptions, dlgTreeViewSCM,
   dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData, tdMeetProgram,
-	tdMeetProgramPick, uWatchTime, uAppUtils, tdLogin,
+	dlgExportCSV, uWatchTime, uAppUtils, tdLogin,
   Winapi.ShellAPI, dlgFDExplorer, dmSCM, dmTDS, dlgScanOptions, rptReportsSCM,
-	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile;
+	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile, uExportCSV;
 
 const
 
@@ -549,53 +549,67 @@ end;
 
 procedure TMain.actnExportMeetProgramExecute(Sender: TObject);
 var
-  fn: TFileName;
-  dlg: TMeetProgramPick;
-  AModalResult: TModalResult;
-  msg: string;
+	fn: TFileName;
+	dlg: TExportCSV;
+	mr: TModalResult;
+	msg, s: string;
+	success: boolean;
+	excsv: TCTS_Utils;
 begin
+	success := false;
+	//  assert path state.  // assert folder exists ?
+	if Settings.ProgramFolder.IsEmpty then
+	begin
+		s := 'Error: A ''Meet Program'' folder wasn''t assigned in options.';
+		msg := Format(s, [fn]);
+		MessageBox(0,	PChar(msg),
+			PChar('Export of Meet Program'), MB_ICONINFORMATION or MB_OK);
+		exit;
+	end;
 
-  if (SCM.qrySession.IsEmpty) or (SCM.qryEvent.IsEmpty)
-    or (SCM.qryHeat.IsEmpty) then
-  begin
-    msg := '''
-    Missing elements in the SwimClubMeet Session.
-    Check that the session contains events with heats, else a ''Meet Program'' can''t be built).
-    ''';
-    MessageDlg(msg, mtInformation, [mbOK], 0);
-    exit;
-  end;
+	dlg := TExportCSV.Create(self);
+	mr := dlg.ShowModal;
+	dlg.Free;
+	if IsPositiveResult(mr) then
+	begin
+		// Build a qualified path
+		fn := IncludeTrailingPathDelimiter(Settings.ProgramFolder);
+		excsv:= TCTS_Utils.Create;
+		SCMGrid.BeginUpdate;
+		try
+			success := excsv.Export_CTS_CSV(fn);
+		finally
+			SCM.dsEvent.DataSet.First; // re-set to head of session.
+			SCM.dsHeat.DataSet.First;
+			SCMGrid.EndUpdate; // update grid.
+      excsv.free;
+		end;
 
-  dlg := TMeetProgramPick.Create(self);
-  AModalResult := dlg.ShowModal;
-  if IsPositiveResult(AModalResult) then
-  begin
-    // The meet program folder may have changed.
-    Settings.LoadFromFile();
-    // The default filename required by TimeDrops
-		fn := IncludeTrailingPathDelimiter(Settings.ProgramFolder)  + 'meet_program.json';
-    SCMGrid.BeginUpdate;
-    if Settings.MeetProgramType = 1 then
-      BuildAndSaveMeetProgramDetailed(fn) // Detailed meet program.
-		else if Settings.MeetProgramType = 0 then
-      BuildAndSaveMeetProgramBasic(fn); // Basic meet program.
-    // re-set to head of session.
-    SCM.dsEvent.DataSet.First;
-    SCM.dsHeat.DataSet.First;
-    // update grid.
-    SCMGrid.EndUpdate;
-    // Message user.
-    MessageBox(0,
-      PChar('Export of the Time Drops Meet Program has been completed.'),
-      PChar('Export Meet Program'), MB_ICONINFORMATION or MB_OK);
-  end;
-  dlg.Free;
-
+		if success then // Message user.
+		begin
+			s := '''
+				The Meet Program %s
+				was successfully exported. (%s)
+				''';
+			msg := Format(s, [fn, excsv.StatStr ]);
+		end
+		else
+		begin
+			s := '''
+				An error occurred while exporting ...
+				%s
+				Check your settings. (%S)
+				''';
+			msg := Format(s, [fn, excsv.ErrStr ]);
+		end;
+		MessageBox(0,	PChar(msg),
+			PChar('Export of Meet Program'), MB_ICONINFORMATION or MB_OK);
+	end;
 end;
 
 procedure TMain.actnExportMeetProgramUpdate(Sender: TObject);
 begin
-  if Assigned(SCM) and SCM.DataIsActive then
+	if Assigned(Settings) and Assigned(SCM) and SCM.DataIsActive and (not SCM.qrySession.IsEmpty) then
     begin
     if (TAction(Sender).Enabled = false) then
       TAction(Sender).Enabled := true;

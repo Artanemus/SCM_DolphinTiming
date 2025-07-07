@@ -24,7 +24,7 @@ uses
   SCMUtility in '..\SCM_SHARED\SCMUtility.pas',
   dlgSessionPicker in 'dlgSessionPicker.pas' {SessionPicker},
   tdResults in 'tdResults.pas',
-  tdMeetProgramPick in 'tdMeetProgramPick.pas' {MeetProgramPick},
+  dlgExportCSV in 'dlgExportCSV.pas' {ExportCSV},
   tdTimingSystemStatus in 'tdTimingSystemStatus.pas',
   tdReConstructDlg in 'tdReConstructDlg.pas' {ReConstructDlg},
   uWatchTime in 'uWatchTime.pas',
@@ -43,10 +43,9 @@ uses
   dlgSwimClubPicker in 'dlgSwimClubPicker.pas' {SwimClubPicker},
   dlgAbout in 'dlgAbout.pas' {About},
   dtReConstruct in 'dtReConstruct.pas',
-  dtDlgOptionsCTS in 'BIN\dtDlgOptionsCTS.pas' {DlgOptionsCTS},
-  dtResults in 'BIN\dtResults.pas',
   tdResultsCTS in 'tdResultsCTS.pas',
-  tdResultsCTSFile in 'tdResultsCTSFile.pas';
+  tdResultsCTSFile in 'tdResultsCTSFile.pas',
+  uExportCSV in 'uExportCSV.pas';
 
 {$R *.res}
 
