@@ -24,7 +24,6 @@ object ExportCSV: TExportCSV
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 272
     object btnOk: TButton
       Left = 281
       Top = 6
@@ -53,7 +52,6 @@ object ExportCSV: TExportCSV
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitHeight = 272
     object lblEventCSV: TLabel
       Left = 3
       Top = 33

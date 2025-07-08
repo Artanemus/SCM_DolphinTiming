@@ -45,7 +45,7 @@ uses
   dtReConstruct in 'dtReConstruct.pas',
   tdResultsCTS in 'tdResultsCTS.pas',
   tdResultsCTSFile in 'tdResultsCTSFile.pas',
-  uExportCSV in 'uExportCSV.pas';
+  uExport_CSV in 'uExport_CSV.pas';
 
 {$R *.res}
 

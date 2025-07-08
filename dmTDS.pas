@@ -40,7 +40,7 @@ type
 		FPatchesEnabled: Boolean;  // TForm.dtfrmExec ...   // Both DataModules
 		msgHandle: HWND;
 
-		bmSess, bmEv, bmHt: integer; // bookmarks
+		bmSessID, bmEvID, bmHtID: integer;
 
 		procedure POST_LaneToLane(LaneNum: Integer);
 		procedure POST_Noodle(NoodleID: Integer);
@@ -159,33 +159,33 @@ function TTDS.BookmarkCue: boolean;
 begin
   Result := False;
   if not fDataIsActive then Exit;
-	if bmSess = 0 then Exit;
-	Result := LocateTSessionNum(bmSess);
+	if bmSessID = 0 then Exit;
+	Result := LocateTSessionID(bmSessID);
 	if not result then begin tblmSession.First; exit; end;
-	if (bmEv = 0) then Exit;
-	Result := LocateTEventNum(tblmSession.FieldByName('SessionID').AsInteger, bmEv);
+	if (bmEvID = 0) then Exit;
+	Result := LocateTEventID(bmEvID);
 	if not result then begin tblmEvent.First; exit; end;
-	if (bmHt = 0) then Exit;
-	Result := LocateTHeatNum(tblmEvent.FieldByName('EventID').AsInteger, bmHt);
+	if (bmHtID = 0) then Exit;
+	Result := LocateTHeatID(bmHtID);
 end;
 
 function TTDS.BookmarkSet: boolean;
 begin
-	bmSess := 0;
-	bmEv := 0;
-	bmHt := 0;
+	bmSessID := 0;
+	bmEvID := 0;
+	bmHtID := 0;
 	result := false;
 	if fDataIsActive then
 	begin
 		if not TDS.tblmSession.IsEmpty then
 		begin
-			bmSess := TDS.tblmSession.FieldByName('SessionNum').AsInteger;
+			bmSessID := TDS.tblmSession.FieldByName('SessionID').AsInteger;
 			if not TDS.tblmEvent.IsEmpty then
 			begin
-				bmEv := TDS.tblmEvent.FieldByName('EventNum').AsInteger;
+				bmEvID := TDS.tblmEvent.FieldByName('EventID').AsInteger;
 				if not TDS.tblmHeat.IsEmpty then
 				begin
-					bmHt := TDS.tblmHeat.FieldByName('HeatNum').AsInteger;
+					bmHtID := TDS.tblmHeat.FieldByName('HeatID').AsInteger;
 					result := true; // success - fully assigned.
 				end;
 			end;
@@ -1364,8 +1364,8 @@ begin
 	tblmHeat.DisableControls;
 	tblmLane.DisableControls;
 	tblmSession.DisableControls;
-
-	found := LocateTSessionID(SessionID);
+	// SCM.qrySession.SessionID = TDS.tbmlSession.SessionNum;
+	found := LocateTSessionNum(SessionID);
 	if found then
 	begin
 		tblmEvent.ApplyMaster;

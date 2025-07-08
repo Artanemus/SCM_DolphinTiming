@@ -43,7 +43,7 @@ implementation
 procedure TExportCSV.btnedtMeetProgramRightButtonClick(Sender: TObject);
 
 begin
-  // Default folder to browse for TD "meet program" files.
+	// Default folder to browse for "meet program" files.
   BrowseFolderDlg.DefaultFolder :=
     IncludeTrailingPathDelimiter(Settings.MeetsFolder) ;
   if BrowseFolderDlg.Execute then
@@ -56,11 +56,12 @@ procedure TExportCSV.vimgInfo1MouseEnter(Sender: TObject);
 begin
   BalloonHint1.Title := 'Export Folder ...';
 	BalloonHint1.Description := '''
-		To begin, the SwimClubMeet database must be connected.
-		Using the current selected SCM session, the application writes a CSV file
-		to the given folder.
-		This file contains data which can be read by the Dolphin Timing system to
-		initalize and/or update it's application state.
+		Using the current selected SCM session, the application writes a
+		"Meets Program" file to the given folder.
+		This file contains comma seperated values and has the file extension .CSV
+		You can view this file in a simple text or spreadsheet applicaion.
+		The data can be read by the Dolphin Timing system to initalize and/or
+		update it's application state.
 		''';
   BalloonHint1.ShowHint(vimgInfo1);
 end;

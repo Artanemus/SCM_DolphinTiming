@@ -4,7 +4,7 @@
         <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">SCM_DolphinTiming</ProjectName>
         <TargetedPlatforms>3</TargetedPlatforms>
@@ -242,7 +242,7 @@
         <DCCReference Include="dtReConstruct.pas"/>
         <DCCReference Include="tdResultsCTS.pas"/>
         <DCCReference Include="tdResultsCTSFile.pas"/>
-        <DCCReference Include="uExportCSV.pas"/>
+        <DCCReference Include="uExport_CSV.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

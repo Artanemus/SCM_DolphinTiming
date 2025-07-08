@@ -8981,7 +8981,6 @@ object Main: TMain
     Top = 0
     Width = 1460
     Height = 27
-    UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
     Color = clMenuBar
@@ -8990,7 +8989,7 @@ object Main: TMain
     ColorMap.BtnSelectedFont = clBlack
     ColorMap.UnusedColor = clWhite
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBlack
+    Font.Color = clWindowText
     Font.Height = -13
     Font.Name = 'Segoe UI'
     Font.Style = []
@@ -10650,13 +10649,11 @@ object Main: TMain
             Items = <
               item
                 Action = actnSyncTD
-                Caption = '&Sync DT to SCM'
                 ImageIndex = 11
                 ImageName = 'arrow_back'
               end
               item
                 Action = actnSyncSCM
-                Caption = 'S&ync SCM to DT'
                 ImageIndex = 15
                 ImageName = 'arrow_forward'
               end
@@ -10925,7 +10922,7 @@ object Main: TMain
     end
     object actnSyncTD: TAction
       Category = 'Edit'
-      Caption = 'Sync DT to SCM'
+      Caption = 'Sync CTS to SCM'
       ImageIndex = 11
       ImageName = 'arrow_back'
       OnExecute = actnSyncTDExecute
@@ -10933,7 +10930,7 @@ object Main: TMain
     end
     object actnSyncSCM: TAction
       Category = 'Edit'
-      Caption = 'Sync SCM to DT'
+      Caption = 'Sync SCM to CTS'
       ImageIndex = 15
       ImageName = 'arrow_forward'
       OnExecute = actnSyncSCMExecute

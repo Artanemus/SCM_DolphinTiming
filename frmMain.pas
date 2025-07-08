@@ -59,7 +59,7 @@ type
     actnSCMSession: TAction;
     actnSelectSwimClub: TAction;
     actnSyncSCM: TAction;
-    actnSyncTD: TAction;
+		actnSyncTD: TAction;
     actnTDTableViewer: TAction;
     actnFireDACExplorer: TAction;
     btnNextDTFile: TButton;
@@ -149,9 +149,9 @@ type
     procedure actnSCMSessionUpdate(Sender: TObject);
     procedure actnSelectSwimClubExecute(Sender: TObject);
     procedure actnSelectSwimClubUpdate(Sender: TObject);
-    procedure actnSyncSCMExecute(Sender: TObject);
-    procedure actnSyncSCMUpdate(Sender: TObject);
-    procedure actnSyncTDExecute(Sender: TObject);
+		procedure actnSyncSCMExecute(Sender: TObject);
+		procedure actnSyncSCMUpdate(Sender: TObject);
+		procedure actnSyncTDExecute(Sender: TObject);
     procedure actnSyncTDUpdate(Sender: TObject);
     procedure actnTDTableViewerExecute(Sender: TObject);
     procedure actnFireDACExplorerExecute(Sender: TObject);
@@ -226,7 +226,7 @@ uses System.UITypes, System.DateUtils ,dlgSessionPicker, dlgOptions, dlgTreeView
   dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData, tdMeetProgram,
 	dlgExportCSV, uWatchTime, uAppUtils, tdLogin,
   Winapi.ShellAPI, dlgFDExplorer, dmSCM, dmTDS, dlgScanOptions, rptReportsSCM,
-	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile, uExportCSV;
+	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile, uExport_CSV;
 
 const
 
@@ -554,54 +554,56 @@ var
 	mr: TModalResult;
 	msg, s: string;
 	success: boolean;
-	excsv: TCTS_Utils;
+	excsv: TExport_CSV;
 begin
-	success := false;
 	//  assert path state.  // assert folder exists ?
 	if Settings.ProgramFolder.IsEmpty then
 	begin
 		s := 'Error: A ''Meet Program'' folder wasn''t assigned in options.';
-		msg := Format(s, [fn]);
-		MessageBox(0,	PChar(msg),
+		MessageBox(0,	PChar(s),
 			PChar('Export of Meet Program'), MB_ICONINFORMATION or MB_OK);
 		exit;
 	end;
 
-	dlg := TExportCSV.Create(self);
+	fn := Settings.ProgramFolder;
+
+	dlg := TExportCSV.Create(self); // a dialogue twith meet program options.
 	mr := dlg.ShowModal;
 	dlg.Free;
 	if IsPositiveResult(mr) then
 	begin
-		// Build a qualified path
-		fn := IncludeTrailingPathDelimiter(Settings.ProgramFolder);
-		excsv:= TCTS_Utils.Create;
+		excsv:= TExport_CSV.Create; // class to manage CSV export.
 		SCMGrid.BeginUpdate;
 		try
 			success := excsv.Export_CTS_CSV(fn);
+			if success then // Build export report message.
+			begin
+				s := '''
+					The Meet Program...
+					%s
+					was successfully exported. (%s)
+					''';
+				msg := Format(s, [excsv.PrgFileName, excsv.StatStr ]);
+			end
+			else
+			begin
+				s := '''
+					An error occurred while exporting...
+					%s
+					Error: %S
+					''';
+				if excsv.PrgFileName.IsEmpty then
+					msg := Format(s, [fn, excsv.ErrStr ])
+				else
+					msg := Format(s, [excsv.PrgFileName, excsv.ErrStr ]);
+			end;
 		finally
 			SCM.dsEvent.DataSet.First; // re-set to head of session.
 			SCM.dsHeat.DataSet.First;
 			SCMGrid.EndUpdate; // update grid.
-      excsv.free;
+			excsv.free;
 		end;
 
-		if success then // Message user.
-		begin
-			s := '''
-				The Meet Program %s
-				was successfully exported. (%s)
-				''';
-			msg := Format(s, [fn, excsv.StatStr ]);
-		end
-		else
-		begin
-			s := '''
-				An error occurred while exporting ...
-				%s
-				Check your settings. (%S)
-				''';
-			msg := Format(s, [fn, excsv.ErrStr ]);
-		end;
 		MessageBox(0,	PChar(msg),
 			PChar('Export of Meet Program'), MB_ICONINFORMATION or MB_OK);
 	end;
@@ -875,8 +877,8 @@ begin
     SCMGrid.EndUpdate;
     // Message user.
     MessageBox(0,
-      PChar('Creation of Time Drops Results files has been completed.'),
-      PChar('Re-Construct & Export TD Results'), MB_ICONINFORMATION or MB_OK);
+			PChar('Creation of CTS Results files has been completed.'),
+      PChar('Re-Construct & Export CTS Results'), MB_ICONINFORMATION or MB_OK);
   end;
   dlg.Free;
 end;
@@ -1055,8 +1057,8 @@ begin
 						FreeAndNil(CTS);
 						pbarResults.Visible :=  false; // hide the progress bar
 						TDS.tblmSession.First;
-						TDS.EnableAllTDControls;
 						TDS.BookmarkCue;
+						TDS.EnableAllTDControls;
 						tdsGrid.EndUpdate;
           end;
         end;
@@ -1184,24 +1186,25 @@ end;
 procedure TMain.actnSyncSCMExecute(Sender: TObject);
 var
   found: boolean;
-  aTDSSessionNum, aTDSEventNum, aTDSHeatNum: integer;
+	aTDSSessionNum, aTDSEventNum, aTDSHeatNum: integer;
+	s: string;
 begin
-  scmGrid.BeginUpdate;
-  aTDSSessionNum := TDS.tblmSession.FieldByName('SessionNum').AsInteger;
-  aTDSEventNum := TDS.tblmEvent.FieldByName('EventNum').AsInteger;
+	scmGrid.BeginUpdate;
+	aTDSSessionNum := TDS.tblmSession.FieldByName('SessionNum').AsInteger;
+	aTDSEventNum := TDS.tblmEvent.FieldByName('EventNum').AsInteger;
 	aTDSHeatNum := TDS.tblmHeat.FieldByName('HeatNum').AsInteger;
+
+	s := 'Syncronization of SCM to CTS failed.';
 	
 	// PART 1 : ensure we are using the correct session.
 	if actnAutoSync.Checked then
-	begin // Does the current SCM session match the TD session? 
+	begin // Does the current SCM session match the CTS session?
 		if SCM.qrySession.FieldByName('SessionID').AsInteger <> aTDSSessionNum then
-			found :=
-				SCM.LocateSessionID(TDS.tblmSession.FieldByName('SessionNum').AsInteger)
+			found := SCM.LocateSessionID(aTDSSessionNum)
 		else found := true;
     if not found then
 		begin // Error finding the SCM sessionID.
-			StatBar.SimpleText := 'Syncronization of SCM to TD failed. '
-			+ 'Auto-Sync was unable to find the SCM Session.';
+			StatBar.SimpleText := s	+ 'Auto-Sync was unable to find the SCM Session.';
       timer1.enabled := true;
       if FSyncSCMVerbose then
 				MessageBeep(MB_ICONERROR); // Plays the system-defined warning sound 
@@ -1210,21 +1213,29 @@ begin
 		end;
 	end;
 
+	if (aTDSEventNum = 0) or (aTDSHeatNum = 0) then
+	begin
+		if (aTDSEventNum = 0) then s := s + 'SCM-Event 0 does not exist.'
+		else s := s + 'SCM-Heat 0 does not exist.';
+		StatBar.SimpleText := s;
+		timer1.enabled := true;
+		exit;
+	end;
+
 	// PART 2 : try to syncronize with TimeDrops.
 	found := SCM.SyncSCMToDT(aTDSSessionNum, aTDSEventNum, aTDSHeatNum);
 	scmGrid.EndUpdate;
 
 	if not found then
-	begin	
-		StatBar.SimpleText := 'Syncronization of SCM to TD failed. '
-		+ 'Enable Auto-Sync or manually ''Select SCM Session''.';
+	begin
+		StatBar.SimpleText := s	+ 'Enable Auto-Sync or manually ''Select SCM Session''.';
 		timer1.enabled := true;
 		if FSyncSCMVerbose then
 			MessageBeep(MB_ICONERROR); // Plays the system-defined warning sound
 	end
   else
   begin
-		StatBar.SimpleText := 'Synced.';
+		StatBar.SimpleText := 'SCM Synced.';
     timer1.enabled := true;
   end;
 end;
@@ -1262,14 +1273,14 @@ begin
 
   if not found then
   begin
-		StatBar.SimpleText := 'Syncronization of TD to SCM failed. '
+		StatBar.SimpleText := 'Syncronization of CTS to SCM failed. '
       + 'Your ''Results'' folder may not contain the session files required to sync.';
     timer1.enabled := true;
     if FSyncTDSVerbose then MessageBeep(MB_ICONERROR); // Plays the system-defined warning sound
   end
   else
   begin
-		StatBar.SimpleText := 'Synced.';
+		StatBar.SimpleText := 'CTS Synced.';
     timer1.enabled := true;
   end;
 end;
@@ -1470,13 +1481,13 @@ begin
     begin
       SCM.dsHeat.DataSet.next;
     end;
-  end;
+	end;
 
   if sbtnAutoSync.Down then
   begin
     FSyncTDSVerbose := false;
-    actnSyncTD.Execute(); // Syncronize TDS grid.
-    FSyncTDSVerbose := true;
+		actnSyncTD.Execute(); // Syncronize TDS grid.
+		FSyncTDSVerbose := true;
   end;
 
 	PostMessage(Self.Handle, SCM_UPDATEUI_SCM, 0, 0);
@@ -2423,9 +2434,9 @@ begin
   // -----------------------------------------------------
   if not Assigned(tdsGrid.DataSource) then
     tdsGrid.DataSource := TDS.dsmLane;
-  // -----------------------------------------------------
+	// -----------------------------------------------------
 
-  // most of the tools (currently) require both TD/SCM to be ready.
+	// most of the tools (currently) require both CTS/SCM to be ready.
   pnlTool2.Visible := true;
   lblEventDetailsTD.Visible := true;
 

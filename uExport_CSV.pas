@@ -1,9 +1,9 @@
-unit uExportCSV;
+unit uExport_CSV;
 
 interface
 uses
 	System.Classes, System.SysUtils, dmSCM, Vcl.Controls, dlgExportCSV,
-	tdSetting, DateUtils;
+	tdSetting, DateUtils, System.IOUtils;
 	//
 	//Vcl.Graphics, Vcl.Forms,
 	//vcl.Dialogs,
@@ -13,9 +13,9 @@ uses
 	//SCMDefines,
 type
 
-	TCTS_Utils = class
+	TExport_CSV = class
 	private
-		fErrStr, fStatStr: string;
+		fErrStr, fStatStr, fPrgFileName: string;
 		fCountEv, fCountHt: integer;
 		function Construct_CTS_CSV_filename(AFilePath: string; out fn: string): boolean;
 		function BuildCSVEventData(AFileName: string): boolean;
@@ -30,49 +30,53 @@ type
 
 		property ErrStr: string read FErrStr;
 		property StatStr: string read FStatStr;
+		property PrgFileName: string read fPrgFileName;
 
 end;
 
 
-
-
-
 implementation
 
-constructor TCTS_Utils.Create;
+constructor TExport_CSV.Create;
 begin
 	inherited;
 	fErrStr := '';
 	fStatStr := '';
 	fCountEv := 0;
 	fCountHt := 0;
+	fPrgFileName := '';
 end;
 
-destructor TCTS_Utils.Destroy;
+destructor TExport_CSV.Destroy;
 begin
 	// my cleanup code
 	inherited;
 end;
 
 
-function TCTS_Utils.Export_CTS_CSV(AfilePath: string): boolean;
+function TExport_CSV.Export_CTS_CSV(AfilePath: string): boolean;
 var
 passed: boolean;
-fn: string;
 begin
 	fCountEv := 0;
 	fCountHt := 0;
 	fErrStr := '';
 	fStatStr := '';
-	passed := Construct_CTS_CSV_filename(AFilePath, fn);
-	if passed then
-		begin
-			passed := BuildCSVEventData(fn);
-		end;
+	fPrgFileName := '';
+  passed := true;
+	if not TDirectory.Exists(AfilePath) then
+	begin
+		fErrStr := 'The folder for export of the "Meet Program" (see Preferences) doesn''t exist.';
+		passed := false;
+	end;
+	// build the fully qualified path, filename and extension.
+	if passed then passed := Construct_CTS_CSV_filename(AFilePath, fPrgFileName);
+	// Assert
+	if passed then passed := BuildCSVEventData(fPrgFileName);
 	result := passed;
 end;
 
-function TCTS_Utils.Construct_CTS_CSV_filename(AFilePath: string; out fn: string): boolean;
+function TExport_CSV.Construct_CTS_CSV_filename(AFilePath: string; out fn: string): boolean;
 var
 	i: integer;
 	dt: TDatetime;
@@ -95,7 +99,7 @@ try
 	fs.ShortDateFormat := 'yyyy-mm-dd';
 	fs.LongTimeFormat := 'hh:nn:ss';
 	dt := DateOf(dt) + TimeOf(Now); // timeof exporting file.
-	s := '-' + DatetoStr(dt, fs);
+	s := DatetoStr(dt, fs);
 except
 	on E: Exception do
 	begin
@@ -104,11 +108,12 @@ except
 		exit;
 	end;
 end;
-	fn := fn + 'CTS_MeetProgram_' + IntToStr(i) + '_' + s + '.csv';
+	// example: C:\CTSDolphin\EventCSV\CTS_MeetProgram_113_01_02_2024.csv
+	fn := fn + 'CTS_MeetProgram' + IntToStr(i) + '_' + s + '.csv';
 	result := true;
 end;
 
-function TCTS_Utils.BuildCSVEventData(AFileName: string): boolean;
+function TExport_CSV.BuildCSVEventData(AFileName: string): boolean;
 var
 	sl: TStringList;
 	s, s2, s3: string;
