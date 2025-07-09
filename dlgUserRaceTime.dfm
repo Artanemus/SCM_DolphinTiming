@@ -1,13 +1,14 @@
-object DataDebug: TDataDebug
+object UserRaceTime: TUserRaceTime
   Left = 0
   Top = 0
-  Caption = 'DataDebug'
-  ClientHeight = 635
-  ClientWidth = 971
+  BorderStyle = bsDialog
+  Caption = 'Enter a Race-Time ...'
+  ClientHeight = 188
+  ClientWidth = 307
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -13
+  Font.Height = -16
   Font.Name = 'Segoe UI'
   Font.Style = []
   Icon.Data = {
@@ -8967,101 +8968,97 @@ object DataDebug: TDataDebug
     FFFFFFFFFFFFFFFEFEFEFF000000000000000000000000000000000000000000
     0000000000000000000000000000000000000000000000000000000000000000
     0000000000000000000000}
-  Position = poDesktopCenter
+  KeyPreview = True
+  Position = poOwnerFormCenter
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  OnKeyDown = FormKeyDown
   OnShow = FormShow
-  TextHeight = 17
-  object pgcntrlData: TPageControl
+  TextHeight = 21
+  object pnlFooter: TPanel
+    Left = 0
+    Top = 123
+    Width = 307
+    Height = 65
+    Align = alBottom
+    BevelEdges = [beTop]
+    BevelKind = bkFlat
+    BevelOuter = bvNone
+    TabOrder = 0
+    object btnOk: TButton
+      Left = 157
+      Top = 15
+      Width = 106
+      Height = 34
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = btnOkClick
+    end
+    object btnCancel: TButton
+      Left = 45
+      Top = 15
+      Width = 106
+      Height = 34
+      Caption = 'Cancel'
+      TabOrder = 1
+      OnClick = btnCancelClick
+    end
+  end
+  object rpnlBody: TRelativePanel
     Left = 0
     Top = 0
-    Width = 971
-    Height = 635
-    ActivePage = tabsheetNoodle
+    Width = 307
+    Height = 123
+    ControlCollection = <
+      item
+        Control = edtRaceTimeUser
+        AlignBottomWithPanel = False
+        AlignHorizontalCenterWithPanel = True
+        AlignLeftWithPanel = False
+        AlignRightWithPanel = False
+        AlignTopWithPanel = False
+        AlignVerticalCenterWithPanel = True
+      end
+      item
+        Control = lblErrMsg
+        AlignBottomWithPanel = False
+        AlignHorizontalCenterWithPanel = False
+        AlignLeftWithPanel = False
+        AlignRightWithPanel = False
+        AlignTopWithPanel = False
+        AlignVerticalCenterWithPanel = False
+      end>
     Align = alClient
-    TabOrder = 0
-    object grid: TTabSheet
-      Caption = 'Session'
-      object dbgridSession: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
+    BevelOuter = bvNone
+    TabOrder = 1
+    DesignSize = (
+      307
+      123)
+    object edtRaceTimeUser: TEdit
+      Left = 69
+      Top = 39
+      Width = 169
+      Height = 45
+      Alignment = taCenter
+      Anchors = []
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -27
+      Font.Name = 'Segoe UI'
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 0
+      Text = '00:00.000'
     end
-    object tabsheetEvent: TTabSheet
-      Caption = 'Event'
-      ImageIndex = 1
-      object dbgridEvent: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetHeat: TTabSheet
-      Caption = 'Heat'
-      ImageIndex = 2
-      object dbgridHeat: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetLane: TTabSheet
-      Caption = 'Lane'
-      ImageIndex = 3
-      object dbgridLane: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
-    end
-    object tabsheetNoodle: TTabSheet
-      Caption = 'Noodle'
-      ImageIndex = 4
-      object dbgridNoodle: TDBGrid
-        Left = 0
-        Top = 0
-        Width = 963
-        Height = 603
-        Align = alClient
-        DataSource = TDS.dsmNoodle
-        TabOrder = 0
-        TitleFont.Charset = DEFAULT_CHARSET
-        TitleFont.Color = clWindowText
-        TitleFont.Height = -13
-        TitleFont.Name = 'Segoe UI'
-        TitleFont.Style = []
-      end
+    object lblErrMsg: TLabel
+      Left = 0
+      Top = 96
+      Width = 307
+      Height = 21
+      Alignment = taCenter
+      Anchors = []
+      AutoSize = False
+      Caption = 'Enter the swimmers racetime.'
     end
   end
 end

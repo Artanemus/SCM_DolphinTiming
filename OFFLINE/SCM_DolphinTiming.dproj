@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{E26720C0-C566-4B09-A0FE-D30FB65EB625}</ProjectGuid>
+        <ProjectGuid>{DC555F89-12F7-458B-B43F-4B0848795731}</ProjectGuid>
         <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
@@ -72,24 +72,26 @@
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
         <SanitizedProjectName>SCM_DolphinTiming</SanitizedProjectName>
         <Custom_Styles>&quot;Windows10 SlateGray|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Windows10SlateGray.vsf&quot;</Custom_Styles>
-        <DCC_UnitSearchPath>C:\Users\Ben\Documents\GitHub\VCL_TMS;C:\Users\Ben\Documents\GitHub\SVGIconImageList\Lib\D12\Win32\Release;$(FastReports)\Source;$(FastReports)\FastScript;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>C:\Users\Ben\Documents\GitHub\VCL_TMS;C:\Users\Ben\Documents\GitHub\SVGIconImageList\Lib\D12\Win32\Release;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Locale>3081</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=Artanemus;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.1;InternalName=SCM_DT;LegalCopyright=Copyright (C) 2019-2025 Artanemus.  All rights reserved.;LegalTrademarks=SwimClubMeet;OriginalFilename=SCM_DolphinTiming.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0;Comments=Utility to accept Dolphin Timing data into SwimClubMeet</VerInfo_Keys>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Build>1</VerInfo_Build>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <DCC_UsePackage>JvNet;vclwinx;DataSnapServer;fmx;vclie;DbxCommonDriver;bindengine;IndyIPCommon;VCLRESTComponents;DBXMSSQLDriver;FireDACCommonODBC;emsclient;AbbreviaD;appanalytics;IndyProtocols;vclx;Skia.Package.RTL;dbxcds;vcledge;fsADO;FmxTeeUI;DBXFirebirdDriver;JvAppFrm;FireDACSqliteDriver;DbxClientDriver;JclVcl;soapmidas;TeeUI;Jcl;dbexpress;JvManagedThreads;inet;TMSXls;vcltouch;JvDB;FireDACDBXDriver;fmxdae;JvCustom;CustomIPTransport;FireDACMSSQLDriver;JvSystem;JvControls;JvCrypt;JvJans;JvMM;IndySystem;JvGlobus;fsIBX;ibxbindings;frxTee;JclContainers;JvPageComps;vclFireDAC;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;fsFD;bindcompdbx;rtl;FireDACMySQLDriver;DBXSqliteDriver;frxDBX;VirtualTreesDR;DBXSybaseASEDriver;JvRuntimeDesign;frx;JvXPCtrls;vclimg;DataSnapFireDAC;inetdbxpress;FireDAC;JvDocking;JvDlgs;xmlrtl;ibxpress;dsnap;JvCmp;FireDACDb2Driver;DBXOracleDriver;DBXInformixDriver;vclib;fmxobj;bindcompvclsmp;DataSnapNativeClient;DatasnapConnectorsFreePascal;SVGIconImageList;frxIntIO;emshosting;FireDACCommonDriver;IndyIPClient;frxFD;bindcompvclwinx;TMSWiz;emsedge;bindcompfmx;frxADO;JvBands;inetdb;ibmonitor;FireDACASADriver;Tee;frxIBX;OrpheusDBDR;SVGIconImageListFMX;vclactnband;fmxFireDAC;FireDACInfxDriver;DBXMySQLDriver;VclSmp;DataSnapCommon;JvPascalInterpreter;fmxase;frxcs;JvPluginSystem;frxIntIOIndy;DBXOdbcDriver;JvTimeFramework;dbrtl;FireDACOracleDriver;Skia.Package.FMX;fsTee;TeeDB;FireDACMSAccDriver;AbbreviaVCLD;DataSnapIndy10ServerTransport;JclDeveloperTools;DataSnapConnectors;vcldsnap;DBXInterBaseDriver;fsDB;FireDACMongoDBDriver;JvWizards;OrpheusDR;FireDACTDataDriver;frxOpenFiltersTemp;Skia.Package.VCL;vcldb;TMSEx;JvCore;bindcomp;AbbreviaFMXDDesign;IndyCore;RESTBackendComponents;FireDACADSDriver;RESTComponents;IndyIPServer;vcl;dsnapxml;adortl;dsnapcon;DataSnapClient;DataSnapProviderClient;JvDotNetCtrls;JvHMI;DBXDb2Driver;frxe;emsclientfiredac;FireDACPgDriver;FireDACDSDriver;JvPrintPreview;tethering;TMS;JvStdCtrls;bindcompvcl;fs;CloudService;DBXSybaseASADriver;FMXTee;frxDB;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>JvNet;vclwinx;DataSnapServer;fmx;vclie;DbxCommonDriver;bindengine;IndyIPCommon;VCLRESTComponents;DBXMSSQLDriver;FireDACCommonODBC;emsclient;appanalytics;IndyProtocols;vclx;Skia.Package.RTL;dbxcds;vcledge;fsADO;FmxTeeUI;DBXFirebirdDriver;JvAppFrm;FireDACSqliteDriver;DbxClientDriver;JclVcl;soapmidas;TeeUI;Jcl;dbexpress;JvManagedThreads;inet;TMSXls;vcltouch;JvDB;FireDACDBXDriver;fmxdae;JvCustom;CustomIPTransport;FireDACMSSQLDriver;JvSystem;JvControls;JvCrypt;JvJans;JvMM;IndySystem;JvGlobus;fsIBX;ibxbindings;frxTee;JclContainers;JvPageComps;vclFireDAC;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;fsFD;bindcompdbx;rtl;FireDACMySQLDriver;DBXSqliteDriver;DBXSybaseASEDriver;JvRuntimeDesign;frx;JvXPCtrls;vclimg;DataSnapFireDAC;inetdbxpress;FireDAC;JvDocking;JvDlgs;xmlrtl;ibxpress;dsnap;JvCmp;FireDACDb2Driver;DBXOracleDriver;DBXInformixDriver;vclib;fmxobj;bindcompvclsmp;DataSnapNativeClient;DatasnapConnectorsFreePascal;frxIntIO;emshosting;FireDACCommonDriver;IndyIPClient;bindcompvclwinx;TMSWiz;emsedge;bindcompfmx;JvBands;inetdb;ibmonitor;FireDACASADriver;Tee;vclactnband;fmxFireDAC;FireDACInfxDriver;DBXMySQLDriver;VclSmp;DataSnapCommon;JvPascalInterpreter;fmxase;JvPluginSystem;frxIntIOIndy;DBXOdbcDriver;JvTimeFramework;dbrtl;FireDACOracleDriver;Skia.Package.FMX;fsTee;TeeDB;FireDACMSAccDriver;DataSnapIndy10ServerTransport;JclDeveloperTools;DataSnapConnectors;vcldsnap;DBXInterBaseDriver;fsDB;FireDACMongoDBDriver;JvWizards;FireDACTDataDriver;frxOpenFiltersTemp;Skia.Package.VCL;vcldb;TMSEx;JvCore;bindcomp;IndyCore;RESTBackendComponents;FireDACADSDriver;RESTComponents;IndyIPServer;vcl;dsnapxml;adortl;dsnapcon;DataSnapClient;DataSnapProviderClient;JvDotNetCtrls;JvHMI;DBXDb2Driver;emsclientfiredac;FireDACPgDriver;FireDACDSDriver;JvPrintPreview;tethering;TMS;JvStdCtrls;bindcompvcl;fs;CloudService;DBXSybaseASADriver;FMXTee;frxDB;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <Icon_MainIcon>SCM_TimeDrops_Icon.ico</Icon_MainIcon>
+        <Icon_MainIcon>SCM_DolphinTiming_Icon.ico</Icon_MainIcon>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
-        <UWP_DelphiLogo44>..\SCM_Assets\ICONS\SCM_TimeDrops_44x44.png</UWP_DelphiLogo44>
-        <UWP_DelphiLogo150>..\SCM_Assets\ICONS\SCM_TimeDrops_150x150.png</UWP_DelphiLogo150>
+        <UWP_DelphiLogo44>..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png</UWP_DelphiLogo44>
+        <UWP_DelphiLogo150>..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png</UWP_DelphiLogo150>
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <DCC_UsePackage>vclwinx;DataSnapServer;fmx;vclie;DbxCommonDriver;bindengine;IndyIPCommon;VCLRESTComponents;DBXMSSQLDriver;FireDACCommonODBC;emsclient;AbbreviaD;appanalytics;IndyProtocols;vclx;dbxcds;vcledge;fsADO;FmxTeeUI;DBXFirebirdDriver;FireDACSqliteDriver;DbxClientDriver;soapmidas;TeeUI;dbexpress;inet;TMSXls;vcltouch;FireDACDBXDriver;fmxdae;CustomIPTransport;FireDACMSSQLDriver;IndySystem;fsIBX;ibxbindings;frxTee;vclFireDAC;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;fsFD;bindcompdbx;rtl;FireDACMySQLDriver;DBXSqliteDriver;frxDBX;VirtualTreesDR;DBXSybaseASEDriver;frx;vclimg;DataSnapFireDAC;inetdbxpress;FireDAC;xmlrtl;ibxpress;dsnap;FireDACDb2Driver;DBXOracleDriver;DBXInformixDriver;vclib;fmxobj;bindcompvclsmp;DataSnapNativeClient;DatasnapConnectorsFreePascal;SVGIconImageList;frxIntIO;emshosting;FireDACCommonDriver;IndyIPClient;frxFD;bindcompvclwinx;emsedge;bindcompfmx;frxADO;inetdb;ibmonitor;FireDACASADriver;Tee;frxIBX;OrpheusDBDR;SVGIconImageListFMX;vclactnband;fmxFireDAC;FireDACInfxDriver;DBXMySQLDriver;VclSmp;DataSnapCommon;fmxase;frxcs;frxIntIOIndy;DBXOdbcDriver;dbrtl;FireDACOracleDriver;fsTee;TeeDB;FireDACMSAccDriver;AbbreviaVCLD;DataSnapIndy10ServerTransport;DataSnapConnectors;vcldsnap;DBXInterBaseDriver;fsDB;FireDACMongoDBDriver;OrpheusDR;FireDACTDataDriver;frxOpenFiltersTemp;Skia.Package.VCL;vcldb;TMSEx;bindcomp;IndyCore;RESTBackendComponents;FireDACADSDriver;RESTComponents;IndyIPServer;vcl;dsnapxml;adortl;dsnapcon;DataSnapClient;DataSnapProviderClient;DBXDb2Driver;frxe;emsclientfiredac;FireDACPgDriver;FireDACDSDriver;tethering;TMS;bindcompvcl;fs;CloudService;DBXSybaseASADriver;FMXTee;frxDB;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>vclwinx;DataSnapServer;fmx;vclie;DbxCommonDriver;bindengine;IndyIPCommon;VCLRESTComponents;DBXMSSQLDriver;FireDACCommonODBC;emsclient;appanalytics;IndyProtocols;vclx;dbxcds;vcledge;fsADO;FmxTeeUI;DBXFirebirdDriver;FireDACSqliteDriver;DbxClientDriver;soapmidas;TeeUI;dbexpress;inet;TMSXls;vcltouch;FireDACDBXDriver;fmxdae;CustomIPTransport;FireDACMSSQLDriver;IndySystem;fsIBX;ibxbindings;vclFireDAC;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;fsFD;bindcompdbx;rtl;FireDACMySQLDriver;DBXSqliteDriver;DBXSybaseASEDriver;frx;vclimg;DataSnapFireDAC;inetdbxpress;FireDAC;xmlrtl;ibxpress;dsnap;FireDACDb2Driver;DBXOracleDriver;DBXInformixDriver;vclib;fmxobj;bindcompvclsmp;DataSnapNativeClient;DatasnapConnectorsFreePascal;emshosting;FireDACCommonDriver;IndyIPClient;bindcompvclwinx;emsedge;bindcompfmx;inetdb;ibmonitor;FireDACASADriver;Tee;vclactnband;fmxFireDAC;FireDACInfxDriver;DBXMySQLDriver;VclSmp;DataSnapCommon;fmxase;DBXOdbcDriver;dbrtl;FireDACOracleDriver;fsTee;TeeDB;FireDACMSAccDriver;DataSnapIndy10ServerTransport;DataSnapConnectors;vcldsnap;DBXInterBaseDriver;fsDB;FireDACMongoDBDriver;FireDACTDataDriver;Skia.Package.VCL;vcldb;TMSEx;bindcomp;IndyCore;RESTBackendComponents;FireDACADSDriver;RESTComponents;IndyIPServer;vcl;dsnapxml;adortl;dsnapcon;DataSnapClient;DataSnapProviderClient;DBXDb2Driver;emsclientfiredac;FireDACPgDriver;FireDACDSDriver;tethering;TMS;bindcompvcl;CloudService;DBXSybaseASADriver;FMXTee;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
@@ -112,10 +114,7 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <Icon_MainIcon>SCM_DolphinTiming.ico</Icon_MainIcon>
-        <DCC_MapFile>3</DCC_MapFile>
-        <UWP_DelphiLogo44>..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png</UWP_DelphiLogo44>
-        <UWP_DelphiLogo150>..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png</UWP_DelphiLogo150>
+        <Icon_MainIcon>SCM_DolphinTiming_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -128,15 +127,8 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=Artanemus;FileDescription=$(MSBuildProjectName);FileVersion=1.1.0.1;InternalName=SCM_CTS;LegalCopyright=Copyright (C) 2019-2025 Artanemus.  All rights reserved.;LegalTrademarks=SwimClubMeet;OriginalFilename=SCM_DolphinTiming.exe;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.1;Comments=A utility to capture CTS DolphinTiming data and import into SwimClubMeet.</VerInfo_Keys>
-        <VerInfo_PreRelease>true</VerInfo_PreRelease>
-        <Icon_MainIcon>SCM_DolphinTiming.ico</Icon_MainIcon>
-        <VerInfo_Build>1</VerInfo_Build>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
-        <UWP_DelphiLogo44>ASSETS\PNG\SCM_DolphinTiming_44x44.png</UWP_DelphiLogo44>
-        <UWP_DelphiLogo150>ASSETS\PNG\SCM_DolphinTiming_150x150.png</UWP_DelphiLogo150>
+        <Icon_MainIcon>SCM_DolphinTiming_Icon.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
@@ -145,98 +137,61 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\x-superobject\XSuperJSON.pas"/>
-        <DCCReference Include="..\x-superobject\XSuperObject.pas"/>
-        <DCCReference Include="tdSetting.pas"/>
-        <DCCReference Include="..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas"/>
-        <DCCReference Include="..\SCM_SHARED\SCMDefines.pas"/>
-        <DCCReference Include="..\SCM_SHARED\SCMSimpleConnect.pas"/>
-        <DCCReference Include="frmMain.pas">
-            <Form>Main</Form>
-        </DCCReference>
-        <DCCReference Include="uAppUtils.pas"/>
-        <DCCReference Include="DirectoryWatcher.pas"/>
-        <DCCReference Include="dlgOptions.pas">
-            <Form>Options</Form>
-        </DCCReference>
-        <DCCReference Include="dlgPostData.pas">
-            <Form>PostData</Form>
-        </DCCReference>
-        <DCCReference Include="dlgTreeViewData.pas">
-            <Form>TreeViewData</Form>
-        </DCCReference>
-        <DCCReference Include="dlgTreeViewSCM.pas">
-            <Form>TreeViewSCM</Form>
-        </DCCReference>
-        <DCCReference Include="dlgDataDebug.pas">
-            <Form>DataDebug</Form>
-        </DCCReference>
-        <DCCReference Include="dlgUserRaceTime.pas">
-            <Form>UserRaceTime</Form>
-        </DCCReference>
-        <DCCReference Include="..\SCM_SHARED\SCMUtility.pas"/>
-        <DCCReference Include="dlgSessionPicker.pas">
-            <Form>SessionPicker</Form>
-        </DCCReference>
-        <DCCReference Include="dlgExportCSV.pas">
-            <Form>ExportCSV</Form>
-        </DCCReference>
-        <DCCReference Include="uWatchTime.pas"/>
-        <DCCReference Include="tdLogin.pas">
-            <Form>Login</Form>
-        </DCCReference>
-        <DCCReference Include="dlgFDExplorer.pas">
-            <Form>FDExplorer</Form>
-        </DCCReference>
-        <DCCReference Include="dmIMG.pas">
-            <Form>IMG</Form>
+        <DCCReference Include="dtfrmExec.pas">
+            <Form>dtExec</Form>
             <FormType>dfm</FormType>
-            <DesignClass>TDataModule</DesignClass>
         </DCCReference>
         <DCCReference Include="dmSCM.pas">
             <Form>SCM</Form>
             <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="dmTDS.pas">
-            <Form>TDS</Form>
+        <DCCReference Include="dtuSetting.pas"/>
+        <DCCReference Include="..\x-superobject\XSuperJSON.pas"/>
+        <DCCReference Include="..\x-superobject\XSuperObject.pas"/>
+        <DCCReference Include="dtfrmBoot.pas">
+            <Form>dtBoot</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="..\SCM_SHARED\SCMDefines.pas"/>
+        <DCCReference Include="..\SCM_SHARED\SCMSimpleConnect.pas"/>
+        <DCCReference Include="..\SCM_SHARED\SCMUtility.pas"/>
+        <DCCReference Include="..\SCM_SHARED\exeinfo.pas"/>
+        <DCCReference Include="dmDTData.pas">
+            <Form>DTData</Form>
             <FormType>dfm</FormType>
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
-        <DCCReference Include="dlgScanOptions.pas">
-            <Form>ScanOptions</Form>
+        <DCCReference Include="dtUtils.pas"/>
+        <DCCReference Include="dlgSessionPicker.pas">
+            <Form>SessionPicker</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="rptReportsSCM.pas">
-            <Form>ReportsSCM</Form>
-            <FormType>dfm</FormType>
-            <DesignClass>TDataModule</DesignClass>
-        </DCCReference>
-        <DCCReference Include="uNoodle.pas"/>
-        <DCCReference Include="uNoodleFrame.pas">
-            <Form>NoodleFrame</Form>
-            <FormType>dfm</FormType>
-            <DesignClass>TFrame</DesignClass>
-        </DCCReference>
-        <DCCReference Include="uNoodleData.pas"/>
-        <DCCReference Include="uNoodleInfo.pas">
-            <Form>NoodleInfo</Form>
+        <DCCReference Include="dtDlgOptions.pas">
+            <Form>dlgOptions</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="dlgSwimClubPicker.pas">
-            <Form>SwimClubPicker</Form>
+        <DCCReference Include="dtReConstruct.pas"/>
+        <DCCReference Include="..\SCM_SHARED\Vcl.PlatformVclStylesActnCtrls.pas"/>
+        <DCCReference Include="dtTreeViewSCM.pas">
+            <Form>TreeViewSCM</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="dlgAbout.pas">
-            <Form>About</Form>
+        <DCCReference Include="dtTreeViewDT.pas">
+            <Form>TreeViewDT</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="tdResultsCTSFile.pas"/>
-        <DCCReference Include="uExport_CSV.pas"/>
-        <DCCReference Include="tdResultsCTS.pas"/>
-        <DCCReference Include="ReConstruct\dtReConstruct.pas"/>
-        <DCCReference Include="ReConstruct\dtReConstructDlg.pas">
-            <Form>ReConstructDlg</Form>
+        <DCCReference Include="dlgDataDebug.pas">
+            <Form>DataDebug</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="dlgRaceTimeUser.pas">
+            <Form>RaceTimeUser</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="DirectoryWatcher.pas"/>
+        <DCCReference Include="dtPostData.pas">
+            <Form>PostData</Form>
             <FormType>dfm</FormType>
         </DCCReference>
         <BuildConfiguration Include="Base">
@@ -260,7 +215,6 @@
                     <Source Name="MainSource">SCM_DolphinTiming.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclemsedge290.bpl">Embarcadero RAD Server Edge Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k290.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcbofficexp290.bpl">Embarcadero C++Builder Office XP Servers Package</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dcloffice2k290.bpl">Microsoft Office 2000 Sample Automation Server Wrapper Components</Excluded_Packages>
@@ -268,49 +222,9 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="5">
-                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png" Configuration="Debug" Class="UWP_DelphiLogo150">
-                    <Platform Name="Win32">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo150x150.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png" Configuration="Debug" Class="UWP_DelphiLogo44">
-                    <Platform Name="Win32">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo44x44.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_TimeDrops_150x150.png" Configuration="Release" Class="UWP_DelphiLogo150"/>
-                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_TimeDrops_44x44.png" Configuration="Release" Class="UWP_DelphiLogo44"/>
-                <DeployFile LocalName="ASSETS\PNG\SCM_DolphinTiming_150x150.png" Configuration="Release" Class="UWP_DelphiLogo150">
-                    <Platform Name="Win32">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo150x150.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="ASSETS\PNG\SCM_DolphinTiming_44x44.png" Configuration="Release" Class="UWP_DelphiLogo44">
-                    <Platform Name="Win32">
-                        <RemoteDir>Assets\</RemoteDir>
-                        <RemoteName>Logo44x44.png</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win32\Debug\SCM_DolphinTiming.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>SCM_DolphinTiming.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win32\Debug\SCM_TimeDrops.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName="Win32\Release\SCM_DolphinTiming.exe" Configuration="Release" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>SCM_DolphinTiming.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
+                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_150x150.png" Configuration="Debug" Class="UWP_DelphiLogo150"/>
+                <DeployFile LocalName="..\SCM_Assets\ICONS\SCM_DolphinTiming_44x44.png" Configuration="Debug" Class="UWP_DelphiLogo44"/>
+                <DeployFile LocalName="Win32\Debug\SCM_DolphinTiming.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
@@ -1266,16 +1180,6 @@
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>
-            <MMX>
-                <UsesClauseFormatter AutoFormat="0" UseDefault="0">
-                    <GroupNames>Winapi;System.Win;System;Data;REST;Xml;Vcl;FMX</GroupNames>
-                </UsesClauseFormatter>
-                <Parser>
-                    <Defines/>
-                    <IfExpressions/>
-                </Parser>
-            </MMX>
-            <ModelSupport>False</ModelSupport>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
     </ProjectExtensions>

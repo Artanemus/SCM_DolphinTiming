@@ -4,11 +4,8 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
-  Vcl.DBCtrls, Data.DB, Vcl.Grids, Vcl.DBGrids, FireDAC.Stan.Param, dmSCM,
-  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.DatS,
-  FireDAC.Phys.Intf, FireDAC.DApt.Intf, FireDAC.Stan.Async, FireDAC.DApt,
-  FireDAC.Comp.DataSet, FireDAC.Comp.Client;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, dmDTData,
+  Vcl.DBCtrls, Data.DB, Vcl.Grids, Vcl.DBGrids;
 
 type
   TSessionPicker = class(TForm)
@@ -21,14 +18,6 @@ type
     btnOk: TButton;
     btnCancel: TButton;
     btnSelectClub: TButton;
-    qrySessionList: TFDQuery;
-    qrySessionListSessionID: TFDAutoIncField;
-    qrySessionListCaption: TWideStringField;
-    qrySessionListSessionStart: TSQLTimeStampField;
-    qrySessionListClosedDT: TSQLTimeStampField;
-    qrySessionListSwimClubID: TIntegerField;
-    qrySessionListSessionStatusID: TIntegerField;
-    dsSessionList: TDataSource;
     procedure btnCancelClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -63,24 +52,9 @@ end;
 procedure TSessionPicker.FormCreate(Sender: TObject);
 begin
   fSessionID := 0;
-
-  if Assigned(SCM) and Assigned(SCM.scmConnection)
-      and SCM.scmConnection.Connected then
-  begin
-    qrySessionList.Connection := SCM.scmConnection;
-    if qrySessionList.Active then
-      qrySessionList.Close;
-    qrySessionList.ParamByName('SWIMCLUBID').AsInteger :=
-      SCM.qrySwimClub.FieldByName('SwimClubID').AsInteger;
-    qrySessionList.Prepare;
-    qrySessionList.Open;
-  end;
-
-  if not qrySessionList.Active then
-  begin
-    raise Exception.Create('Session List failed to load.');
-  end;
-
+  // ensure data tables are active...
+  if not DTData.qrySessionList.Active then
+    DTData.qrySessionList.Open;
 end;
 
 procedure TSessionPicker.dbgridSessionDblClick(Sender: TObject);
@@ -107,12 +81,12 @@ begin
   if fSessionID <> 0 then
   begin
     SearchOptions := [];
-    if qrySessionList.Active and not qrySessionList.IsEmpty then
+    if DTData.qrySessionList.Active and not DTData.qrySessionList.IsEmpty then
     begin
-        success := qrySessionList.Locate('SessionID', fSessionID, SearchOptions);
+        success := DTData.qrySessionList.Locate('SessionID', fSessionID, SearchOptions);
         if not success then
         begin
-          qrySessionList.First;
+          DTData.qrySessionList.First;
         end;
     end;
   end;
