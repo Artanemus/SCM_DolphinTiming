@@ -8981,6 +8981,7 @@ object Main: TMain
     Top = 0
     Width = 1460
     Height = 27
+    UseSystemFont = False
     ActionManager = actnManager
     Caption = 'actnMenuBar'
     Color = clMenuBar
@@ -8989,7 +8990,7 @@ object Main: TMain
     ColorMap.BtnSelectedFont = clBlack
     ColorMap.UnusedColor = clWhite
     Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
+    Font.Color = clBlack
     Font.Height = -13
     Font.Name = 'Segoe UI'
     Font.Style = []
@@ -10620,12 +10621,6 @@ object Main: TMain
           item
             Items = <
               item
-                Action = actnRefresh
-                Caption = '&Refresh'
-                ImageIndex = 4
-                ImageName = 'Sync'
-              end
-              item
                 Caption = '-'
               end
               item
@@ -10649,11 +10644,13 @@ object Main: TMain
             Items = <
               item
                 Action = actnSyncTD
+                Caption = '&Sync CTS to SCM'
                 ImageIndex = 11
                 ImageName = 'arrow_back'
               end
               item
                 Action = actnSyncSCM
+                Caption = 'S&ync SCM to CTS'
                 ImageIndex = 15
                 ImageName = 'arrow_forward'
               end
@@ -10710,12 +10707,6 @@ object Main: TMain
                     Caption = '&Export DT Meet Program (.csv) ...'
                     ImageIndex = 1
                     ImageName = 'file_saveAlt'
-                  end
-                  item
-                    Action = actnReConstructTDResultFiles
-                    Caption = '&Generate Dolphin Timing results files  ...'
-                    ImageIndex = 9
-                    ImageName = 'build'
                   end>
                 Caption = 'E&xport'
               end>
@@ -10752,7 +10743,6 @@ object Main: TMain
               end
               item
                 Action = actnClearGrid
-                Caption = '&Clear the Dolphin grid ...'
                 ImageIndex = 10
                 ImageName = 'scan'
               end>
@@ -10796,6 +10786,12 @@ object Main: TMain
               end
               item
                 Caption = '-'
+              end
+              item
+                Action = actnReConstructTDResultFiles
+                Caption = '&Generate Dolphin Timing results files  ...'
+                ImageIndex = 9
+                ImageName = 'build'
               end
               item
                 Action = actnBuildTDTables
@@ -10888,7 +10884,7 @@ object Main: TMain
     end
     object actnClearGrid: TAction
       Category = 'Dolphin'
-      Caption = 'Clear the Dolphin grid ...'
+      Caption = 'Clear the '#39'Results'#39' grid ...'
       ImageIndex = 10
       ImageName = 'scan'
       OnExecute = actnClearGridExecute

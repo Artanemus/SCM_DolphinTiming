@@ -53,7 +53,6 @@ begin
 	inherited;
 end;
 
-
 function TExport_CSV.Export_CTS_CSV(AfilePath: string): boolean;
 var
 passed: boolean;

@@ -1,4 +1,4 @@
-unit tdReConstructDlg;
+unit dtReConstructDlg;
 
 interface
 
@@ -19,6 +19,7 @@ type
     BrowseFolderDlg: TFileOpenDialog;
     BalloonHint1: TBalloonHint;
     lblInfo: TLabel;
+    rgrpFileType: TRadioGroup;
     procedure btnCancelClick(Sender: TObject);
     procedure btnedtExportFolderClick(Sender: TObject);
     procedure btnOkClick(Sender: TObject);
@@ -107,13 +108,12 @@ procedure TReConstructDlg.vimgInfo1MouseEnter(Sender: TObject);
 begin
   BalloonHint1.Title := 'Export Folder ...';
   BalloonHint1.Description := '''
-    The SCM_TimeDrops writes files to the given folder with the pattern
-    "SessionSSSS_Event_EEEE_HeatHHHH_RaceRRRR_XXX.json".
-    These files contains JSON data identical to "results" files produced by
-    Time-Drops.
-    With each file written a sudo "Timing System" status file is updated.
-    These files can be used to simulate or repair a Time-Drops session (meet).
-  ''';
+		The application writes re-engineered DO3 or DO4 files to the given folder.
+		These files contains ASCII data identical to "results" files produced by
+		CTS Dolphin Timing. They can be view in any simple text application.
+		Select the variant you wish to create. Select the folder to write out the
+		files and press "Re-Construct and Export Results".
+		''';
   BalloonHint1.ShowHint(TControl(Sender));
 end;
 

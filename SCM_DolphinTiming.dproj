@@ -156,8 +156,6 @@
         </DCCReference>
         <DCCReference Include="uAppUtils.pas"/>
         <DCCReference Include="DirectoryWatcher.pas"/>
-        <DCCReference Include="tdMeetProgram.pas"/>
-        <DCCReference Include="tdReConstruct.pas"/>
         <DCCReference Include="dlgOptions.pas">
             <Form>Options</Form>
         </DCCReference>
@@ -180,13 +178,8 @@
         <DCCReference Include="dlgSessionPicker.pas">
             <Form>SessionPicker</Form>
         </DCCReference>
-        <DCCReference Include="tdResults.pas"/>
         <DCCReference Include="dlgExportCSV.pas">
             <Form>ExportCSV</Form>
-        </DCCReference>
-        <DCCReference Include="tdTimingSystemStatus.pas"/>
-        <DCCReference Include="tdReConstructDlg.pas">
-            <Form>ReConstructDlg</Form>
         </DCCReference>
         <DCCReference Include="uWatchTime.pas"/>
         <DCCReference Include="tdLogin.pas">
@@ -220,7 +213,6 @@
             <DesignClass>TDataModule</DesignClass>
         </DCCReference>
         <DCCReference Include="uNoodle.pas"/>
-        <DCCReference Include="TransparentPanel.pas"/>
         <DCCReference Include="uNoodleFrame.pas">
             <Form>NoodleFrame</Form>
             <FormType>dfm</FormType>
@@ -239,10 +231,14 @@
             <Form>About</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="dtReConstruct.pas"/>
-        <DCCReference Include="tdResultsCTS.pas"/>
         <DCCReference Include="tdResultsCTSFile.pas"/>
         <DCCReference Include="uExport_CSV.pas"/>
+        <DCCReference Include="tdResultsCTS.pas"/>
+        <DCCReference Include="ReConstruct\dtReConstruct.pas"/>
+        <DCCReference Include="ReConstruct\dtReConstructDlg.pas">
+            <Form>ReConstructDlg</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

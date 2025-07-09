@@ -26,10 +26,10 @@ uses
   Data.DB, Vcl.Grids, Vcl.DBGrids, SCMDefines, System.StrUtils, AdvUtil, AdvObj,
   BaseGrid, AdvGrid, DBAdvGrid, System.Actions, Vcl.ActnList, Vcl.ToolWin,
   Vcl.ActnMan, Vcl.ActnCtrls, Vcl.ActnMenus, Vcl.PlatformDefaultStyleActnCtrls,
-  Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, tdReConstruct,
+	Vcl.ExtDlgs, FireDAC.Stan.Param, Vcl.ComCtrls, Vcl.DBCtrls, dtReConstruct,
   Vcl.PlatformVclStylesActnCtrls, Vcl.WinXPanels, Vcl.WinXCtrls,
   System.Types, System.IOUtils, System.Math, DirectoryWatcher,
-  tdReConstructDlg, dmIMG, uNoodleFrame,
+	dtReConstructDlg, dmIMG, uNoodleFrame,
 	System.Generics.Collections, System.Generics.Defaults, tdResultsCTS, System.Character;
 //	System.Diagnostics, System.IO;
 
@@ -223,7 +223,7 @@ implementation
 {$R *.dfm}
 
 uses System.UITypes, System.DateUtils ,dlgSessionPicker, dlgOptions, dlgTreeViewSCM,
-  dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData, tdMeetProgram,
+  dlgDataDebug, dlgTreeViewData, dlgUserRaceTime, dlgPostData,
 	dlgExportCSV, uWatchTime, uAppUtils, tdLogin,
   Winapi.ShellAPI, dlgFDExplorer, dmSCM, dmTDS, dlgScanOptions, rptReportsSCM,
 	dlgSwimClubPicker, dlgAbout, tdResultsCTSFile, uExport_CSV;
@@ -863,24 +863,25 @@ var
 begin
   dlg := TReConstructDlg.Create(self);
   AModalResult := dlg.ShowModal;
-  if IsPositiveResult(AModalResult) then
-  begin
-    // ASSERT: Settings may have changed.
-    Settings.LoadFromFile();
-    // The default filename supplied in settings.
-    SCMGrid.BeginUpdate;
-    ReconstructSession(SCM.qrySession.FieldByName('SessionID').AsInteger);
-    // re-set to head of session.
-    SCM.dsEvent.DataSet.First;
-    SCM.dsHeat.DataSet.First;
-    // update grid.
-    SCMGrid.EndUpdate;
-    // Message user.
-    MessageBox(0,
-			PChar('Creation of CTS Results files has been completed.'),
-      PChar('Re-Construct & Export CTS Results'), MB_ICONINFORMATION or MB_OK);
+  try
+    if IsPositiveResult(AModalResult) then
+    begin
+      SCMGrid.BeginUpdate;
+      if dlg.rgrpFileType.ItemIndex = 1 then
+        ReConstructDO4(SCM.qrySession.FieldByName('SessionID').AsInteger)
+      else
+        ReConstructDO3(SCM.qrySession.FieldByName('SessionID').AsInteger);
+			SCM.dsEvent.DataSet.First; // re-set record selection.
+      SCMGrid.EndUpdate; // update grid.
+			// Message user.
+      MessageBox(0,
+        PChar('Creation of CTS Results files has been completed.'),
+        PChar('Re-Construct & Export CTS Results'), MB_ICONINFORMATION or
+          MB_OK);
+    end;
+  finally
+    dlg.Free;
   end;
-  dlg.Free;
 end;
 
 procedure TMain.actnReConstructTDResultFilesUpdate(Sender: TObject);

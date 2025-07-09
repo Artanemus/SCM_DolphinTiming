@@ -11,10 +11,8 @@ uses
   frmMain in 'frmMain.pas' {Main},
   uAppUtils in 'uAppUtils.pas',
   DirectoryWatcher in 'DirectoryWatcher.pas',
-  tdMeetProgram in 'tdMeetProgram.pas',
   Vcl.Themes,
   Vcl.Styles,
-  tdReConstruct in 'tdReConstruct.pas',
   dlgOptions in 'dlgOptions.pas' {Options},
   dlgPostData in 'dlgPostData.pas' {PostData},
   dlgTreeViewData in 'dlgTreeViewData.pas' {TreeViewData},
@@ -23,10 +21,7 @@ uses
   dlgUserRaceTime in 'dlgUserRaceTime.pas' {UserRaceTime},
   SCMUtility in '..\SCM_SHARED\SCMUtility.pas',
   dlgSessionPicker in 'dlgSessionPicker.pas' {SessionPicker},
-  tdResults in 'tdResults.pas',
   dlgExportCSV in 'dlgExportCSV.pas' {ExportCSV},
-  tdTimingSystemStatus in 'tdTimingSystemStatus.pas',
-  tdReConstructDlg in 'tdReConstructDlg.pas' {ReConstructDlg},
   uWatchTime in 'uWatchTime.pas',
   tdLogin in 'tdLogin.pas' {Login},
   dlgFDExplorer in 'dlgFDExplorer.pas' {FDExplorer},
@@ -36,16 +31,16 @@ uses
   dlgScanOptions in 'dlgScanOptions.pas' {ScanOptions},
   rptReportsSCM in 'rptReportsSCM.pas' {ReportsSCM: TDataModule},
   uNoodle in 'uNoodle.pas',
-  TransparentPanel in 'TransparentPanel.pas',
   uNoodleFrame in 'uNoodleFrame.pas' {NoodleFrame: TFrame},
   uNoodleData in 'uNoodleData.pas',
   uNoodleInfo in 'uNoodleInfo.pas' {NoodleInfo},
   dlgSwimClubPicker in 'dlgSwimClubPicker.pas' {SwimClubPicker},
   dlgAbout in 'dlgAbout.pas' {About},
-  dtReConstruct in 'dtReConstruct.pas',
-  tdResultsCTS in 'tdResultsCTS.pas',
   tdResultsCTSFile in 'tdResultsCTSFile.pas',
-  uExport_CSV in 'uExport_CSV.pas';
+  uExport_CSV in 'uExport_CSV.pas',
+  tdResultsCTS in 'tdResultsCTS.pas',
+  dtReConstruct in 'ReConstruct\dtReConstruct.pas',
+  dtReConstructDlg in 'ReConstruct\dtReConstructDlg.pas' {ReConstructDlg};
 
 {$R *.res}
 

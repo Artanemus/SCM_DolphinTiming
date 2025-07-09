@@ -3,7 +3,7 @@ object ReConstructDlg: TReConstructDlg
   Top = 0
   BorderStyle = bsDialog
   Caption = 'ReConstruct & Export Time-Drops Results.'
-  ClientHeight = 202
+  ClientHeight = 306
   ClientWidth = 658
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,12 +18,13 @@ object ReConstructDlg: TReConstructDlg
   TextHeight = 21
   object pnlFooter: TPanel
     Left = 0
-    Top = 145
+    Top = 249
     Width = 658
     Height = 57
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitTop = 145
     object btnOk: TButton
       Left = 256
       Top = 6
@@ -48,10 +49,11 @@ object ReConstructDlg: TReConstructDlg
     Left = 0
     Top = 0
     Width = 658
-    Height = 145
+    Height = 249
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitHeight = 145
     object lblEventCSV: TLabel
       Left = 3
       Top = 33
@@ -90,17 +92,40 @@ object ReConstructDlg: TReConstructDlg
       RightButton.ImageName = 'Folders'
       RightButton.Visible = True
       TabOrder = 0
-      Text = 'c:\TimeDrops\Meets\'
+      Text = 'c:\CTSDolphin\ReConstruct\'
       OnClick = btnedtExportFolderClick
+    end
+    object rgrpFileType: TRadioGroup
+      Left = 3
+      Top = 136
+      Width = 247
+      Height = 49
+      Caption = 'Select file type to export...'
+      Columns = 2
+      ItemIndex = 1
+      Items.Strings = (
+        '.DO3'
+        '.DO4')
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 1
     end
   end
   object BrowseFolderDlg: TFileOpenDialog
-    DefaultExtension = '.JSON'
+    DefaultExtension = '.DO3'
     FavoriteLinks = <>
     FileTypes = <
       item
-        DisplayName = 'JSON files '
-        FileMask = '*.JSON'
+        DisplayName = 'CTS Dolphin result files (DO3, DO4)'
+        FileMask = '*.DO?'
+      end
+      item
+        DisplayName = 'DO3 files '
+        FileMask = '*.DO3'
+      end
+      item
+        DisplayName = 'DO4 files'
+        FileMask = '*.DO4'
       end
       item
         DisplayName = 'All Files'
@@ -108,7 +133,7 @@ object ReConstructDlg: TReConstructDlg
       end>
     OkButtonLabel = 'Select Folder'
     Options = [fdoPickFolders, fdoDontAddToRecent]
-    Title = 'Select Time Drops'#39#39' "Meet Program" folder.'
+    Title = 'Select ReContruct folder...'
     Left = 364
     Top = 19
   end

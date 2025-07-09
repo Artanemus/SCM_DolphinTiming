@@ -772,7 +772,6 @@ var
 begin
   Canvas := (Sender as TPaintBox).Canvas;
   Canvas.Brush.Style := bsClear;
-  // Make background transparent (won't erase grids)
 
   // draw the HotSpots (circles)
   for HotSpot in FHotSpots do
